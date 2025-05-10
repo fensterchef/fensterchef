@@ -17,13 +17,12 @@
 #include "notification.h"
 #include "parse/data_type.h"
 #include "parse/parse.h"
-#include "parse/stream.h"
 #include "window_list.h"
 #include "window_stacking.h"
 #include "x11_synchronize.h"
 
 /* the corresponding string identifier for all actions */
-static const char *action_strings[ACTION_MAX] = {
+static const char *action_strings[ACTION_SIMPLE_MAX] = {
 #define X(identifier, string) \
     [identifier] = string,
     DEFINE_ALL_PARSE_ACTIONS
@@ -1330,6 +1329,7 @@ void do_action(action_type_t type, const struct parse_generic_data *data)
         break;
 
     /* not a real action */
+    case ACTION_SIMPLE_MAX:
     case ACTION_MAX:
         break;
     }

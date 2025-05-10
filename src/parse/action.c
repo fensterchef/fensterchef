@@ -1,23 +1,21 @@
 #include <string.h>
 
 #include "action.h"
-#include "parse/parse.h"
-#include "parse/struct.h"
-#include "parse/stream.h"
-#include "parse/utility.h"
 #include "log.h"
+#include "parse/input.h"
+#include "parse/utility.h"
 #include "utility/utility.h"
 
 /* Find a section in the action strings that match the word loaded into
- * `parser`.
+ * @parser.
  *
  * @return ERROR if no action matches.
  */
-static int resolve_action_word(void)
+static int resolve_action_word(Parser *parser)
 {
     action_type_t count = 0;
 
-    for (action_type_t i = 0; i < ACTION_MAX; i++) {
+    for (action_type_t i = 0; i < ACTION_SIMPLE_MAX; i++) {
         const char *action, *space;
         unsigned skip_length;
 
@@ -36,20 +34,20 @@ static int resolve_action_word(void)
             skip_length = space - action + 1;
         }
 
-        if (parser.string_length == (size_t) (space - action) &&
-                memcmp(action, parser.string,
-                    parser.string_length) == 0) {
+        if (parser->string_length == (size_t) (space - action) &&
+                memcmp(action, parser->string,
+                    parser->string_length) == 0) {
             if (count == 0) {
-                parser.first_action = i;
+                parser->first_action = i;
             }
 
             count++;
 
-            parser.last_action = i + 1;
+            parser->last_action = i + 1;
 
-            parser.actions[i].offset = skip_length;
+            parser->actions[i].offset = skip_length;
             /* prepare the data for filling */
-            parser.actions[i].data_length = 0;
+            parser->actions[i].data_length = 0;
         } else if (count > 0) {
             /* optimization: no more will match because of the alphabetical
              * sorting
@@ -65,25 +63,25 @@ static int resolve_action_word(void)
  *
  * @return ERROR if no action matches.
  */
-static int read_and_resolve_next_action_word(void)
+static int read_and_resolve_next_action_word(Parser *parser)
 {
     action_type_t count = 0;
 
-    assert_read_string();
+    assert_read_string(parser);
 
     /* go through all actions that matched previously */
-    for (action_type_t i = parser.first_action, end = parser.last_action;
+    for (action_type_t i = parser->first_action, end = parser->last_action;
             i < end;
             i++) {
         const char *action, *space;
         unsigned skip_length;
 
-        if (parser.actions[i].offset == -1) {
+        if (parser->actions[i].offset == -1) {
             continue;
         }
 
         action = get_action_string(i);
-        action = &action[parser.actions[i].offset];
+        action = &action[parser->actions[i].offset];
 
         /* get the end of the next action word of the action string */
         space = strchr(action, ' ');
@@ -97,33 +95,33 @@ static int read_and_resolve_next_action_word(void)
         /* check if next is a string parameter */
         if (action[0] == 'S') {
             /* append the string data point */
-            parser.data.type = PARSE_DATA_TYPE_STRING;
-            LIST_COPY(parser.string, 0, parser.string_length + 1,
-                    parser.data.u.string);
-            LIST_APPEND_VALUE(parser.actions[i].data, parser.data);
+            parser->data.type = PARSE_DATA_TYPE_STRING;
+            LIST_COPY(parser->string, 0, parser->string_length + 1,
+                    parser->data.u.string);
+            LIST_APPEND_VALUE(parser->actions[i].data, parser->data);
         } else {
             /* the word needs to be unquoted */
-            if (parser.is_string_quoted) {
-                parser.actions[i].offset = -1;
+            if (parser->is_string_quoted) {
+                parser->actions[i].offset = -1;
                 continue;
             }
 
             /* check if an integer is expected and try to resolve it */
             if (action[0] == 'I') {
-                if (resolve_integer() == OK) {
+                if (resolve_integer(parser) == OK) {
                     /* append the integer data point */
-                    parser.data.type = PARSE_DATA_TYPE_INTEGER;
-                    LIST_APPEND_VALUE(parser.actions[i].data, parser.data);
+                    parser->data.type = PARSE_DATA_TYPE_INTEGER;
+                    LIST_APPEND_VALUE(parser->actions[i].data, parser->data);
                 } else {
-                    parser.actions[i].offset = -1;
+                    parser->actions[i].offset = -1;
                     continue;
                 }
             } else {
                 /* try to match the next word */
-                if (parser.string_length != (size_t) (space - action) ||
-                        memcmp(action, parser.string,
-                            parser.string_length) != 0) {
-                    parser.actions[i].offset = -1;
+                if (parser->string_length != (size_t) (space - action) ||
+                        memcmp(action, parser->string,
+                            parser->string_length) != 0) {
+                    parser->actions[i].offset = -1;
                     continue;
                 }
             }
@@ -132,28 +130,28 @@ static int read_and_resolve_next_action_word(void)
         /* got a valid action */
 
         if (count == 0) {
-            parser.first_action = i;
+            parser->first_action = i;
         }
         count++;
 
-        parser.last_action = i + 1;
+        parser->last_action = i + 1;
 
-        parser.actions[i].offset += skip_length;
+        parser->actions[i].offset += skip_length;
     }
 
     return count == 0 ? ERROR : OK;
 }
 
 /* Print all possible actions to stderr. */
-static void print_action_possibilities(void)
+static void print_action_possibilities(Parser *parser)
 {
     fprintf(stderr, "possible words are: ");
-    for (action_type_t i = parser.first_action; i < parser.last_action; i++) {
+    for (action_type_t i = parser->first_action; i < parser->last_action; i++) {
         const char *action, *space;
         int length;
 
         action = get_action_string(i);
-        action = &action[parser.actions[i].offset];
+        action = &action[parser->actions[i].offset];
 
         /* get the end of the next action word of the action string */
         space = strchr(action, ' ');
@@ -163,7 +161,7 @@ static void print_action_possibilities(void)
             length = space - action;
         }
 
-        if (i != parser.first_action) {
+        if (i != parser->first_action) {
             fprintf(stderr, ", ");
         }
         if (length == 1 && action[0] == 'I') {
@@ -182,43 +180,43 @@ static void print_action_possibilities(void)
  *
  * @return ERROR when there are no following actions, otherwise OK.
  */
-static int parse_next_action_part(size_t item_index)
+static int parse_next_action_part(Parser *parser, size_t item_index)
 {
     int error = OK;
     int character;
 
-    character = peek_stream_character(parser.stream);
+    character = peek_stream_character(parser);
     if (character == EOF || character == ',' || character == '\n') {
-        const char *const action = get_action_string(parser.first_action);
-        if (action[parser.actions[parser.first_action].offset] != '\0') {
-            parser.index = parser.stream->index;
-            emit_parse_error("incomplete action");
-            print_action_possibilities();
+        const char *const action = get_action_string(parser->first_action);
+        if (action[parser->actions[parser->first_action].offset] != '\0') {
+            parser->index = parser->index;
+            emit_parse_error(parser, "incomplete action");
+            print_action_possibilities(parser);
         } else {
-            parser.action_items[item_index].type = parser.first_action;
-            parser.action_items[item_index].data_count =
-                parser.actions[parser.first_action].data_length;
-            LIST_APPEND(parser.action_data,
-                parser.actions[parser.first_action].data,
-                parser.actions[parser.first_action].data_length);
+            parser->action_items[item_index].type = parser->first_action;
+            parser->action_items[item_index].data_count =
+                parser->actions[parser->first_action].data_length;
+            LIST_APPEND(parser->action_data,
+                parser->actions[parser->first_action].data,
+                parser->actions[parser->first_action].data_length);
         }
 
         if (character == ',') {
             /* skip ',' */
-            (void) get_stream_character(parser.stream);
-            skip_space();
-            assert_read_string();
+            (void) get_stream_character(parser);
+            skip_space(parser);
+            assert_read_string(parser);
         } else {
             error = ERROR;
         }
     } else {
-        if (read_and_resolve_next_action_word() == ERROR) {
-            emit_parse_error("invalid action word");
-            print_action_possibilities();
-            skip_statement();
+        if (read_and_resolve_next_action_word(parser) == ERROR) {
+            emit_parse_error(parser, "invalid action word");
+            print_action_possibilities(parser);
+            skip_statement(parser);
             error = ERROR;
         } else {
-            error = parse_next_action_part(item_index);
+            error = parse_next_action_part(parser, item_index);
         }
     }
 
@@ -227,26 +225,26 @@ static int parse_next_action_part(size_t item_index)
 
 /* Parse an action.
  *
- * Expects that a string has been read into `parser.`
+ * Expects that a string has been read into @parser.
  *
  * @return ERROR if there is no action, OK otherwise.
  */
-int continue_parsing_action(void)
+int continue_parsing_action(Parser *parser)
 {
     size_t item_index;
 
-    parser.action_items_length = 0;
-    parser.action_data_length = 0;
+    parser->action_items_length = 0;
+    parser->action_data_length = 0;
 
     do {
-        item_index = parser.action_items_length;
-        LIST_APPEND(parser.action_items, NULL, 1);
+        item_index = parser->action_items_length;
+        LIST_APPEND(parser->action_items, NULL, 1);
 
-        if (resolve_action_word() != OK) {
+        if (resolve_action_word(parser) != OK) {
             /* the action might be a binding or association */
             return ERROR;
         }
-    } while (parse_next_action_part(item_index) == OK);
+    } while (parse_next_action_part(parser, item_index) == OK);
 
     return OK;
 }

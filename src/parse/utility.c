@@ -5,34 +5,33 @@
 #include <X11/keysym.h>
 
 #include "parse/parse.h"
-#include "parse/struct.h"
-#include "parse/stream.h"
+#include "parse/input.h"
 #include "parse/utility.h"
 
 /* Skip to the beginning of the next line. */
-void skip_line(void)
+void skip_line(Parser *parser)
 {
     int character;
 
-    while (character = get_stream_character(parser.stream),
+    while (character = get_stream_character(parser),
             character != '\n' && character != EOF) {
         /* nothing */
     }
 }
 
 /* Skip over any blank (`isblank()`). */
-void skip_blanks(void)
+void skip_blanks(Parser *parser)
 {
-    while (isblank(peek_stream_character(parser.stream))) {
-        (void) get_stream_character(parser.stream);
+    while (isblank(peek_stream_character(parser))) {
+        (void) get_stream_character(parser);
     }
 }
 
 /* Skip over any white space (`isspace()`). */
-void skip_space(void)
+void skip_space(Parser *parser)
 {
-    while (isspace(peek_stream_character(parser.stream))) {
-        (void) get_stream_character(parser.stream);
+    while (isspace(peek_stream_character(parser))) {
+        (void) get_stream_character(parser);
     }
 }
 
@@ -40,17 +39,17 @@ void skip_space(void)
  *
  * This is used when an error occurs but more potential errors can be shown.
  */
-void skip_statement(void)
+void skip_statement(Parser *parser)
 {
     int character;
 
-    while (character = get_stream_character(parser.stream),
+    while (character = get_stream_character(parser),
             character != ',' && character != '\n' && character != EOF) {
         /* skip over quotes */
         if (character == '\"' || character == '\'') {
             const int quote = character;
-            while (parser.index = parser.stream->index,
-                    character = get_stream_character(parser.stream),
+            while (parser->index = parser->index,
+                    character = get_stream_character(parser),
                     character != quote && character != EOF &&
                     character != '\n') {
                 /* nothing */
@@ -60,12 +59,12 @@ void skip_statement(void)
 }
 
 /* Skip all following statements. */
-void skip_all_statements(void)
+void skip_all_statements(Parser *parser)
 {
     do {
-        skip_statement();
-        if (peek_stream_character(parser.stream) == ',') {
-            (void) get_stream_character(parser.stream);
+        skip_statement(parser);
+        if (peek_stream_character(parser) == ',') {
+            (void) get_stream_character(parser);
             continue;
         }
     } while (false);
@@ -92,72 +91,72 @@ static inline bool is_word_character(int character)
 }
 
 /* Read a string/word from the active input stream. */
-int read_string(void)
+int read_string(Parser *parser)
 {
     int character;
 
-    skip_space();
+    skip_space(parser);
 
-    parser.index = parser.stream->index;
-    parser.string_length = 0;
-    character = peek_stream_character(parser.stream);
+    parser->index = parser->index;
+    parser->string_length = 0;
+    character = peek_stream_character(parser);
     if (character == '\"' || character == '\'') {
-        parser.is_string_quoted = true;
+        parser->is_string_quoted = true;
 
         const int quote = character;
 
         /* skip over the opening quote */
-        (void) get_stream_character(parser.stream);
+        (void) get_stream_character(parser);
 
-        while (character = get_stream_character(parser.stream),
+        while (character = get_stream_character(parser),
                 character != quote && character != EOF && character != '\n') {
             /* escape any characters following \\ */
             if (character == '\\') {
-                character = get_stream_character(parser.stream);
-                LIST_APPEND_VALUE(parser.string, '\\');
+                character = get_stream_character(parser);
+                LIST_APPEND_VALUE(parser->string, '\\');
                 if (character == EOF || character == '\n') {
                     break;
                 }
             }
-            LIST_APPEND_VALUE(parser.string, character);
+            LIST_APPEND_VALUE(parser->string, character);
         }
 
         if (character != quote) {
-            emit_parse_error("missing closing quote character");
+            emit_parse_error(parser, "missing closing quote character");
         }
     } else {
-        parser.is_string_quoted = false;
+        parser->is_string_quoted = false;
 
-        while (character = peek_stream_character(parser.stream),
+        while (character = peek_stream_character(parser),
                 is_word_character(character)) {
-            (void) get_stream_character(parser.stream);
+            (void) get_stream_character(parser);
 
-            LIST_APPEND_VALUE(parser.string, character);
+            LIST_APPEND_VALUE(parser->string, character);
         }
 
-        if (parser.string_length == 0) {
+        if (parser->string_length == 0) {
             return ERROR;
         }
     }
 
     /* append a nul-terminator but reduce the size again */
-    LIST_APPEND_VALUE(parser.string, '\0');
-    parser.string_length--;
+    LIST_APPEND_VALUE(parser->string, '\0');
+    parser->string_length--;
     return OK;
 }
 
 /* Makes sure that next comes a word. */
-void assert_read_string(void)
+void assert_read_string(Parser *parser)
 {
-    if (read_string() != OK) {
-        skip_all_statements();
-        emit_parse_error("unexpected token");
-        longjmp(parser.throw_jump, 1);
+    if (read_string(parser) != OK) {
+        skip_all_statements(parser);
+        emit_parse_error(parser, "unexpected token");
+        longjmp(parser->throw_jump, 1);
     }
 }
 
-/* Translate a string like "Button1" to a button index. */
-int translate_string_to_button(const char *string)
+/* Translate the string within @parser to a button index. */
+int resolve_button(Parser *parser)
 {
     /* conversion from string to button index */
     static const struct button_string {
@@ -190,7 +189,9 @@ int translate_string_to_button(const char *string)
     };
 
     int index = -1;
+    const char *string;
 
+    string = parser->string;
     /* parse strings starting with "X" */
     if (string[0] == 'X') {
         int x_index = 0;
@@ -200,7 +201,7 @@ int translate_string_to_button(const char *string)
             x_index *= 10;
             x_index += string[0] - '0';
             if (x_index >= BUTTON_MAX - BUTTON_X1) {
-                emit_parse_error("X button value is too high");
+                emit_parse_error(parser, "X button value is too high");
                 x_index = 1 - BUTTON_X1;
                 break;
             }
@@ -217,7 +218,7 @@ int translate_string_to_button(const char *string)
             index += string[0] - '0';
             if (index > UINT8_MAX) {
                 index = BUTTON_NONE;
-                emit_parse_error("button value is too high");
+                emit_parse_error(parser, "button value is too high");
                 break;
             }
             string++;
@@ -238,11 +239,11 @@ int translate_string_to_button(const char *string)
     return index;
 }
 
-/* Try to resolve `parser.string` as integer.
+/* Try to resolve `parser->string` as integer.
  *
- * @return ERROR if `parser.string` is not an integer.
+ * @return ERROR if `parser->string` is not an integer.
  */
-int resolve_integer(void)
+int resolve_integer(Parser *parser)
 {
     /* a translation table from string to integer */
     static const struct {
@@ -274,8 +275,8 @@ int resolve_integer(void)
     int error = ERROR;
     parse_integer_t sign = 1, integer = 0;
 
-    word = parser.string;
-    parser.data.flags = 0;
+    word = parser->string;
+    parser->data.flags = 0;
     if ((word[0] == '-' && isdigit(word[1])) || isdigit(word[0])) {
         if (word[0] == '-') {
             sign = -1;
@@ -289,7 +290,7 @@ int resolve_integer(void)
             word++;
 
             if (integer > PARSE_INTEGER_LIMIT) {
-                emit_parse_error("integer overflows "
+                emit_parse_error(parser, "integer overflows "
                         STRINGIFY(PARSE_INTEGER_LIMIT));
                 do {
                     word++;
@@ -300,7 +301,7 @@ int resolve_integer(void)
         }
 
         if (word[0] == '%') {
-            parser.data.flags |= PARSE_DATA_FLAGS_IS_PERCENT;
+            parser->data.flags |= PARSE_DATA_FLAGS_IS_PERCENT;
             word++;
         }
 
@@ -319,7 +320,7 @@ int resolve_integer(void)
         }
 
         if (count == 0) {
-            emit_parse_error("expected hexadecimal digits");
+            emit_parse_error(parser, "expected hexadecimal digits");
         }
 
         /* if no alpha channel is specified, make it fully opaque */
@@ -340,12 +341,12 @@ int resolve_integer(void)
         }
     }
 
-    parser.data.u.integer = sign * integer;
+    parser->data.u.integer = sign * integer;
     return error;
 }
 
 /* Translate a string to some extended key symbols. */
-KeySym translate_string_to_additional_key_symbols(const char *string)
+KeySym resolve_key_symbol(Parser *parser)
 {
     struct {
         const char *name;
@@ -367,10 +368,10 @@ KeySym translate_string_to_additional_key_symbols(const char *string)
     };
 
     for (unsigned i = 0; i < SIZE(symbol_table); i++) {
-        if (strcmp(string, symbol_table[i].name) == 0) {
+        if (strcmp(parser->string, symbol_table[i].name) == 0) {
             return symbol_table[i].key_symbol;
         }
     }
 
-    return NoSymbol;
+    return XStringToKeysym(parser->string);
 }

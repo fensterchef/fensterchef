@@ -15,8 +15,14 @@ typedef enum {
     identifier,
     DEFINE_ALL_PARSE_ACTIONS
 #undef X
-    /* these get special treatment by the parser */
+    /* the maximum value for a simple action */
+    ACTION_SIMPLE_MAX,
+
+    /* The below actions are parsed in a special way. */
+
+    /* a button binding */
     ACTION_BUTTON_BINDING,
+    /* a key binding */
     ACTION_KEY_BINDING,
     /* not a real action */
     ACTION_MAX,

@@ -11,50 +11,53 @@
  */
 
 /* Skip to the beginning of the next line. */
-void skip_line(void);
+void skip_line(Parser *parser);
 
 /* Skip over any blank (`isblank()`). */
-void skip_blanks(void);
+void skip_blanks(Parser *parser);
 
 /* Skip over any white space (`isspace()`). */
-void skip_space(void);
+void skip_space(Parser *parser);
 
 /* Skip to the next statement.
  *
  * This is used when an error occurs but more potential errors can be shown.
  */
-void skip_statement(void);
+void skip_statement(Parser *parser);
 
 /* Skip all following statements. */
-void skip_all_statements(void);
+void skip_all_statements(Parser *parser);
 
-/* Read a string/word from the active input stream.
+/* Read a string/word from the parser input.
  *
  * @return ERROR if there was no string, OK otherwise.
  */
-int read_string(void);
+int read_string(Parser *parser);
 
 /* Makes sure that next comes a word.
  *
  * If no word comes next, an error is thrown.
  */
-void assert_read_string(void);
+void assert_read_string(Parser *parser);
 
-/* Translate a string like "Button1" to a button index.
+/* Translate the string within @parser to a button index.
  *
  * @return `BUTTON_NONE` if the button string is invalid.
  */
-int translate_string_to_button(const char *string);
+int resolve_button(Parser *parser);
 
-/* Try to resolve `parser.word` as integer.
+/* Try to resolve the string within @parser as integer.
  *
- * The result is stored in `parser.integer`.
+ * The result is stored in @parser->integer.
  *
- * @return ERROR if `parser.word` is not an integer.
+ * @return ERROR if @parser->string is not an integer.
  */
-int resolve_integer(void);
+int resolve_integer(Parser *parser);
 
-/* Translate a string to some extended key symbols. */
-KeySym translate_string_to_additional_key_symbols(const char *string);
+/* Try to resolve the string within @parser as key symbol.
+ *
+ * @return NoSymbol if the string is not a key symbol.
+ */
+KeySym resolve_key_symbol(Parser *parser);
 
 #endif

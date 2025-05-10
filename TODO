@@ -27,7 +27,14 @@
     When floating windows are spawned, they are placed along a line.  Simplify
     this and only use the top window.
 
-#91 ...
+#91 Add actions to only merge specific default parts
+    For example `merge default bindings` or `merge default font`.
+
+#92 Moving into empty frame on another monitor
+    Moving into an empty frame that is on another monitor should ALWAYS remove
+    it
+
+#93 ...
 
 #200 Make repository for fensterchef-menu
     Menus of all kind for any window manager

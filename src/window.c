@@ -203,14 +203,14 @@ FcWindow *create_window(Window id)
         /* check if the window holds a command */
         utf8_t *const command = get_fensterchef_command_property(id);
         if (command != NULL) {
-            InputStream *stream;
+            Parser *parser;
 
             LOG("window %#lx has command: %s\n",
                     id, command);
 
-            stream = create_string_stream(command);
-            (void) parse_stream_and_run_actions(stream);
-            destroy_stream(stream);
+            parser = create_string_parser(command);
+            (void) parse_and_run_actions(parser);
+            destroy_parser(parser);
 
             free(command);
 

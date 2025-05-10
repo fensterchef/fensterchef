@@ -10,8 +10,7 @@
 
 #include "binding.h"
 #include "configuration.h"
-#include "parse/parse.h"
-#include "parse/stream.h"
+#include "parse/input.h"
 #include "cursor.h"
 #include "event.h"
 #include "fensterchef.h"
