@@ -35,13 +35,6 @@ inline const char *get_action_string(action_type_t type)
     return action_strings[type];
 }
 
-static void free_action_list(struct action_list *list)
-{
-    clear_action_list_but_keep_shallow(list);
-    free(list->items);
-    free(list->data);
-}
-
 /* Do all actions within @list. */
 void run_action_list(const struct action_list *original_list)
 {
@@ -82,64 +75,25 @@ void duplicate_action_list(struct action_list *list)
 
     data = list->data;
     for (size_t i = 0; i < data_count; i++) {
-        switch (data->type) {
-        case PARSE_DATA_TYPE_INTEGER:
-            /* nothing */
-            break;
-
-        case PARSE_DATA_TYPE_STRING:
-            data->u.string = xstrdup(data->u.string);
-            break;
-
-        case PARSE_DATA_TYPE_BUTTON:
-            duplicate_action_list(&data->u.button.actions);
-            break;
-
-        case PARSE_DATA_TYPE_KEY:
-            duplicate_action_list(&data->u.key.actions);
-            break;
-        }
+        duplicate_generic_data(data);
         data++;
     }
 }
 
-/* Free deep memory associated to the action list @list. */
-void clear_action_list_but_keep_shallow(struct action_list *list)
+/* Free ALL memory associated to the action list. */
+void clear_action_list(const struct action_list *list)
 {
     struct parse_generic_data *data;
 
     data = list->data;
     for (unsigned i = 0; i < list->number_of_items; i++) {
         for (unsigned j = 0; j < list->items[i].data_count; j++) {
-            switch (data->type) {
-            case PARSE_DATA_TYPE_INTEGER:
-                /* nothing */
-                break;
-
-            case PARSE_DATA_TYPE_STRING:
-                free(data->u.string);
-                break;
-
-            case PARSE_DATA_TYPE_BUTTON:
-                free_action_list(&data->u.button.actions);
-                break;
-
-            case PARSE_DATA_TYPE_KEY:
-                free_action_list(&data->u.key.actions);
-                break;
-            }
+            clear_generic_data(data);
             data++;
         }
     }
-}
-
-/* Free ALL memory associated to the action list @list and set it to 0. */
-void clear_action_list(struct action_list *list)
-{
-    free_action_list(list);
-    list->items = NULL;
-    list->number_of_items = 0;
-    list->data = NULL;
+    free(list->items);
+    free(list->data);
 }
 
 /* Log a list of actions to stderr. */

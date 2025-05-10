@@ -42,4 +42,10 @@ struct parse_generic_data {
     } u;
 };
 
+/* Duplicate a data value into itself. */
+void duplicate_generic_data(struct parse_generic_data *data);
+
+/* Clear the data value within @data. */
+void clear_generic_data(const struct parse_generic_data *data);
+
 #endif

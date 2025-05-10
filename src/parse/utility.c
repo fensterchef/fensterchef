@@ -48,7 +48,7 @@ void skip_statement(Parser *parser)
         /* skip over quotes */
         if (character == '\"' || character == '\'') {
             const int quote = character;
-            while (parser->index = parser->index,
+            while (parser->start_index = parser->index,
                     character = get_stream_character(parser),
                     character != quote && character != EOF &&
                     character != '\n') {
@@ -97,7 +97,7 @@ int read_string(Parser *parser)
 
     skip_space(parser);
 
-    parser->index = parser->index;
+    parser->start_index = parser->index;
     parser->string_length = 0;
     character = peek_stream_character(parser);
     if (character == '\"' || character == '\'') {

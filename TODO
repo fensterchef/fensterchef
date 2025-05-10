@@ -3,10 +3,6 @@
     Abstract parts of the window list away to make more choose menus like an
     application launcher
 
-#74 Add caching of window stack
-    Stack changes should be only locally noticed and then sent at once to the X
-    server to allow more tolerance in scripts (expected to improve performance)
-
 #80 Add the dialog window mode
     Add a window mode for dialog windows
 
@@ -51,9 +47,6 @@
 [In Progress]
 #14 Generate documentation
     Make shell scripts to generate the manual page
-
-#85 Add sourcing to parser
-    The source command needs to be added again to load other files
 
 [Recheck]
 #1 ! Hover events not working in firefox sometimes
@@ -447,3 +440,10 @@
     Move server synchronization out of event.c into its own file.
     Maybe merge this with window properties.
     I decided not to make two lists and simply update all if anything changed.
+
+#85 Add sourcing to parser
+    The source command needs to be added again to load other files
+
+#74 Add caching of window stack
+    Stack changes should be only locally noticed and then sent at once to the X
+    server to allow more tolerance in scripts (expected to improve performance)

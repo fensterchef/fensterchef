@@ -14,9 +14,6 @@
 /* the assumed width of a tab character \t */
 #define PARSE_TAB_SIZE 8
 
-/* the maximum number of files to deeply source */
-#define PARSE_MAX_FILE_DEPTH 32
-
 /* The maximum number of errors that can occur before the parser stops.
  * Outputting many errors is good as it helps with fixing files.  But when the
  * user sources an invalid file, the user should not be be flooded with errors.
@@ -26,6 +23,9 @@
 
 /* the parser object */
 typedef struct parser {
+    /* the upper parser in the parsing process */
+    struct parser *upper_parser;
+
     /* the start index of the last item */
     size_t start_index;
     /* if the parser had any error */
@@ -67,7 +67,7 @@ typedef struct parser {
 
     /* the action items being parsed */
     LIST(struct action_list_item, action_items);
-    /* data for the action list */
+    /* data for the action items being parsed */
     LIST(struct parse_generic_data, action_data);
 
     /* the startup items being parsed */
@@ -83,7 +83,7 @@ typedef struct parser {
 } Parser;
 
 /* Emit a parse error. */
-void emit_parse_error(Parser *parser, const char *message);
+void emit_parse_error(Parser *parser, const char *format, ...);
 
 /* Initialize the internal parse object to parse file at given path.
  *

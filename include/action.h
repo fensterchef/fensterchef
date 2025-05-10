@@ -55,11 +55,8 @@ void run_action_list(const struct action_list *list);
 /* Make a deep copy of @list and put it into itself. */
 void duplicate_action_list(struct action_list *list);
 
-/* Free very deep memory associated to the action list @list. */
-void clear_action_list_but_keep_shallow(struct action_list *list);
-
-/* Free ALL memory associated to the action list @list and set it to 0. */
-void clear_action_list(struct action_list *list);
+/* Free ALL memory associated to the action list. */
+void clear_action_list(const struct action_list *list);
 
 /* Log a list of actions to stderr. */
 void log_action_list(const struct action_list *list);
