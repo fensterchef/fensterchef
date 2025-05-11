@@ -3,7 +3,7 @@
 
 #include <setjmp.h>
 
-#include "../action.h"
+#include "core/action.h"
 #include "parse/data_type.h"
 #include "utility/list.h"
 #include "utility/types.h"

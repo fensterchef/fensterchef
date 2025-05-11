@@ -1,7 +1,7 @@
 #ifndef PARSE__ACTION_H
 #define PARSE__ACTION_H
 
-#include "../action.h"
+#include "core/action.h"
 #include "parse/parse.h"
 
 /* Parse an action.

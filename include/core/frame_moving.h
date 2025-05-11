@@ -32,6 +32,8 @@
  * `get_above_frame(2)` -> NULL
  * `get_below_frame(1)` -> NULL
  * `get_left_frame(4)` -> 2, 3
+ *
+ * These function do NOT move across monitors.
  */
 
 /* Get the frame on the left of @frame. */
@@ -53,7 +55,7 @@ Frame *get_below_frame(Frame *frame);
  *
  * @return always a leaf frame and never NULL.
  */
-Frame *get_most_left_leaf_frame(Frame *frame, int32_t y);
+Frame *get_most_left_leaf_frame(Frame *frame, int y);
 
 /* Get the frame at the top within @frame.
  *
@@ -62,7 +64,7 @@ Frame *get_most_left_leaf_frame(Frame *frame, int32_t y);
  *
  * @return always a leaf frame and never NULL.
  */
-Frame *get_top_leaf_frame(Frame *frame, int32_t x);
+Frame *get_top_leaf_frame(Frame *frame, int x);
 
 /* Get the most right frame within @frame.
  *
@@ -71,7 +73,7 @@ Frame *get_top_leaf_frame(Frame *frame, int32_t x);
  *
  * @return always a leaf frame and never NULL.
  */
-Frame *get_most_right_leaf_frame(Frame *frame, int32_t y);
+Frame *get_most_right_leaf_frame(Frame *frame, int y);
 
 /* Get the frame at the bottom within @frame.
  *
@@ -80,9 +82,9 @@ Frame *get_most_right_leaf_frame(Frame *frame, int32_t y);
  *
  * @return always a leaf frame and never NULL.
  */
-Frame *get_bottom_leaf_frame(Frame *frame, int32_t x);
+Frame *get_bottom_leaf_frame(Frame *frame, int x);
 
-/* The `move_frame_XXX()` functions work analogous. Here is an illustration:
+/* The `move_frame_XXX()` functions work analogous.  Here is an illustration:
  * +-----+---+---+---+
  * |     |   2   |   |
  * |  1  +---+---+ 5 |

@@ -1,12 +1,12 @@
 #!/bin/sh
 
 CC=cc
-CFLAGS='-std=c99 -Iinclude -Wall -Wextra -O3 -DNO_ANSII_COLORS'
+CFLAGS='-std=c99 -Iinclude -Iinclude/core -Wall -Wextra -O3 -DNO_ANSII_COLORS'
 LDLIBS=
 # Packages (added to CFLAGS and LDLIBS before compiling/linking)
-PACKAGES='x11 xrandr xcursor xft'
+PACKAGES='x11 xrandr xcursor xft fontconfig'
 PREFIX=/usr
-SOURCES=src/*.c\ src/utility/*.c\ src/configuration/*.c
+SOURCES=src/*.c\ src/utility/*.c\ src/parse/*.c
 
 rebuild=false
 

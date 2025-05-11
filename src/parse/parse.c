@@ -169,7 +169,8 @@ static void continue_parsing_source(Parser *parser)
      * because sourcing is not conditional, it always happens.
      */
     for (upper = parser; upper != NULL; upper = upper->upper_parser) {
-        if (strcmp(upper->file_path, parser->string) == 0) {
+        if (upper->file_path != NULL &&
+                strcmp(upper->file_path, parser->string) == 0) {
             break;
         }
     }

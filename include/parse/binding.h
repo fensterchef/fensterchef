@@ -1,7 +1,7 @@
 #ifndef PARSE__BINDING_H
 #define PARSE__BINDING_H
 
-#include "../binding.h"
+#include "core/binding.h"
 
 /* Parse the next binding definition in @parser.
  *

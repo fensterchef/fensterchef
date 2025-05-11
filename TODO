@@ -26,10 +26,6 @@
 #91 Add actions to only merge specific default parts
     For example `merge default bindings` or `merge default font`.
 
-#92 Moving into empty frame on another monitor
-    Moving into an empty frame that is on another monitor should ALWAYS remove
-    it
-
 #93 ...
 
 #200 Make repository for fensterchef-menu
@@ -47,6 +43,10 @@
 [In Progress]
 #14 Generate documentation
     Make shell scripts to generate the manual page
+
+#92 ! Moving into empty frame on another monitor
+    Moving into an empty frame that is on another monitor should ALWAYS remove
+    it
 
 [Recheck]
 #1 ! Hover events not working in firefox sometimes
