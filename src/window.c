@@ -318,9 +318,8 @@ FcWindow *create_window(Window id)
     /* new window is now in the list */
     Window_count++;
 
-    /* initialize the window mode and Z position */
+    /* initialize the window mode */
     set_window_mode(window, mode);
-    update_window_layer(window);
 
     /* grab the buttons for this window */
     grab_configured_buttons(id);
@@ -342,6 +341,9 @@ FcWindow *create_window(Window id)
             set_focus_window_with_frame(window);
         }
     }
+
+    /* put the window on a sensible Z position for its mode */
+    update_window_layer(window);
 
     return window;
 }

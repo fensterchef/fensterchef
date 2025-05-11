@@ -6,10 +6,6 @@
 #80 Add the dialog window mode
     Add a window mode for dialog windows
 
-#83 Add dynamic bindings
-    Add binding actions that dynamically add bindings.  This simply requires the
-    parser to parse key bindings within key bindings.
-
 #84 Give each window its own individual settings
     Each window should have its own settings for border and gaps.  Actions have
     to be made that set these individual settings.  Whether a setting is
@@ -19,7 +15,10 @@
     Move focus X11 management into x11_synchronize (out of event.c) and bundle
     all relevant parts.
 
-#94 ...
+#95 Make select action
+    Make an action that selects a window without focusing it for further actions
+
+#96 ...
 
 #200 Make repository for fensterchef-menu
     Menus of all kind for any window manager
@@ -34,6 +33,9 @@
     Make an additional repository that hosts fensterland
 
 [In Progress]
+#83 Add binding bindings
+    Allow binding actions to add bindings.  This simply requires the parser to
+    parse bindings within bindings.
 
 [Recheck]
 #1 ! Hover events not working in firefox sometimes
@@ -453,3 +455,6 @@
 
 #93 Make unbind action
     Make an action to unbind a specific binding
+
+#94 ! Fix misplacement of notification window
+    With multiple monitors, the notification window is not clipped correctly

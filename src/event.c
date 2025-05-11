@@ -737,6 +737,7 @@ void handle_event(XEvent *event)
         /* Screen change notifications are sent when the screen configuration is
          * changed.  This includes position, size etc.
          */
+        XRRUpdateConfiguration(event);
         merge_monitors(query_monitors());
         return;
     }
