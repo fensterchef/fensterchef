@@ -1,643 +1,484 @@
-.TH FENSTERCHEF 5 "2025-03-17" "Fensterchef developer" "Fensterchef manual"
+.TH FENSTERCHEF 5 "2025-05-11" "Fensterchef" "Fensterchef manual"
 .SH NAME
 fensterchef - format of fensterchef configuration files
 .
 .SH DESCRIPTION
 The fensterchef configuration file format is very simple and easy to understand.
 
-However, using the shell like scripting capabilities can make for quite complex
-programs.
-
-There are sections indicated by
-.BI [ section-name ]
-and within these sections are the settings the section accepts.
-A section may also accept special settings, for example the
-.B [keybind]
-or
-.B [startup]
-section.
-By default the
-.B [startup]
-section is used.
-This can be imagined like a
-.B [startup]
-being at the first line.
+Settings can be set through simple
+.B key value
+syntax.  For example:
+.B border color
+.BR #440088 .
+When a line starts with a
+.I #
+the line is ignored.
+Lines can be joined using
+.I \\\\
+This character must be the first non space character on a line which makes this
+line continue the previous line.
+It is also possible to run actions like hiding a window.
 .
-.SH DATA TYPE
-A handful of data types are supported.
-.SS string
-A utf8 encoded sequence of bytes. Characters can be escaped using
-.BR \[rs] .
-Examples:
-    I am not quoted and can not be quoted
-    \[rs] I have a leading and trailing space\[rs] 
-
-These are all characters with special intepretation:
-    \\a, \\b, \\e, \\f, \\n, \\r, \\t, \\v
-
-And all these must be escaped when using them literally:
-    ;, &, |, )
-.SS integer
-An integer in base 10 notation with an optional sign.
-Integers are limited to 1000000.
-Examples:
-    -11
-    384
-    123454678910
-.RI ( 1000000 )
-    true
-    on
-    false
-    #ff00ff
-    #edceef
-    #000000
-.SS modifiers (interpreted as integer)
-Keyboard modifiers.
-Examples:
-    Shift
-    Control
-    Mod1
+.SH SETTING
 .PP
-The possible modifiers are:
-.BR None ,
-.BR Shift ,
-.BR Lock ,
-.BR CapsLock ,
-.BR Ctrl ,
-.BR Control ,
-.BR Alt ,
-.BR Super ,
-.BR Mod1 ,
-.BR Mod2 ,
-.BR Mod3 ,
-.BR Mod4 ,
-.BR Mod5 .
-.SS cursor (interpreted as integer)
-A cursor constant.
-Examples:
-    left-ptr
-    fleur
-    sizing
-.PP
-This is a complete list of the possible cursors:
-    X-cursor
-    arrow
-    based-arrow-down
-    based-arrow-up
-    boat
-    bogosity
-    bottom-left-corner
-    bottom-right-corner
-    bottom-side
-    bottom-tee
-    box-spiral
-    center-ptr
-    circle
-    clock
-    coffee-mug
-    cross
-    cross-reverse
-    crosshair
-    diamond-cross
-    dot
-    dotbox
-    double-arrow
-    draft-large
-    draft-small
-    draped-box
-    exchange
-    fleur
-    gobbler
-    gumby
-    hand1
-    hand2
-    heart
-    icon
-    iron-cross
-    left-ptr
-    left-side
-    left-tee
-    leftbutton
-    ll-angle
-    lr-angle
-    man
-    middlebutton
-    mouse
-    pencil
-    pirate
-    plus
-    question-arrow
-    right-ptr
-    right-side
-    right-tee
-    rightbutton
-    rtl-logo
-    sailboat
-    sb-down-arrow
-    sb-h-double-arrow
-    sb-left-arrow
-    sb-right-arrow
-    sb-up-arrow
-    sb-v-double-arrow
-    shuttle
-    sizing
-    spider
-    spraycan
-    star
-    target
-    tcross
-    top-left-arrow
-    top-left-corner
-    top-right-corner
-    top-side
-    top-tee
-    trek
-    ul-angle
-    umbrella
-    ur-angle
-    watch
-    xterm
-.SS quad
-A set of 1, 2 or 4 integers.
-Examples:
-    1 2 3 4
-    -4 4 (expands to -4 4 -4 4)
-    2 (expands to 2 2 2 2)
-.
-.SH SECTION
-.SS [startup]
-This section is equipped by default.
-It may hold an expression.
-Nothing else can be put into this section.
-.SS [general]
-This section contains a few miscallaneous options.
-.PP
-overlap-percentage
-.I integer
-(default: 80)
-.PP
-root-cursor
-.I cursor
-(default: left-ptr)
-.PP
-moving-cursor
-.I cursor
-(default: fleur)
-.PP
-horizontal-cursor
-.I cursor
-(default: sb-h-double-arrow)
-.PP
-vertical-cursor
-.I cursor
-(default: sb-v-double-arrow)
-.PP
-sizing-cursor
-.I cursor
-(default: sizing)
-.SS [assignment]
-Here assignments can be written in the format
-.I integer
-.I string
-.I ;
-.I string
-.I ;
-.IR expression .
-The actions are executed when the window gets assigned its number.
-If you supply actions, this will overwrite the default behaviour of showing and
-focusing the window.
-The
-.I ;
-.I expression
-may be omitted.
-.PP
-first-window-number
-.I integer
-(default: 1)
-.SS [tiling]
-Control how windows should be tiled.
-.PP
-auto-split
-.I boolean
-(default: false)
-.PP
-auto-equalize
-.I boolean
-(default: true)
-.PP
-auto-fill-void
-.I boolean
-(default: true)
-.PP
-auto-remove
-.I boolean
-(default: false)
-.PP
-auto-remove-void
-.I boolean
-(default: false)
-.SS [font]
-Set the name of the font used for the window list and notifications.
-.PP
-name
-.I string
-(default: Mono)
-.SS [border]
-Change the style of the window bordes.
-.PP
-size
-.I integer
-(default: 1)
-.PP
-color
-.I color
-(default: #36454f)
-.PP
-active-color
-.I color
-(default: #71797e)
-.PP
-focus-color
-.I color
-(default: #c7bb28)
-.SS [gaps]
-Change the size of the gaps.
-.PP
-inner
-.I quad
-(default: 0)
-.PP
-outer
-.I quad
-(default: 0)
-.SS [notification]
-Set the style of the window list and notification windows.
-.PP
-duration
-.I integer
-(default: 2)
-.PP
-padding
-.I integer
-(default: 6)
-.PP
-border-size
-.I integer
-(default: 1)
-.PP
-border-color
-.I color
-(default: #000000)
-.PP
-foreground
-.I color
-(default: #000000)
-.PP
-background
-.I color
-(default: #ffffff)
-.SS [mouse]
-Add mouse bindings. Mouse bindings have the format:
-.I modifiers
-.I +
-.I button_index expression
-.PP
-resize-tolerance
-.I integer
-(default: 8)
-.PP
-modifiers
-.I modifiers
-(default: Mod4)
-.PP
-ignore-modifiers
-.I modifiers
-(default: Lock+Mod2+Mod3+Mod5)
-.SS [keyboard]
-Add keyboard bindings. Keyboard bindings have the format:
-.I modifiers
-.I +
-.RI ( key
-.I symbol
-or
-.I key
-.IR code )
-.I expression
-.PP
-modifiers
-.I modifiers
-(default: Mod4)
-.PP
-ignore-modifiers
-.I modifiers
-(default: Lock+Mod2+Mod3+Mod5)
-.
-.SH ACTION
-.PP
-.B none
-    No action at all.
-.PP
-.B reload-configuration
-    Reload the configuration file.
-.PP
-.B assign
-.I integer
-    Assign a number to a frame.
-.PP
-.B focus-frame
-.I integer
-.B ?
-    Focus a frame with given number.
-.PP
-.B focus-parent
-.I integer
-.B ?
-    Move the focus to the parent frame.
-.PP
-.B focus-child
-.I integer
-.B ?
-    Move the focus to the child frame.
-.PP
-.B equalize-frame
-    Equalize the size of the child frames within a frame.
-.PP
-.B close-window
-    Closes the currently active window.
-.PP
-.B minimize-window
-.I integer
-.B ?
-    Hides the window with given number of the clicked window.
-.PP
-.B show-window
-.I integer
-.B ?
-    Show the window with given number or the clicked window.
-.PP
-.B focus-window
-.I integer
-.B ?
-    Focus the window with given number or the clicked window.
-.PP
-.B initiate-move
-    Start moving a window with the mouse.
-.PP
-.B initiate-resize
-    Start resizing a window with the mouse.
-.PP
-.B next-window
-.I integer
-.B ?
-    Go to the next window in the window list.
-.PP
-.B previous-window
-.I integer
-.B ?
-    Go to the previous window in the window list.
-.PP
-.B remove-frame
-    Remove the current frame.
-.PP
-.B other-frame
-    Remove the current frame and replace it with a frame from the stash.
-.PP
-.B toggle-tiling
-    Changes a non tiling window to a tiling window and vise versa.
-.PP
-.B toggle-fullscreen
-    Toggles the fullscreen state of the currently focused window.
-.PP
-.B toggle-focus
-    Change the focus from tiling to non tiling or vise versa.
-.PP
-.B split-horizontally
-    Split the current frame horizontally.
-.PP
-.B split-vertically
-    Split the current frame vertically.
-.PP
-.B left-split-horizontally
-    Split the current frame left horizontally.
-.PP
-.B left-split-vertically
-    Split the current frame left vertically.
-.PP
-.B hint-split-horizontally
-    Hint that the current frame should split horizontally.
-.PP
-.B hint-split-vertically
-    Hint that the current frame should split vertically.
-.PP
-.B focus-up
-    Move the focus to the above frame.
-.PP
-.B focus-left
-    Move the focus to the left frame.
-.PP
-.B focus-right
-    Move the focus to the right frame.
-.PP
-.B focus-down
-    Move the focus to the frame below.
-.PP
-.B exchange-up
-    Exchange the current frame with the above one.
-.PP
-.B exchange-left
-    Exchange the current frame with the left one.
-.PP
-.B exchange-right
-    Exchange the current frame with the right one.
-.PP
-.B exchange-down
-    Exchange the current frame with the below one.
-.PP
-.B move-up
-    Move the current frame up.
-.PP
-.B move-left
-    Move the current frame to the left.
-.PP
-.B move-right
-    Move the current frame to the right.
-.PP
-.B move-down
-    Move the current frame down.
-.PP
-.B show-window-list
-    Show the interactive window list.
-.PP
-.B run
-.I string
-    Run a shell program.
-.PP
-.B show-message
-.I string
-    Show a notification with a string message.
-.PP
-.B show-message-run
-.I string
-    Show a notification with a message extracted from a shell program.
-.PP
-.B resize-by
-.I quad
-    Resize the edges of the current window by given values.
-.PP
-.B resize-to
-.I quad
-    Resize the edges of the current window to given values.
-.PP
-.B center-to
-.I string
-.B ?
-    Center a window to given monitor (glob pattern) or the monitor the window is currently on.
-.PP
-.B dump-layout
-.I string
-    Write all fensterchef information to a file.
-.PP
-.B quit
-    Quit fensterchef.
-.
-.SH EXPRESSION
-Expressions are very shell-like making heavy use of
-.I &&
-and
-.IR || .
-But you can directly use mathematical operators including
-.I +
-,
-.I -
-,
-.I *
-,
-.I /
-,
-.IR % .
-Boolean expression like
+.B auto equalize
 .I true
 or
 .I false
-are directly translated to an integer.
-The same goes for key modifiers and cursor constants.
-Examples:
-    1 + 2
-    (2 + 3) * 4
-    show-window 1000 || hide-window 1000 (toggle window visibility)
-    run $TERMINAL
+    Make frames equalize their size when splitting/unsplitting.
+.PP
+.B auto fill void
+.I true
+or
+.I false
+    Fill empty frames with stashed frames automatically.
+.PP
+.B auto remove
+.I true
+or
+.I false
+    Remove any frames automatically even if gaps can be filled.
+.PP
+.B auto remove void
+.I true
+or
+.I false
+    Remove empty frames automatically.
+.PP
+.B auto split
+.I true
+or
+.I false
+    When a window is shown, split the current frame to make room to show it.
+.PP
+.B background
+.I color
+    Set the background color of fensterchef windows.
+.PP
+.B border color active
+.I color
+    Set the border color of active windows.
+.PP
+.B border color focus
+.I color
+    Set the border color of focused windows.
+.PP
+.B border color
+.I color
+    Set the border color of inactive and not focused windows.
+.PP
+.B border size
+.I number
+    Set the size of the border of all windows.
+.PP
+.B cursor horizontal
+.I cursor_name
+    Set the cursor shown when resizing horizontally.
+.PP
+.B cursor moving
+.I cursor_name
+    Set the cursor shown when moving a window.
+.PP
+.B cursor root
+.I cursor_name
+    Set the cursor shown on the root window.
+.PP
+.B cursor sizing
+.I cursor_name
+    Set the cursor shown when sizing a corner of a window.
+.PP
+.B cursor vertical
+.I cursor_name
+    Set the cursor shown when resizing vertically.
+.PP
+.B first window number
+.I number
+    Set the number the first window should receive.
+.PP
+.B font
+.I name
+    Set the font used for fensterchef windows.
+.PP
+.B foreground
+.I color
+    Set the text color of fensterchef windows.
+.PP
+.B gaps inner
+.IR 1 ,
+.I 2
+or
+.I 4
+.IR number s
+    Set the gaps between frames and their inner windows.
+.PP
+.B gaps outer
+.IR 1 ,
+.I 2
+or
+.I 4
+.IR number s
+    Set the gaps between frames and the monitor edges.
+.PP
+.B modifiers
+.I modifiers
+    Set the modifiers to apply to all future bindings.
+.PP
+.B modifiers ignore
+.I modifiers
+    Set the modifiers to ignore for all bindings.
+    For example when setting this to "Shift", then pressing "Shift" will not
+    mess with any bindings.
+.PP
+.B notification duration
+.I number
+    Set the duration the notification should be visible for.
+.PP
+.B overlap
+.I number
+    Set the percentage a window should be counted overlapping a monitor.
+    Set this to 100% to only allow this for fullscreen windows.
+    Set it to 101% to disable this feature.
+.PP
+.B text padding
+.I number
+    The insets of the text in fensterchef windows.
+.
+.SH ACTION
+Actions can be run directly in the configuration file or on a button/key
+binding.
+Note that the "focused window" can also refer to the pressed window in a button
+binding or the window matched in an association.
+.PP
+.B assign
+.I number
+    Assign a number to the currently focused frame.
+.PP
+.B assign window
+.I number
+    Assign a number to the currently focused window.
+.PP
+.B center window
+    Center the focused window onto the monitor it is on.
+.PP
+.B center window to
+.I pattern
+    Center the focused window to the monitor matching the pattern.
+    If no monitor matches, nothing happens.
+.PP
+.B close window
+.I number?
+    Close the focused window or the window with given number.
+.PP
+.B dump layout
+.I file_name
+    Dump all frames and windows to a file.
+.PP
+.B exchange down
+    Exchange the current frame with the frame below it.
+.PP
+.B exchange left
+    Exchange the current frame with the frame left of it.
+.PP
+.B exchange right
+    Exchange the current frame with the frame right of it.
+.PP
+.B exchange up
+    Exchange the current frame with the frame above it.
+.PP
+.B focus child
+.I number?
+    Focus the child frame or the ith child frame.
+.PP
+.B focus down
+    Focus the frame below the current frame.
+.PP
+.B focus
+.I number
+    Focus the frame with given number.
+.PP
+.B focus leaf
+    Focus the deepest child of the current frame.
+    Same as
+.B focus child
+.BR -1 .
+.PP
+.B focus left
+    Focus the frame on the left of the current frame.
+.PP
+.B focus parent
+.I number?
+.PP
+.B focus right
+    Focus the frame on the right of the current frame.
+.PP
+.B focus root
+.I pattern?
+.PP
+.B focus up
+    Focus the frame on the above the current frame.
+.PP
+.B focus window
+.I number?
+    Focus the window with given number.
+.PP
+.B hint split horizontally
+    Hint that the current frame should split horizontally.
+.PP
+.B hint split vertically
+    Hint that the current frame should split vertically.
+.PP
+.B initiate move
+    Initiate a moving of a window with the mouse.
+.PP
+.B initiate resize
+    Initiate a resizing of a window with the mouse.
+.PP
+.B merge default
+    Merge the default configuration with the current configuration.
+.PP
+.B minimize window
+.I number?
+    Minimize the focus window or the window with given number.
+.PP
+.B move down
+    Move the current frame down.
+.PP
+.B move left
+    Move the current frame to the left.
+.PP
+.B move right
+    Move the current frame to the right.
+.PP
+.B move up
+    Move the current frame up.
+.PP
+.B move window by
+.I x y
+    Move the focused window by given coordinates.
+.PP
+.B move window to
+.I x y
+    Move the focused window to given coordinates.
+.PP
+.B pop stash
+    Pop the last stashed frame into the current frame.
+.PP
+.B quit
+    Quit fensterchef.
+.PP
+.B reload configuration
+    Clear the configuration and load all again from the configuration file.
+.PP
+.B remove
+.I number?
+    Remove the curent frame or the frame with given number.
+.PP
+.B resize window by
+.I x y
+    Resize the focused window by given coordinates.
+.PP
+.B resize window to
+.I x y
+    Resize the focused window to given coordinates.
+.PP
+.B run
+.I shell_program
+    Run a shell program.
+    The shell used is located at `/bin/sh/`.
+.PP
+.B set floating
+    Set the focused window to floating.
+.PP
+.B set fullscreen
+    Set the focused window to fullscreen.
+.PP
+.B set tiling
+    Set the focused window to tiling.
+.PP
+.B show list
+    Show/hide the interactive window list.
+.PP
+.B show message
+.I string
+    Show a notification window with given message.
+.PP
+.B show next window
+.I number?
+    Show the next window or the ith next window.
+.PP
+.B show previous window
+.I number?
+    Show the previous window or the ith previous window.
+.PP
+.B show run
+.I shell_program
+    Run a shell program and show its output as notification.
+.PP
+.B show window
+.I number?
+    Show the focused window or the window with given number.
+.PP
+.B split horizontally
+    Split the current frame horizontally.
+.PP
+.B split left horizontally
+    Split the current frame horizontally but swap the positions of the split
+    frames.
+.PP
+.B split left vertically
+    Split the current frame vertically but swap the positions of the split
+    frames.
+.PP
+.B split vertically
+    Split the current frame vertically.
+.PP
+.B toggle focus
+    Toggle the focus from the tiling layer to the floating layer.
+.PP
+.B toggle fullscreen
+    Toggle the mode of a window from
+.I X
+to fullscreen and vise versa.
+.PP
+.B toggle tiling
+    Toggle the mode of a window from
+.I X
+to tiling and vise versa.
+.
+.SH ASSOCIATION
+.I STRING ACTIONS
+
+When a line starts with a quoted string like
+.I "Navigator,firefox"
+then this is the start of an association.
+The string refers to the instance name and class name.
+You can use
+.BR xprop ( 1 )
+to click on a window and read off the
+.B WM_CLASS
+property.
+
+After the string comes the actions that should run when a window with this
+instance name and class name is created.
+.
+.SH BINDING
+.I release?
+.I transparent?
+.IR MODIFIERS + BUTTON | KEY_SYMBOL
+.I ACTIONS
+
+This creates a binding that triggers when the specified combination of modifiers
+and button/key symbol is pressed/released.
+
+.I transparent
+can be used for button bindings to also send the button event to the pressed
+window.
+
+.I release
+can be used to trigger the bind when releasing the key/button.
+
+.I MODIFIERS
+is combined with the currently configured
+.I modifiers
+setting.
+Note that the ignored modifiers can be used to control which additional
+physically pressed modifiers should not change the interpretation of a binding.
+.
 .SH EXAMPLE
 .SS Parts of the default configuration
 .EX
-.B [general]
-overlap-percentage 80
+overlap 80%
 
-.B [tiling]
-auto-remove-void false
-auto-fill-void true
+auto remove void false
+auto fill void true
 
-.B [font]
-name Mono
+font Mono
 
-.B [border]
-size 0
+border size 1
+border color #000000
 
-.B [gaps]
-inner 0
-outer 0
+gaps inner 0
+gaps outer 0
 
-.B [notification]
-duration 2
-padding 6
-border-color #000000
-border-size 1
+notification duration 2
+text padding 6
 foreground #000000
 background #ffffff
 
-.B [mouse]
-resize-tolerance 8
+resize tolerance 8
+
+modifiers ignore Lock Mod2
 modifiers Mod4
 
-ignore-modifiers Lock Mod2 Mod3 Mod5
-LeftButton initiate-resize
-MiddleButton minimize-window
-RightButton initiate-move
+LeftButton initiate resize
+MiddleButton minimize window
+RightButton initiate move
 
-.B [keyboard]
-modifiers Mod4
-ignore-modifiers Lock Mod2 Mod3 Mod5
-
-Shift+r reload-configuration
-a parent-frame
-b child-frame
-Shift+a root-frame
-q close-window
-Minus minimize-window
-n next-window
-p previous-window
-r remove-frame
-Shift+Space toggle-tiling
-Space toggle-focus
-f toggle-fullscreen
-v split-horizontally
-s split-vertically
-k focus-up
-h focus-left
-l focus-right
-j focus-down
-Shift+k exchange-up
-Shift+h exchange-left
-Shift+l exchange-right
-Shift+j exchange-down
-w show-window-list
-Return run [ -n "$TERMINAL" ] \\&\\& "$TERMINAL" \\|\\| xterm
+Shift+r reload configuration
+a focus parent
+b focus child
+Shift+a focus root
+q close window
+Minus minimize window
+n focus next window
+p focus previous window
+r remove frame
+Shift+Space toggle tiling
+Space toggle focus
+f toggle fullscreen
+v split horizontally
+s split vertically
+k focus up
+h focus left
+l focus right
+j focus down
+Shift+k exchange up
+Shift+h exchange left
+Shift+l exchange right
+Shift+j exchange down
+w show list
+Return run '[ -n "$TERMINAL" ] && "$TERMINAL" || xterm'
 .EE
 .SS Initial layout
 .EX
-.B [assignment]
-901 1 ; st-256color
-902 2 ; st-256color
-903 3 ; st-256color
+"1,st-256color" assign window 901, focus window
+"2,st-256color" assign window 902, focus window
+"3,st-256color" assign window 903, focus window
+
+assign 901
+
+split horizontally
+focus right
+assign 902
+
+split horizontally
+focus right
+assign 903
 
 # Use st -n X, this sets the instance name to X
 # (a feature of suckless terminal)
-.B [startup]
-assign 901
-
-split-horizontally
-focus-right
-assign 902
-
-split-horizontally
-focus-right
-assign 903
-
-st -n 1
-st -n 2
-st -n 3
+run 'st -n 1'
+run 'st -n 2'
+run 'st -n 3'
 .EE
 .SS i3-like tiling
 .EX
-.B [tiling]
-auto-split true
-auto-equalize true
-auto-fill-void true
-auto-remove true
+auto split true
+auto equalize true
+auto fill void true
+auto remove true
 
-.B [keyboard]
-v hint-split-horizontally
-s hint-split-vertically
+v hint split horizontally
+s hint split vertically
 
-shift+h move-left
-shift+l move-right
-shift+k move-up
-shift+j move-down
-
+Shift+h move left
+Shift+l move right
+Shift+k move up
+Shift+j move down
 .EE
 .SS Start ALL windows as floating besides terminal windows
 .EX
-.B [assignment]
-0 * ; st-256color
-0 * ; * ; toggle-tiling ; focus-window
+"st-256color" focus window
+"*" set floating, focus window
 .EE
 .

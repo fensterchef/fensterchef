@@ -44,10 +44,6 @@
 #14 Generate documentation
     Make shell scripts to generate the manual page
 
-#92 ! Moving into empty frame on another monitor
-    Moving into an empty frame that is on another monitor should ALWAYS remove
-    it
-
 [Recheck]
 #1 ! Hover events not working in firefox sometimes
     This is fixed by resizing the window, try to find out why it happens in the
@@ -153,6 +149,10 @@
 
 #70 Re-add the wiki
     Add the Github wiki again
+
+#92 ! Moving into empty frame on another monitor
+    Moving into an empty frame that is on another monitor should ALWAYS remove
+    it. NO!
 
 [Done]
 #9 Add maintainability macros

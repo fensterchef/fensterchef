@@ -1,6 +1,7 @@
 #include "configuration.h"
 #include "frame.h"
 #include "frame_splitting.h"
+#include "log.h"
 #include "monitor.h"
 
 /* Get the frame on the left of @frame. */
@@ -86,11 +87,11 @@ Frame *get_below_frame(Frame *frame)
 }
 
 /* Get the most left within @frame. */
-Frame *get_most_left_leaf_frame(Frame *frame, int32_t y)
+Frame *get_most_left_leaf_frame(Frame *frame, int y)
 {
     while (frame->left != NULL) {
         if (frame->split_direction == FRAME_SPLIT_VERTICALLY) {
-            if (frame->left->y + (int32_t) frame->left->height >= y) {
+            if (frame->left->y + (int) frame->left->height >= y) {
                 frame = frame->left;
             } else {
                 frame = frame->right;
@@ -103,11 +104,11 @@ Frame *get_most_left_leaf_frame(Frame *frame, int32_t y)
 }
 
 /* Get the frame at the top within @frame. */
-Frame *get_top_leaf_frame(Frame *frame, int32_t x)
+Frame *get_top_leaf_frame(Frame *frame, int x)
 {
     while (frame->left != NULL) {
         if (frame->split_direction == FRAME_SPLIT_HORIZONTALLY) {
-            if (frame->left->x + (int32_t) frame->left->width >= x) {
+            if (frame->left->x + (int) frame->left->width >= x) {
                 frame = frame->left;
             } else {
                 frame = frame->right;
@@ -120,11 +121,11 @@ Frame *get_top_leaf_frame(Frame *frame, int32_t x)
 }
 
 /* Get the most right frame within @frame. */
-Frame *get_most_right_leaf_frame(Frame *frame, int32_t y)
+Frame *get_most_right_leaf_frame(Frame *frame, int y)
 {
     while (frame->left != NULL) {
         if (frame->split_direction == FRAME_SPLIT_VERTICALLY) {
-            if (frame->left->y + (int32_t) frame->left->height >= y) {
+            if (frame->left->y + (int) frame->left->height >= y) {
                 frame = frame->left;
             } else {
                 frame = frame->right;
@@ -137,11 +138,11 @@ Frame *get_most_right_leaf_frame(Frame *frame, int32_t y)
 }
 
 /* Get the frame at the bottom within @frame. */
-Frame *get_bottom_leaf_frame(Frame *frame, int32_t x)
+Frame *get_bottom_leaf_frame(Frame *frame, int x)
 {
     while (frame->left != NULL) {
         if (frame->split_direction == FRAME_SPLIT_HORIZONTALLY) {
-            if (frame->left->x + (int32_t) frame->left->width >= x) {
+            if (frame->left->x + (int) frame->left->width >= x) {
                 frame = frame->left;
             } else {
                 frame = frame->right;
@@ -153,19 +154,25 @@ Frame *get_bottom_leaf_frame(Frame *frame, int32_t x)
     return frame;
 }
 
-/* Utility function for moving frames. */
-static void do_resplit(Frame *frame, Frame *original, bool is_left_split,
+/* Utility function for moving frames.
+ *
+ * @original is the frame that should be moved
+ * @frame is the frame to split off from
+ */
+static void resplit_frame(Frame *frame, Frame *original, bool is_left_split,
         frame_split_direction_t direction)
 {
-    /* if they have the same parent, then `remove_frame()` would
-     * invalidate the `frame` pointer, we would need to split off
-     * the parent
+    /* If they have the same parent, then `remove_frame()` would
+     * invalidate the `frame` pointer.  We would need to split off
+     * the parent.
      */
     if (frame->parent != NULL && frame->parent == original->parent) {
         frame = frame->parent;
     }
 
     if (is_frame_void(frame)) {
+        LOG_DEBUG("splitting off a void\n");
+
         /* case S1 */
         if (Frame_focus == original) {
             Frame_focus = frame;
@@ -177,6 +184,8 @@ static void do_resplit(Frame *frame, Frame *original, bool is_left_split,
             destroy_frame(original);
         }
     } else {
+        LOG_DEBUG("splitting off a normal frame\n");
+
         const bool refocus = Frame_focus == original;
         if (original->parent == NULL) {
             /* make a wrapper around the root */
@@ -231,6 +240,7 @@ static bool move_frame_up_or_left(Frame *frame,
             frame = get_above_frame(frame);
         }
 
+        /* if there is no frame, move across monitors */
         if (frame == NULL) {
             /* case 1, S2 */
             Monitor *monitor;
@@ -268,7 +278,7 @@ static bool move_frame_up_or_left(Frame *frame,
         return false;
     }
 
-    do_resplit(frame, original, is_left_split, direction);
+    resplit_frame(frame, original, is_left_split, direction);
     return true;
 }
 
@@ -358,7 +368,7 @@ static bool move_frame_down_or_right(Frame *frame,
         return false;
     }
 
-    do_resplit(frame, original, is_left_split, direction);
+    resplit_frame(frame, original, is_left_split, direction);
     return true;
 }
 

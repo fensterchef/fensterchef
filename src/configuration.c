@@ -119,12 +119,20 @@ static const struct default_key_binding {
     { 0, XK_h, .action = ACTION_FOCUS_LEFT },
     { 0, XK_l, .action = ACTION_FOCUS_RIGHT },
     { 0, XK_j, .action = ACTION_FOCUS_DOWN },
+    { 0, XK_Up, .action = ACTION_FOCUS_UP },
+    { 0, XK_Left, .action = ACTION_FOCUS_LEFT },
+    { 0, XK_Right, .action = ACTION_FOCUS_RIGHT },
+    { 0, XK_Down, .action = ACTION_FOCUS_DOWN },
 
     /* exchange frames */
     { ShiftMask, XK_k, .action = ACTION_EXCHANGE_UP },
     { ShiftMask, XK_h, .action = ACTION_EXCHANGE_LEFT },
     { ShiftMask, XK_l, .action = ACTION_EXCHANGE_RIGHT },
     { ShiftMask, XK_j, .action = ACTION_EXCHANGE_DOWN },
+    { ShiftMask, XK_Up, .action = ACTION_EXCHANGE_UP },
+    { ShiftMask, XK_Left, .action = ACTION_EXCHANGE_LEFT },
+    { ShiftMask, XK_Right, .action = ACTION_EXCHANGE_RIGHT },
+    { ShiftMask, XK_Down, .action = ACTION_EXCHANGE_DOWN },
 
     /* show the interactive window list */
     { 0, XK_w, .action = ACTION_SHOW_LIST },
