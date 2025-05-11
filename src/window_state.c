@@ -58,7 +58,7 @@ static inline void move_to_next_available(Monitor *monitor, FcWindow *window,
 {
     FcWindow *other;
     int start_x, start_y;
-    int x, y;
+    int x = 0, y = 0;
     FcWindow *top = NULL;
 
     start_x = monitor->x + monitor->width / 10;
@@ -105,14 +105,14 @@ static inline void move_to_next_available(Monitor *monitor, FcWindow *window,
         y = difference.y;
     }
 
-    if (top != NULL) {
-        /* append the window to the line */
-        *destination_x += top->x + 20;
-        *destination_y += top->y + 20;
-    } else {
+    if (top == NULL) {
         /* start a fresh diagonal line */
         *destination_x = start_x;
         *destination_y = start_y;
+    } else {
+        /* append the window to the line */
+        *destination_x += top->x + 20;
+        *destination_y += top->y + 20;
     }
 }
 

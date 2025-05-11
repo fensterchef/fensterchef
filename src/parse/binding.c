@@ -1,8 +1,8 @@
+#include "core/x11_synchronize.h"
 #include "parse/action.h"
 #include "parse/input.h"
 #include "parse/parse.h"
 #include "parse/utility.h"
-#include "x11_synchronize.h"
 
 /* Parse the next binding definition in @parser. */
 void continue_parsing_modifiers_or_binding(Parser *parser)
@@ -13,19 +13,32 @@ void continue_parsing_modifiers_or_binding(Parser *parser)
     int character;
     unsigned modifiers = 0;
     button_t button_index;
+    unsigned flags;
+    parse_integer_t integer;
     KeySym key_symbol = NoSymbol;
     KeyCode key_code = 0;
     /* position for error reporting */
     size_t transparent_position = 0;
+    struct parse_action_list list;
 
     if (strcmp(parser->string, "release") == 0) {
-        assert_read_string(parser);
+        if (read_string(parser) != OK) {
+            emit_parse_error(parser,
+                    "expected binding definition after 'release'");
+            skip_all_statements(parser);
+            return;
+        }
         is_release = true;
         has_anything = true;
     }
 
     if (strcmp(parser->string, "transparent") == 0) {
-        assert_read_string(parser);
+        if (read_string(parser) != OK) {
+            emit_parse_error(parser,
+                    "expected binding definition after 'transparent'");
+            skip_all_statements(parser);
+            return;
+        }
         transparent_position = parser->index;
         is_transparent = true;
         has_anything = true;
@@ -38,23 +51,28 @@ void continue_parsing_modifiers_or_binding(Parser *parser)
         /* skip over '+' */
         (void) get_stream_character(parser);
 
-        if (resolve_integer(parser) != OK) {
+        if (resolve_integer(parser, &flags, &integer) != OK) {
             emit_parse_error(parser, "invalid integer value");
         }
-        modifiers |= parser->data.u.integer;
-        assert_read_string(parser);
+        modifiers |= integer;
+        if (read_string(parser) != OK) {
+            emit_parse_error(parser,
+                    "expected modifier, button or key symbol after '+'");
+            skip_all_statements(parser);
+            return;
+        }
         has_anything = true;
     }
 
     button_index = resolve_button(parser);
     if (button_index == BUTTON_NONE) {
-        if (resolve_integer(parser) == OK) {
+        if (resolve_integer(parser, &flags, &integer) == OK) {
             int min_key_code, max_key_code;
 
             /* for testing code, the display is NULL */
             if (UNLIKELY(display != NULL)) {
                 XDisplayKeycodes(display, &min_key_code, &max_key_code);
-                key_code = parser->data.u.integer;
+                key_code = integer;
                 if (key_code < min_key_code || key_code > max_key_code) {
                     emit_parse_error(parser, "key code is out of range");
                 }
@@ -74,13 +92,21 @@ void continue_parsing_modifiers_or_binding(Parser *parser)
         }
     }
 
-    assert_read_string(parser);
-    if (parser->is_string_quoted) {
-        emit_parse_error(parser, "expected word and not a string for binding");
+    if (read_string(parser) != OK) {
+        emit_parse_error(parser, "expected action list");
         skip_all_statements(parser);
-    } else if (continue_parsing_action(parser) != OK) {
+        return;
+    }
+
+    if (parser->is_string_quoted) {
+        emit_parse_error(parser,
+                "expected word and not a string for binding actions");
+        skip_all_statements(parser);
+        return;
+    } else if (continue_parsing_action(parser, &list) != OK) {
         emit_parse_error(parser, "invalid action");
         skip_all_statements(parser);
+        return;
     }
 
     if (button_index != BUTTON_NONE) {
@@ -92,21 +118,16 @@ void continue_parsing_modifiers_or_binding(Parser *parser)
         button.is_transparent = is_transparent;
         button.modifiers = modifiers;
         button.button = button_index;
-        LIST_COPY_ALL(parser->action_items, button.actions.items);
-        button.actions.number_of_items = parser->action_items_length;
-        LIST_COPY_ALL(parser->action_data, button.actions.data);
-
-        /* set all to zero, ready for the next action */
-        LIST_SET(parser->action_data, 0, NULL, parser->action_data_length);
+        make_real_action_list(&button.actions, &list);
 
         item.type = ACTION_BUTTON_BINDING;
         item.data_count = 1;
-        LIST_APPEND_VALUE(parser->startup_items, item);
+        LIST_APPEND_VALUE(parser->items, item);
 
         data.flags = 0;
         data.type = PARSE_DATA_TYPE_BUTTON;
         data.u.button = button;
-        LIST_APPEND_VALUE(parser->startup_data, data);
+        LIST_APPEND_VALUE(parser->data, data);
     } else {
         if (is_transparent) {
             parser->index = transparent_position;
@@ -121,21 +142,16 @@ void continue_parsing_modifiers_or_binding(Parser *parser)
             key.modifiers = modifiers;
             key.key_symbol = key_symbol;
             key.key_code = key_code;
-            LIST_COPY_ALL(parser->action_items, key.actions.items);
-            key.actions.number_of_items = parser->action_items_length;
-            LIST_COPY_ALL(parser->action_data, key.actions.data);
-
-            /* set all to zero, ready for the next action */
-            LIST_SET(parser->action_data, 0, NULL, parser->action_data_length);
+            make_real_action_list(&key.actions, &list);
 
             item.type = ACTION_KEY_BINDING;
             item.data_count = 1;
-            LIST_APPEND_VALUE(parser->startup_items, item);
+            LIST_APPEND_VALUE(parser->items, item);
 
             data.flags = 0;
             data.type = PARSE_DATA_TYPE_KEY;
             data.u.key = key;
-            LIST_APPEND_VALUE(parser->startup_data, data);
+            LIST_APPEND_VALUE(parser->data, data);
         }
     }
 }

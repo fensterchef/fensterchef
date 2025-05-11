@@ -68,6 +68,9 @@
  */
 #define _Nonnull
 
+/* Mark a pointer parameter to a function as "stores output of the function". */
+#define _Out
+
 /* Assert that statement @x is true. If this is not the case, the program is
  * aborted.
  *
@@ -136,6 +139,10 @@
 
 /* Duplicate a memory block. */
 #define DUPLICATE(p, n) (xmemdup((p), sizeof(*(p)) * (n)))
+
+/* Sort an array with given sort compare function. */
+#define SORT(array, n, compare) \
+    qsort(array, n, sizeof(*(array)), compare)
 
 /* Get the maximum of two numbers. */
 #define MAX(a, b) ((a) > (b) ? (a) : (b))

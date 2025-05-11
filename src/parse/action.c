@@ -1,7 +1,7 @@
 #include <string.h>
 
-#include "action.h"
-#include "log.h"
+#include "core/log.h"
+#include "parse/action.h"
 #include "parse/input.h"
 #include "parse/utility.h"
 #include "utility/utility.h"
@@ -11,7 +11,7 @@
  *
  * @return ERROR if no action matches.
  */
-static int resolve_action_word(Parser *parser)
+static int resolve_action_word(Parser *parser, struct parse_action_list *list)
 {
     action_type_t count = 0;
 
@@ -38,16 +38,17 @@ static int resolve_action_word(Parser *parser)
                 memcmp(action, parser->string,
                     parser->string_length) == 0) {
             if (count == 0) {
-                parser->first_action = i;
+                list->first_action = i;
             }
 
             count++;
 
-            parser->last_action = i + 1;
+            list->last_action = i + 1;
 
-            parser->actions[i].offset = skip_length;
-            /* prepare the data for filling */
-            parser->actions[i].data_length = 0;
+            list->actions[i].offset = skip_length;
+
+            /* prepare the data for filling if there was data previously */
+            list->actions[i].data_length = 0;
         } else if (count > 0) {
             /* optimization: no more will match because of the alphabetical
              * sorting
@@ -63,25 +64,29 @@ static int resolve_action_word(Parser *parser)
  *
  * @return ERROR if no action matches.
  */
-static int read_and_resolve_next_action_word(Parser *parser)
+static int read_and_resolve_next_action_word(Parser *parser,
+        struct parse_action_list *list)
 {
     action_type_t count = 0;
+    struct parse_generic_data data;
 
-    assert_read_string(parser);
+    if (read_string(parser) != OK) {
+        return ERROR;
+    }
 
     /* go through all actions that matched previously */
-    for (action_type_t i = parser->first_action, end = parser->last_action;
+    for (action_type_t i = list->first_action, end = list->last_action;
             i < end;
             i++) {
         const char *action, *space;
         unsigned skip_length;
 
-        if (parser->actions[i].offset == -1) {
+        if (list->actions[i].offset == -1) {
             continue;
         }
 
         action = get_action_string(i);
-        action = &action[parser->actions[i].offset];
+        action = &action[list->actions[i].offset];
 
         /* get the end of the next action word of the action string */
         space = strchr(action, ' ');
@@ -95,25 +100,26 @@ static int read_and_resolve_next_action_word(Parser *parser)
         /* check if next is a string parameter */
         if (action[0] == 'S') {
             /* append the string data point */
-            parser->data.type = PARSE_DATA_TYPE_STRING;
+            data.type = PARSE_DATA_TYPE_STRING;
             LIST_COPY(parser->string, 0, parser->string_length + 1,
-                    parser->data.u.string);
-            LIST_APPEND_VALUE(parser->actions[i].data, parser->data);
+                    data.u.string);
+            LIST_APPEND_VALUE(list->actions[i].data, data);
         } else {
             /* the word needs to be unquoted */
             if (parser->is_string_quoted) {
-                parser->actions[i].offset = -1;
+                list->actions[i].offset = -1;
                 continue;
             }
 
             /* check if an integer is expected and try to resolve it */
             if (action[0] == 'I') {
-                if (resolve_integer(parser) == OK) {
+                if (resolve_integer(parser, &data.flags, &data.u.integer) ==
+                        OK) {
                     /* append the integer data point */
-                    parser->data.type = PARSE_DATA_TYPE_INTEGER;
-                    LIST_APPEND_VALUE(parser->actions[i].data, parser->data);
+                    data.type = PARSE_DATA_TYPE_INTEGER;
+                    LIST_APPEND_VALUE(list->actions[i].data, data);
                 } else {
-                    parser->actions[i].offset = -1;
+                    list->actions[i].offset = -1;
                     continue;
                 }
             } else {
@@ -121,7 +127,7 @@ static int read_and_resolve_next_action_word(Parser *parser)
                 if (parser->string_length != (size_t) (space - action) ||
                         memcmp(action, parser->string,
                             parser->string_length) != 0) {
-                    parser->actions[i].offset = -1;
+                    list->actions[i].offset = -1;
                     continue;
                 }
             }
@@ -130,28 +136,57 @@ static int read_and_resolve_next_action_word(Parser *parser)
         /* got a valid action */
 
         if (count == 0) {
-            parser->first_action = i;
+            list->first_action = i;
         }
         count++;
 
-        parser->last_action = i + 1;
+        list->last_action = i + 1;
 
-        parser->actions[i].offset += skip_length;
+        list->actions[i].offset += skip_length;
     }
 
     return count == 0 ? ERROR : OK;
 }
 
-/* Print all possible actions to stderr. */
-static void print_action_possibilities(Parser *parser)
+/* Compare two words. */
+static int compare_words(const void *a, const void *b)
 {
+    return strcmp(*(const char**) a, *(const char**) b);
+}
+
+/* Print a word in the right color and expansion. */
+static void print_word(const char *word)
+{
+    if (strcmp(word, "I") == 0) {
+        fprintf(stderr, COLOR(BLUE) "INTEGER");
+    } else if (strcmp(word, "S") == 0) {
+        fprintf(stderr, COLOR(BLUE) "STRING");
+    } else {
+        fprintf(stderr, COLOR(GREEN) "%s",
+                word);
+    }
+}
+
+/* Print all possible actions to stderr. */
+static void print_action_possibilities(struct parse_action_list *list)
+{
+    int actual_count = 0;
+
     fprintf(stderr, "possible words are: ");
-    for (action_type_t i = parser->first_action; i < parser->last_action; i++) {
+
+    const int count = list->last_action - list->first_action;
+    char *words[count];
+
+    for (action_type_t i = list->first_action; i < list->last_action; i++) {
         const char *action, *space;
         int length;
 
+        if (list->actions[i].offset == -1) {
+            continue;
+        }
+
         action = get_action_string(i);
-        action = &action[parser->actions[i].offset];
+        action = &action[list->actions[i].offset];
 
         /* get the end of the next action word of the action string */
         space = strchr(action, ' ');
@@ -161,62 +196,78 @@ static void print_action_possibilities(Parser *parser)
             length = space - action;
         }
 
-        if (i != parser->first_action) {
-            fprintf(stderr, ", ");
+        words[actual_count] = xstrndup(action, length);
+        actual_count++;
+    }
+
+    SORT(words, actual_count, compare_words);
+
+    print_word(words[0]);
+    for (int i = 1; i < actual_count; i++) {
+        /* skip duplicate words */
+        if (strcmp(words[i], words[i - 1]) == 0) {
+            continue;
         }
-        if (length == 1 && action[0] == 'I') {
-            fprintf(stderr, COLOR(BLUE) "INTEGER");
-        } else if (length == 1 && action[0] == 'S') {
-            fprintf(stderr, COLOR(BLUE) "STRING");
-        } else {
-            fprintf(stderr, COLOR(GREEN) "%.*s",
-                    length, action);
-        }
+        fprintf(stderr, CLEAR_COLOR ", ");
+        print_word(words[i]);
     }
     fprintf(stderr, CLEAR_COLOR "\n");
+
+    for (int i = 0; i < actual_count; i++) {
+        free(words[i]);
+    }
 }
 
 /* Parse the next action word or check for an action separator.
  *
+ * @list is the place to append the parsed action to.
+ *
  * @return ERROR when there are no following actions, otherwise OK.
  */
-static int parse_next_action_part(Parser *parser, size_t item_index)
+static int parse_next_action_part(Parser *parser, size_t item_index,
+        struct parse_action_list *list)
 {
     int error = OK;
     int character;
 
     character = peek_stream_character(parser);
     if (character == EOF || character == ',' || character == '\n') {
-        const char *const action = get_action_string(parser->first_action);
-        if (action[parser->actions[parser->first_action].offset] != '\0') {
-            parser->index = parser->index;
+        const char *const action = get_action_string(list->first_action);
+        if (action[list->actions[list->first_action].offset] != '\0') {
+            parser->start_index = parser->index;
             emit_parse_error(parser, "incomplete action");
-            print_action_possibilities(parser);
+            print_action_possibilities(list);
         } else {
-            parser->action_items[item_index].type = parser->first_action;
-            parser->action_items[item_index].data_count =
-                parser->actions[parser->first_action].data_length;
-            LIST_APPEND(parser->action_data,
-                parser->actions[parser->first_action].data,
-                parser->actions[parser->first_action].data_length);
+            list->items[item_index].type = list->first_action;
+            list->items[item_index].data_count =
+                list->actions[list->first_action].data_length;
+            LIST_APPEND(list->data,
+                list->actions[list->first_action].data,
+                list->actions[list->first_action].data_length);
+
+            /* reset the count so the memory is not freed */
+            list->actions[list->first_action].data_length = 0;
         }
 
         if (character == ',') {
             /* skip ',' */
             (void) get_stream_character(parser);
             skip_space(parser);
-            assert_read_string(parser);
+            if (read_string(parser) != OK) {
+                emit_parse_error(parser, "unexpected token");
+                skip_all_statements(parser);
+                error = ERROR;
+            }
         } else {
             error = ERROR;
         }
     } else {
-        if (read_and_resolve_next_action_word(parser) == ERROR) {
+        if (read_and_resolve_next_action_word(parser, list) == ERROR) {
             emit_parse_error(parser, "invalid action word");
-            print_action_possibilities(parser);
             skip_statement(parser);
             error = ERROR;
         } else {
-            error = parse_next_action_part(parser, item_index);
+            error = parse_next_action_part(parser, item_index, list);
         }
     }
 
@@ -229,22 +280,54 @@ static int parse_next_action_part(Parser *parser, size_t item_index)
  *
  * @return ERROR if there is no action, OK otherwise.
  */
-int continue_parsing_action(Parser *parser)
+int continue_parsing_action(Parser *parser, struct parse_action_list *list)
 {
+    int error = OK;
     size_t item_index;
 
-    parser->action_items_length = 0;
-    parser->action_data_length = 0;
+    ZERO(list, 1);
 
     do {
-        item_index = parser->action_items_length;
-        LIST_APPEND(parser->action_items, NULL, 1);
+        item_index = list->items_length;
+        LIST_APPEND(list->items, NULL, 1);
 
-        if (resolve_action_word(parser) != OK) {
-            /* the action might be a binding or association */
-            return ERROR;
+        if (resolve_action_word(parser, list) != OK) {
+            error = ERROR;
+            break;
         }
-    } while (parse_next_action_part(parser, item_index) == OK);
+    } while (parse_next_action_part(parser, item_index, list) == OK);
 
-    return OK;
+    if (error != OK) {
+        /* free all memory again */
+        free(list->items);
+        for (size_t i = 0; i < list->data_length; i++) {
+            clear_generic_data(&list->data[i]);
+        }
+        free(list->data);
+    }
+
+    /* always free the action memory */
+    for (action_type_t i = 0; i < ACTION_SIMPLE_MAX; i++) {
+        for (size_t j = 0; j < list->actions[i].data_length; j++) {
+            clear_generic_data(&list->actions[i].data[j]);
+        }
+        free(list->actions[i].data);
+    }
+
+    return error;
+}
+
+/* Make a real action list from a parser action list. */
+void make_real_action_list(struct action_list *real_list,
+        struct parse_action_list *list)
+{
+    /* trim the memory for convenience of the caller */
+    REALLOCATE(list->items, list->items_length);
+    list->items_capacity = list->items_length;
+    REALLOCATE(list->data, list->data_length);
+    list->data_capacity = list->data_length;
+
+    real_list->items = list->items;
+    real_list->number_of_items = list->items_length;
+    real_list->data = list->data;
 }

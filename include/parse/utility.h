@@ -34,12 +34,6 @@ void skip_all_statements(Parser *parser);
  */
 int read_string(Parser *parser);
 
-/* Makes sure that next comes a word.
- *
- * If no word comes next, an error is thrown.
- */
-void assert_read_string(Parser *parser);
-
 /* Translate the string within @parser to a button index.
  *
  * @return `BUTTON_NONE` if the button string is invalid.
@@ -48,11 +42,13 @@ int resolve_button(Parser *parser);
 
 /* Try to resolve the string within @parser as integer.
  *
- * The result is stored in @parser->integer.
+ * @flags are special integer flags defined in `parse/data_type.h`.
  *
  * @return ERROR if @parser->string is not an integer.
  */
-int resolve_integer(Parser *parser);
+int resolve_integer(Parser *parser,
+        _Out unsigned *flags,
+        _Out parse_integer_t *integer);
 
 /* Try to resolve the string within @parser as key symbol.
  *

@@ -8,7 +8,12 @@ PACKAGES='x11 xrandr xcursor xft fontconfig'
 PREFIX=/usr
 SOURCES=src/*.c\ src/utility/*.c\ src/parse/*.c
 
-rebuild=false
+usage() {
+    echo "Usage: $0 [VARIABLE[+]=VALUE]... TARGET"
+    echo 'Targets: fensterchef install uninstall clean'
+    echo 'Variables: CC CFLAGS LDLIBS PACKAGES PREFIX SOURCES'
+    exit $1
+}
 
 _command() {
     echo "$@"
@@ -16,25 +21,25 @@ _command() {
 }
 
 fensterchef() {
-    if ! $rebuild && [ -f fensterchef ] ; then
-        echo 'fensterchef has been built already'
-    else
-        CFLAGS="$CFLAGS `pkg-config --cflags $PACKAGES`"
-        LDLIBS="$LDLIBS `pkg-config --libs $PACKAGES`"
-        _command "$CC" $LDFLAGS $CFLAGS $SOURCES -o fensterchef $LDLIBS
-    fi
+    CFLAGS="$CFLAGS `pkg-config --cflags $PACKAGES`"
+    LDLIBS="$LDLIBS `pkg-config --libs $PACKAGES`"
+    _command "$CC" $LDFLAGS $CFLAGS $SOURCES -o fensterchef $LDLIBS
 }
 
 install() {
-    fensterchef
+    if [ -f fensterchef ] ; then
+        echo 'fensterchef has been built already'
+    else
+        fensterchef
+    fi
     _command mkdir -p "$PREFIX/share/licenses"
     _command mkdir -p "$PREFIX/bin"
     _command mkdir -p "$PREFIX/share/man/man1"
     _command mkdir -p "$PREFIX/share/man/man5"
     _command cp LICENSE.txt "$PREFIX/share/licenses"
     _command cp fensterchef "$PREFIX/bin"
-    _command gzip --best -c doc/fensterchef.1 >"$PREFIX/share/man/man1"
-    _command gzip --best -c doc/fensterchef.5 >"$PREFIX/share/man/man5"
+    _command gzip --best -c doc/fensterchef.1 >"$PREFIX/share/man/man1/fensterchef.1"
+    _command gzip --best -c doc/fensterchef.5 >"$PREFIX/share/man/man5/fensterchef.5"
 }
 
 uninstall() {
@@ -58,14 +63,8 @@ clean() {
     fi
 }
 
-if [ "$1" = "-B" ] ; then
-    rebuild=true
-    shift
-fi
-
 if [ $# -eq 0 ] ; then
-    fensterchef
-    exit 0
+    usage 0
 fi
 
 while [ $# -ne 0 ] ; do
@@ -88,10 +87,7 @@ while [ $# -ne 0 ] ; do
     SOURCES+=*) SOURCES="$SOURCES `expr "$1" : 'SOURCES+=\(.*\)'`" ;;
     *)
         echo "what is \"$1\"?"
-        echo "Usage: $0 [VARIABLE[+]=VALUE]... TARGET"
-        echo 'Targets: fensterchef install uninstall clean'
-        echo 'Variables: CC CFLAGS LDLIBS PACKAGES PREFIX SOURCES'
-        exit 1
+        usage 1
         ;;
     esac
     shift

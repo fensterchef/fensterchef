@@ -145,16 +145,6 @@ int read_string(Parser *parser)
     return OK;
 }
 
-/* Makes sure that next comes a word. */
-void assert_read_string(Parser *parser)
-{
-    if (read_string(parser) != OK) {
-        skip_all_statements(parser);
-        emit_parse_error(parser, "unexpected token");
-        longjmp(parser->throw_jump, 1);
-    }
-}
-
 /* Translate the string within @parser to a button index. */
 int resolve_button(Parser *parser)
 {
@@ -239,11 +229,10 @@ int resolve_button(Parser *parser)
     return index;
 }
 
-/* Try to resolve `parser->string` as integer.
- *
- * @return ERROR if `parser->string` is not an integer.
- */
-int resolve_integer(Parser *parser)
+/* Try to resolve the string within @parser as integer. */
+int resolve_integer(Parser *parser,
+        _Out unsigned *flags,
+        _Out parse_integer_t *output_integer)
 {
     /* a translation table from string to integer */
     static const struct {
@@ -276,7 +265,7 @@ int resolve_integer(Parser *parser)
     parse_integer_t sign = 1, integer = 0;
 
     word = parser->string;
-    parser->data.flags = 0;
+    *flags = 0;
     if ((word[0] == '-' && isdigit(word[1])) || isdigit(word[0])) {
         if (word[0] == '-') {
             sign = -1;
@@ -301,7 +290,7 @@ int resolve_integer(Parser *parser)
         }
 
         if (word[0] == '%') {
-            parser->data.flags |= PARSE_DATA_FLAGS_IS_PERCENT;
+            *flags |= PARSE_DATA_FLAGS_IS_PERCENT;
             word++;
         }
 
@@ -341,7 +330,7 @@ int resolve_integer(Parser *parser)
         }
     }
 
-    parser->data.u.integer = sign * integer;
+    *output_integer = sign * integer;
     return error;
 }
 

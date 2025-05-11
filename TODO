@@ -19,10 +19,10 @@
     Move focus X11 management into x11_synchronize (out of event.c) and bundle
     all relevant parts.
 
-#91 Add actions to only merge specific default parts
-    For example `merge default bindings` or `merge default font`.
+#93 Make unbind action
+    Make an action to unbind a specific binding
 
-#93 ...
+#94 ...
 
 #200 Make repository for fensterchef-menu
     Menus of all kind for any window manager
@@ -37,6 +37,8 @@
     Make an additional repository that hosts fensterland
 
 [In Progress]
+#91 Add actions to only merge specific default parts
+    For example `merge default bindings` or `merge default font`.
 
 [Recheck]
 #1 ! Hover events not working in firefox sometimes

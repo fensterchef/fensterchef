@@ -43,7 +43,10 @@ build/fensterchef: $(OBJECTS)
 	$(CC) $(DEBUG_FLAGS) $(OBJECTS) -o $@ $(C_LIBRARIES)
 
 # Functions
-.PHONY: build sandbox clean
+.PHONY: analyze build sandbox clean
+
+analyze:
+	gcc -fanalyzer $(DEBUG_FLAGS) $(SOURCES)
 
 build: build/fensterchef
 

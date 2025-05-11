@@ -121,7 +121,7 @@ char *xasprintf(const char *format, ...)
 
     va_start(list, format);
     /* +1 for the null terminator */
-    result = xmalloc(total_size + 1);
+    result = xmalloc((size_t) total_size + 1);
     (void) vsprintf(result, format, list);
     va_end(list);
 
