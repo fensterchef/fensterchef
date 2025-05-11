@@ -144,7 +144,7 @@ void clear_button_binding(bool is_release,
     binding = find_button_binding(is_release, modifiers, button);
     if (binding != NULL) {
         clear_action_list(&binding->actions);
-        binding->actions.number_of_items = 0;
+        ZERO(&binding->actions, 1);
         synchronization_flags |= SYNCHRONIZE_BUTTON_BINDING;
     }
 }
@@ -159,7 +159,7 @@ void clear_button_bindings(void)
         binding = button_bindings[i - BUTTON_MIN];
         for (; binding != NULL; binding = binding->next) {
             clear_action_list(&binding->actions);
-            binding->actions.number_of_items = 0;
+            ZERO(&binding->actions, 1);
         }
     }
     synchronization_flags |= SYNCHRONIZE_BUTTON_BINDING;
@@ -247,7 +247,7 @@ void clear_key_binding(bool is_release, unsigned modifiers, KeyCode key_code)
     binding = find_key_binding(is_release, modifiers, key_code);
     if (binding != NULL) {
         clear_action_list(&binding->actions);
-        binding->actions.number_of_items = 0;
+        ZERO(&binding->actions, 1);
         synchronization_flags |= SYNCHRONIZE_KEY_BINDING;
     }
 }
@@ -261,7 +261,7 @@ void clear_key_bindings(void)
         binding = key_bindings[i - KEYCODE_MIN];
         for (; binding != NULL; binding = binding->next) {
             clear_action_list(&binding->actions);
-            binding->actions.number_of_items = 0;
+            ZERO(&binding->actions, 1);
         }
     }
     synchronization_flags |= SYNCHRONIZE_KEY_BINDING;

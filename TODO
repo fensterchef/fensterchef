@@ -37,8 +37,6 @@
     Make an additional repository that hosts fensterland
 
 [In Progress]
-#91 Add actions to only merge specific default parts
-    For example `merge default bindings` or `merge default font`.
 
 [Recheck]
 #1 ! Hover events not working in firefox sometimes
@@ -452,3 +450,6 @@
 #90 Simplify window lining
     When floating windows are spawned, they are placed along a line.  Simplify
     this and only use the top window.
+
+#91 Add actions to only merge specific default parts
+    For example `merge default bindings` or `merge default font`.
