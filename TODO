@@ -19,10 +19,6 @@
     Move focus X11 management into x11_synchronize (out of event.c) and bundle
     all relevant parts.
 
-#90 Simplify window lining
-    When floating windows are spawned, they are placed along a line.  Simplify
-    this and only use the top window.
-
 #91 Add actions to only merge specific default parts
     For example `merge default bindings` or `merge default font`.
 
@@ -38,11 +34,9 @@
     Window list usable in any window manager
 
 #1000 Make a wayland port
-    Make an additional repository that hosts fensterchef-wayland
+    Make an additional repository that hosts fensterland
 
 [In Progress]
-#14 Generate documentation
-    Make shell scripts to generate the manual page
 
 [Recheck]
 #1 ! Hover events not working in firefox sometimes
@@ -447,3 +441,12 @@
 #74 Add caching of window stack
     Stack changes should be only locally noticed and then sent at once to the X
     server to allow more tolerance in scripts (expected to improve performance)
+
+#14 Generate documentation
+    Make shell scripts to generate the manual page.
+    This was not implemented but the manual pages were still written but
+    manually.
+
+#90 Simplify window lining
+    When floating windows are spawned, they are placed along a line.  Simplify
+    this and only use the top window.

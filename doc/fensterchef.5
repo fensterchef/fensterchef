@@ -360,15 +360,30 @@ property.
 
 After the string comes the actions that should run when a window with this
 instance name and class name is created.
+Actions are separated by a comma, for example:
+.PP
+.EX
+# Set all firefox windows to floating and focus then when they appear
+"firefox" set floating, focus window
+.EE
 .
 .SH BINDING
-.I release?
-.I transparent?
+.B release?
+.B transparent?
 .IR MODIFIERS + BUTTON | KEY_SYMBOL
 .I ACTIONS
 
 This creates a binding that triggers when the specified combination of modifiers
 and button/key symbol is pressed/released.
+
+To get more information about the modifiers configured on your system, use
+.B xmodmap
+.BR -pm .
+This shows the name of the modifier and then the physical keys that trigger
+these modifiers.
+Note that
+.B fensterchef
+expects the modifiers to start with a capital letter.
 
 .I transparent
 can be used for button bindings to also send the button event to the pressed
@@ -383,6 +398,31 @@ is combined with the currently configured
 setting.
 Note that the ignored modifiers can be used to control which additional
 physically pressed modifiers should not change the interpretation of a binding.
+
+Actions are separated by a comma, for example:
+.PP
+.EX
+# Also trigger all bindings if Lock, Mod2 or Control is down
+modifiers ignore Lock Mod2 Control
+# Show a message when Mod1 (usually Alt) and "t" is pressed
+modifiers Mod1
+t show message Hello!
+
+# Split a frame and focus the right frame
+Shift+t split horizontally, focus right
+
+# Focus a window when pressed with the left mouse button
+modifiers None
+transparent LeftButton focus window
+.EE
+.
+.SH SPECIAL
+.SS source
+.B source
+.I file
+
+The source command can source external files.
+This allows to split a configuration into multiple parts.
 .
 .SH EXAMPLE
 .SS Parts of the default configuration

@@ -52,75 +52,67 @@ int get_window_gravity(FcWindow *window)
     return StaticGravity;
 }
 
-/* Return a comparison value for two windows. */
-static int sort_by_x(const void *a, const void *b)
-{
-    const FcWindow *const window_a = *(FcWindow**) a;
-    const FcWindow *const window_b = *(FcWindow**) b;
-    return window_a->x - window_b->x;
-}
-
 /* Put windows along a diagonal line, spacing them out a little. */
 static inline void move_to_next_available(Monitor *monitor, FcWindow *window,
-        int *x, int *y)
+        int *destination_x, int *destination_y)
 {
-    /* step 1: get all windows on the diagonal line */
-    FcWindow *in_line_windows[Window_count];
-    unsigned count = 0;
-    int best_x = 0;
+    FcWindow *other;
+    int start_x, start_y;
+    int x, y;
+    FcWindow *top = NULL;
 
-    *x = monitor->x + monitor->width / 10;
-    *y = monitor->y + monitor->height / 10;
+    start_x = monitor->x + monitor->width / 10;
+    start_y = monitor->y + monitor->height / 10;
 
-    for (FcWindow *other = Window_first; other != NULL; other = other->next) {
+    /* Check if all windows up to the start position are on a diagonal line.
+     * If that is the case, yield the position of the window furthest along this
+     * line.
+     */
+    for (other = Window_top;
+            other != NULL && other->state.mode != WINDOW_MODE_TILING;
+            other = other->below) {
         if (other == window || !other->state.is_visible) {
             continue;
         }
-        const Point difference = {
-            other->x - *x,
-            other->y - *y,
-        };
-        if (difference.x >= 0 && difference.x == difference.y &&
-                difference.x % 20 == 0) {
-            if (best_x == difference.x) {
-                best_x += 20;
-            }
-            in_line_windows[count] = other;
-            count++;
-        }
-    }
 
-    /* intermediary step: if the windows were already sorted advantageously,
-     * immediately find a gap
-     */
-    for (FcWindow *other = Window_first; other != NULL; other = other->next) {
         const Point difference = {
-            other->x - *x,
-            other->y - *y,
+            other->x - start_x,
+            other->y - start_y,
         };
-        if (difference.x == best_x) {
-            best_x = -1;
+
+        /* if the window is not on the diagonal line, stop */
+        if (difference.x < 0 || difference.x != difference.y ||
+                difference.x % 20 != 0) {
+            top = NULL;
             break;
         }
-    }
 
-    if (best_x >= 0) {
-        *x += best_x;
-        *y += best_x;
-        return;
-    }
-
-    /* step 2: sort them according to their x coordinate */
-    qsort(in_line_windows, count, sizeof(*in_line_windows), sort_by_x);
-
-    /* step 3: find a gap */
-    for (unsigned i = 0; i < count; i++) {
-        FcWindow *const other = in_line_windows[i];
-        if (other->x != *x || other->y != *y) {
+        if (top == NULL) {
+            top = other;
+        } else if (x - 20 != difference.x || y - 20 != difference.y) {
+            /* not all windows are on the diagnoal line */
+            top = NULL;
             break;
         }
-        *x += 20;
-        *y += 20;
+
+        if (difference.x == 0) {
+            /* we found the start of the diagonal line */
+            break;
+        }
+
+        /* save these for the next iteration */
+        x = difference.x;
+        y = difference.y;
+    }
+
+    if (top != NULL) {
+        /* append the window to the line */
+        *destination_x += top->x + 20;
+        *destination_y += top->y + 20;
+    } else {
+        /* start a fresh diagonal line */
+        *destination_x = start_x;
+        *destination_y = start_y;
     }
 }
 
