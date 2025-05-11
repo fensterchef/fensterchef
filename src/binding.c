@@ -10,8 +10,6 @@ static unsigned modifiers_ignore = LockMask | Mod2Mask;
 
 /* The mouse bindings.  The key to this map are button indexes. */
 static struct internal_button_binding {
-    /* if the button is grabbed on the X server */
-    bool is_grabbed;
     /* if this binding is triggered on a release */
     bool is_release;
     /* if the event should pass through to the window the event happened in */
@@ -26,8 +24,6 @@ static struct internal_button_binding {
 
 /* The key bindings.  The key to this map are key codes. */
 static struct internal_key_binding {
-    /* if the key is grabbed on the X server */
-    bool is_grabbed;
     /* if this key binding is triggered on a release */
     bool is_release;
     /* the key modifiers */
@@ -101,7 +97,9 @@ void set_button_binding(const struct button_binding *button_binding)
 
         binding->is_release = button_binding->is_release;
         binding->modifiers = modifiers;
+    }
 
+    if (binding->actions.number_of_items == 0) {
         synchronization_flags |= SYNCHRONIZE_BUTTON_BINDING;
     }
 
@@ -212,7 +210,9 @@ void set_key_binding(const struct key_binding *key_binding)
         binding->is_release = key_binding->is_release;
         binding->modifiers = modifiers;
         binding->key_symbol = key_binding->key_symbol;
+    }
 
+    if (binding->actions.number_of_items == 0) {
         synchronization_flags |= SYNCHRONIZE_KEY_BINDING;
     }
 
@@ -277,9 +277,6 @@ void resolve_all_key_symbols(void)
         previous = NULL;
         binding = key_bindings[i - KEYCODE_MIN];
         for (; binding != NULL; binding = next) {
-            /* we grab this binding after the double for loop has ended */
-            binding->is_grabbed = true;
-
             /* this `next` mechanism needs to be employed because the current
              * binding might move away
              */
@@ -399,9 +396,13 @@ void grab_configured_keys(void)
         for (; binding != NULL; binding = binding->next) {
             /* ignore bindings with no action */
             if (binding->actions.number_of_items == 0) {
+                LOG_DEBUG("binding was created some "
+                        "day but the actions were removed\n");
                 continue;
             }
 
+            LOG_DEBUG("grabbing key for %u+%d\n",
+                    binding->modifiers, i);
             /* iterate over all bit combinations */
             for (unsigned j = modifiers_ignore;
                     true;

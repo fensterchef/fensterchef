@@ -138,6 +138,9 @@ void synchronize_with_server(unsigned flags)
         flags = synchronization_flags;
     }
 
+    LOG_DEBUG("doing server synchronization with: %#x\n",
+            flags);
+
     if ((flags & SYNCHRONIZE_ROOT_CURSOR)) {
         XDefineCursor(display, DefaultRootWindow(display),
                 load_cursor(CURSOR_ROOT, NULL));

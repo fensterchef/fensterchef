@@ -383,8 +383,8 @@ Actions are separated by a comma, for example:
 .EE
 .
 .SH BINDING
-.B release?
-.B transparent?
+.BR release ?
+.BR transparent ?
 .IR MODIFIERS + BUTTON | KEY_SYMBOL
 .I ACTIONS
 
@@ -438,6 +438,12 @@ transparent LeftButton focus window
 
 The source command can source external files.
 This allows to split a configuration into multiple parts.
+.SS unbind
+.B unbind
+.BR release ?
+.IR MODIFIERS + BUTTON | KEY_SYMBOL
+
+The unbind command can be used to remove a previously bound key or button.
 .
 .SH EXAMPLE
 .SS Parts of the default configuration

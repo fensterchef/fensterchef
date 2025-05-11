@@ -227,6 +227,8 @@ int start_parser(Parser *parser)
             continue_parsing_association(parser);
         } else if (strcmp(parser->string, "source") == 0) {
             continue_parsing_source(parser);
+        } else if (strcmp(parser->string, "unbind") == 0) {
+            continue_parsing_unbind(parser);
         } else {
             struct parse_action_list list;
 
@@ -236,7 +238,7 @@ int start_parser(Parser *parser)
                 free(list.items);
                 free(list.data);
             } else {
-                continue_parsing_modifiers_or_binding(parser);
+                continue_parsing_binding(parser);
             }
         }
     }

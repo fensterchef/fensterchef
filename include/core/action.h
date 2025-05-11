@@ -24,6 +24,10 @@ typedef enum {
     ACTION_BUTTON_BINDING,
     /* a key binding */
     ACTION_KEY_BINDING,
+    /* unbind a button binding */
+    ACTION_CLEAR_BUTTON_BINDING,
+    /* unbind a key binding */
+    ACTION_CLEAR_KEY_BINDING,
     /* not a real action */
     ACTION_MAX,
 } action_type_t;

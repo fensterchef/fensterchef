@@ -1310,6 +1310,27 @@ void do_action(action_type_t type, const struct parse_generic_data *data)
         set_key_binding(&data->u.key);
         break;
 
+    /* clear a button binding */
+    case ACTION_CLEAR_BUTTON_BINDING:
+        clear_button_binding(data->u.button.is_release,
+                data->u.button.modifiers,
+                data->u.button.button);
+        break;
+
+    /* clear a button binding */
+    case ACTION_CLEAR_KEY_BINDING: {
+        KeyCode key_code;
+
+        if (data->u.key.key_symbol != NoSymbol) {
+            key_code = XKeysymToKeycode(display, data->u.key.key_symbol);
+        } else {
+            key_code = data->u.key.key_code;
+        }
+        clear_key_binding(data->u.key.is_release,
+                data->u.key.modifiers, key_code);
+        break;
+    }
+
     /* not a real action */
     case ACTION_SIMPLE_MAX:
     case ACTION_MAX:
