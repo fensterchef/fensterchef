@@ -94,9 +94,6 @@ typedef struct x_client {
 /* supporting wm check window */
 extern Window wm_check_window;
 
-/* file descriptor associated to the X display */
-extern int x_file_descriptor;
-
 /* Check if given strut has any reserved space. */
 static inline bool is_strut_empty(wm_strut_partial_t *strut)
 {

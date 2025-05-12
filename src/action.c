@@ -528,11 +528,7 @@ void do_action(action_type_t type, const struct parse_generic_data *data)
     Frame *frame;
     bool is_previous = true;
 
-    window = Window_pressed;
-    if (window == NULL) {
-        window = Window_focus;
-    }
-
+    window = Window_selected;
     frame = Frame_focus;
 
     switch (type) {
@@ -1031,7 +1027,7 @@ void do_action(action_type_t type, const struct parse_generic_data *data)
         /* fall through */
     /* hide the currently active window */
     case ACTION_MINIMIZE_WINDOW:
-        if (window == NULL || !window->state.is_visible) {
+        if (window == NULL) {
             break;
         }
         hide_window(window);
@@ -1170,8 +1166,8 @@ void do_action(action_type_t type, const struct parse_generic_data *data)
         }
 
         monitor = get_monitor_containing_window(window);
-        height_change = translate_integer_data(monitor, &data[0], true);
-        width_change = translate_integer_data(monitor, &data[1], false);
+        width_change = translate_integer_data(monitor, &data[0], true);
+        height_change = translate_integer_data(monitor, &data[1], false);
         resize_frame_or_window_by(window, 0, 0, width_change, height_change);
         break;
     }
@@ -1198,6 +1194,21 @@ void do_action(action_type_t type, const struct parse_generic_data *data)
     /* run a shell program */
     case ACTION_RUN:
         run_shell(data->u.string);
+        break;
+
+    /* select the focused window */
+    case ACTION_SELECT_FOCUS:
+        Window_selected = Window_focus;
+        break;
+
+    /* select the pressed window */
+    case ACTION_SELECT_PRESSED:
+        Window_selected = Window_pressed;
+        break;
+
+    /* select the window with given number */
+    case ACTION_SELECT_WINDOW:
+        Window_selected = get_window_by_number(data->u.integer);
         break;
 
     /* set the mode of the current window to floating */

@@ -5,6 +5,7 @@
 
 #include "bits/frame.h"
 #include "bits/window.h"
+#include "utility/attributes.h"
 #include "utility/types.h"
 
 /* the minimum width or height of a frame, frames are never clipped to this size
@@ -42,14 +43,12 @@ typedef enum {
  * `parent` is NULL when the frame is a root frame or stashed frame.
  */
 struct frame {
-    /* reference counter to keep the pointer around for longer after the frame
-     * has been destroyed
-     */
+    /* reference counter to keep the pointer alive for longer */
     unsigned reference_count;
 
-    /* the window inside the frame, may be NULL; this might become a destroyed
-     * window when this frame is stashed, to check this use `window->client.id`,
-     * it should be `None` when the window is destroyed
+    /* The window inside the frame, may be NULL.  It might become also be
+     * destroyed.  To check this use `window->client.id` which should be `None`
+     * when the window is destroyed.  This case is important for stashed frames.
      */
     FcWindow *window;
 
@@ -140,12 +139,12 @@ void get_frame_gaps(const Frame *frame, Extents *gaps);
 /* Resizes the inner window to fit within the frame. */
 void reload_frame(Frame *frame);
 
-/* Set the frame in focus, this also focuses an associated window if possible.
+/* Set the frame in focus, this also focuses a related window if possible.
  *
- * The associated window is either a window covering the monitor the frame is on
+ * The related window is either a window covering the monitor the frame is on
  * or the window within the frame.
  *
- * If you just want to set the focused frame without focusing the inner window:
+ * If you just want to set the focused frame without focusing the a window:
  * `Frame_focus = frame` suffices.
  */
 void set_focus_frame(Frame *frame);
@@ -154,6 +153,6 @@ void set_focus_frame(Frame *frame);
  *
  * @frame may be NULL, then simply NULL is returned.
  */
-Frame *get_root_frame(const Frame *frame);
+Frame *get_root_frame(_Nullable const Frame *frame);
 
 #endif

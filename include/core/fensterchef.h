@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#include "utility/utility.h"
+#include "utility/attributes.h"
 
 #define FENSTERCHEF_NAME "fensterchef"
 

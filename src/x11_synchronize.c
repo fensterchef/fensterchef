@@ -65,8 +65,6 @@ void open_connection(void)
             XkbAllClientInfoMask,
             XkbAllClientInfoMask);
 
-    x_file_descriptor = XConnectionNumber(display);
-
     LOG("%D\n", display);
 }
 

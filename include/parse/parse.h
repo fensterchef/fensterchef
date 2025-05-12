@@ -3,9 +3,9 @@
 
 #include "core/action.h"
 #include "parse/data_type.h"
+#include "utility/attributes.h"
 #include "utility/list.h"
 #include "utility/types.h"
-#include "utility/utility.h"
 
 /* maximum value for a literal integer */
 #define PARSE_INTEGER_LIMIT 1000000

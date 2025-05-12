@@ -170,6 +170,12 @@
     X(ACTION_RESIZE_WINDOW_TO, "resize window to I I") \
     /* run a shell program */ \
     X(ACTION_RUN, "run S") \
+    /* select the focused window */ \
+    X(ACTION_SELECT_FOCUS, "select focus") \
+    /* select the pressed window */ \
+    X(ACTION_SELECT_PRESSED, "select pressed") \
+    /* select the window with given number */ \
+    X(ACTION_SELECT_WINDOW, "select window I") \
     /* set the mode of the current window to floating */ \
     X(ACTION_SET_FLOATING, "set floating") \
     /* set the mode of the current window to fullscreen */ \

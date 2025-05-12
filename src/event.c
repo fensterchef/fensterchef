@@ -61,6 +61,7 @@ int next_cycle(void)
     FcWindow *old_focus_window;
     Frame *old_focus_frame;
     XEvent event;
+    int file_descriptor;
     fd_set set;
 
     /* signal to stop running */
@@ -80,14 +81,15 @@ int next_cycle(void)
     }
 
     /* prepare `set` for `select()` */
+    file_descriptor = ConnectionNumber(display);
     FD_ZERO(&set);
-    FD_SET(x_file_descriptor, &set);
+    FD_SET(file_descriptor, &set);
 
-    /* using select here is key: select will block until data on the file
-     * descriptor for the X display arrives; when a signal is received,
-     * `select()` will however also unblock and return -1
+    /* Using select here is key: Select will block until data on the file
+     * descriptor for the X display arrives.  When a signal is received,
+     * `select()` will however also unblock and return -1.
      */
-    if (select(x_file_descriptor + 1, &set, NULL, NULL, NULL) > 0) {
+    if (select(file_descriptor + 1, &set, NULL, NULL, NULL) > 0) {
         /* handle all received events */
         while (XPending(display)) {
             XNextEvent(display, &event);
@@ -130,7 +132,7 @@ int next_cycle(void)
         }
     }
 
-    if (has_timer_expired) {
+    if (has_timer_expired && system_notification != NULL) {
         unmap_client(&system_notification->client);
         has_timer_expired = false;
     }
@@ -306,12 +308,16 @@ static void handle_key_press(XKeyPressedEvent *event)
         unmap_client(&system_notification->client);
     }
 
+    Window_pressed = Window_focus;
+    Window_selected = Window_pressed;
     run_key_binding(false, event->state, event->keycode);
 }
 
 /* Key release events are sent when a grabbed key is released. */
 static void handle_key_release(XKeyReleasedEvent *event)
 {
+    Window_pressed = Window_focus;
+    Window_selected = Window_pressed;
     run_key_binding(true, event->state, event->keycode);
 }
 
@@ -325,10 +331,9 @@ static void handle_button_press(XButtonPressedEvent *event)
     }
 
     /* set the pressed window so actions can use it */
-    FcWindow *const old_pressed = Window_pressed;
     Window_pressed = get_fensterchef_window(event->window);
+    Window_selected = Window_pressed;
     run_button_binding(event->time, false, event->state, event->button);
-    Window_pressed = old_pressed;
 }
 
 /* Button releases are sent when a grabbed button is released. */
@@ -344,10 +349,9 @@ static void handle_button_release(XButtonReleasedEvent *event)
     }
 
     /* set the pressed window so actions can use it */
-    FcWindow *const old_pressed = Window_pressed;
     Window_pressed = get_fensterchef_window(event->window);
+    Window_selected = Window_pressed;
     run_button_binding(event->time, true, event->state, event->button);
-    Window_pressed = old_pressed;
 }
 
 /* Motion notifications (mouse move events) are only sent when we grabbed them.

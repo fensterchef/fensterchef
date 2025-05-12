@@ -12,11 +12,6 @@
 
 #include "utility/xalloc.h"
 
-/* If the compiler does not have __has_attribute, always make it false. */
-#ifndef __has_attribute
-#  define __has_attribute(x) 0
-#endif
-
 /* If the compiler does not have __has_builtin, always make it false. */
 #ifndef __has_builtin
 #  define __has_builtin(x) 0
@@ -50,26 +45,6 @@
 #   define LIKELY(x) (x)
 #   define UNLIKELY(x) (x)
 #endif
-
-/* Mark a function as "inline this function no matter what".
- *
- * Functions should be inlined like this when they are performance critical.
- */
-#if defined __GNUC__ || __has_attribute(always_inline)
-#   define INLINE __attribute__((always_inline)) inline
-#else
-#   define INLINE inline
-#endif
-
-/* Mark a function parameter as "allowed to be NULL". */
-#define _Nullable
-/* Mark a function parameter as "NOT allowed to be NULL", this should be implied
- * by excluding `_Nullable`, but can be used to put emphasize on it.
- */
-#define _Nonnull
-
-/* Mark a pointer parameter to a function as "stores output of the function". */
-#define _Out
 
 /* Assert that statement @x is true. If this is not the case, the program is
  * aborted.
@@ -152,35 +127,6 @@
 
 /* Get the absolute difference between two numbers. */
 #define ABSOLUTE_DIFFERENCE(a, b) ((a) < (b) ? (b) - (a) : (a) - (b))
-
-/* Check if the addition overflows and store the result in @c. */
-#if defined __GNUC__ || __has_builtin(__builtin_add_overflow)
-#   define OVERFLOW_ADD(a, b, c) \
-        __builtin_add_overflow((a), (b), &(c))
-#else
-#   error "currently not supporting this compiler"
-#endif
-
-/* Check if the multiplication overflows and store the result in @c. */
-#if defined __GNUC__ || __has_builtin(__builtin_mul_overflow)
-#   define OVERFLOW_MULTIPLY(a, b, c) \
-        __builtin_mul_overflow((a), (b), &(c))
-#else
-#   error "currently not supporting this compiler"
-#endif
-
-/* Multiply two numbers @a and @b without exceeding @maximum.
- *
- * The result is stored back in @a, so it must be writable.
- */
-#define CLIP_MULTIPLY(a, b, maximum) do { \
-    typeof(a) _c; \
-    if (OVERFLOW_MULTIPLY((a), (b), _c)) { \
-        (a) = (maximum); \
-    } else { \
-        (a) = MIN(_c, (maximum)); \
-    } \
-} while (false)
 
 /* Run @command within a shell in the background. */
 void run_shell(const char *command);

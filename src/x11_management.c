@@ -14,9 +14,6 @@
 /* supporting wm check window */
 Window wm_check_window;
 
-/* file descriptor associated to the X display */
-int x_file_descriptor;
-
 /* The handler for X errors. */
 static int x_error_handler(Display *display, XErrorEvent *error)
 {

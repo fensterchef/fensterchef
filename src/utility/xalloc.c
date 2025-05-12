@@ -2,8 +2,7 @@
 #include <stdarg.h> /* va_list, va_start(), va_end() */
 #include <string.h> /* strerror(), vsnprintf(), vsprintf(), memcpy() */
 
-#include "utility/utility.h"
-#include "utility/xalloc.h"
+#include "utility/utility.h" /* ASSERT() */
 
 /* Allocate a minimum of @size bytes of memory. */
 void *xmalloc(size_t size)
@@ -11,11 +10,11 @@ void *xmalloc(size_t size)
     void *pointer;
 
     if (UNLIKELY(size == 0)) {
-        return NULL;
+        pointer = NULL;
+    } else {
+        pointer = malloc(size);
+        ASSERT(pointer != NULL, strerror(errno));
     }
-
-    pointer = malloc(size);
-    ASSERT(pointer != NULL, strerror(errno));
     return pointer;
 }
 
@@ -27,11 +26,11 @@ void *xcalloc(size_t number_of_elements, size_t size_per_element)
     void *pointer;
 
     if (UNLIKELY(number_of_elements == 0 || size_per_element == 0)) {
-        return NULL;
+        pointer = NULL;
+    } else {
+        pointer = calloc(number_of_elements, size_per_element);
+        ASSERT(pointer != NULL, strerror(errno));
     }
-
-    pointer = calloc(number_of_elements, size_per_element);
-    ASSERT(pointer != NULL, strerror(errno));
     return pointer;
 }
 
@@ -40,11 +39,11 @@ void *xrealloc(void *pointer, size_t size)
 {
     if (size == 0) {
         free(pointer);
-        return NULL;
+        pointer = NULL;
+    } else {
+        pointer = realloc(pointer, size);
+        ASSERT(pointer != NULL, strerror(errno));
     }
-
-    pointer = realloc(pointer, size);
-    ASSERT(pointer != NULL, strerror(errno));
     return pointer;
 }
 
@@ -55,8 +54,18 @@ void *xreallocarray(void *pointer, size_t number_of_elements, size_t size)
 {
     size_t byte_count;
 
-    ASSERT(!OVERFLOW_MULTIPLY(number_of_elements, size, byte_count),
+#if __has_builtin(__builtin_mul_overflow)
+    ASSERT(!__builtin_mul_overflow(number_of_elements, size, &byte_count),
             "unsigned integer overflow");
+#else
+    if (number_of_elements == 0 || size == 0) {
+        byte_count = 0;
+    } else {
+        ASSERT(SIZE_MAX / number_of_elements >= size,
+                "unsigned integer overflow");
+        byte_count = number_of_elements * size;
+    }
+#endif
     return xrealloc(pointer, byte_count);
 }
 
@@ -66,13 +75,13 @@ void *xmemdup(const void *pointer, size_t size)
     char *duplicate;
 
     if (size == 0) {
-        return NULL;
+        duplicate = NULL;
+    } else {
+        duplicate = malloc(size);
+        ASSERT(duplicate != NULL, strerror(errno));
+        (void) memcpy(duplicate, pointer, size);
     }
-
-    duplicate = malloc(size);
-    ASSERT(duplicate != NULL, strerror(errno));
-
-    return memcpy(duplicate, pointer, size);
+    return duplicate;
 }
 
 /* Duplicates the null-terminated @string pointer by creating a copy. */
@@ -82,13 +91,14 @@ char *xstrdup(const char *string)
     char *result;
 
     if (string == NULL) {
-        return NULL;
+        result = NULL;
+    } else {
+        /* +1 for the null terminator */
+        length = strlen(string) + 1;
+        result = xmalloc(length);
+        (void) memcpy(result, string, length);
     }
-
-    /* +1 for the null terminator */
-    length = strlen(string) + 1;
-    result = xmalloc(length);
-    return memcpy(result, string, length);
+    return result;
 }
 
 /* Like `xstrdup()` but stop at @length when the null-terminator is not yet

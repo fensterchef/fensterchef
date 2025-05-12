@@ -16,7 +16,7 @@
 /* the window associations */
 struct window_association *window_associations;
 
-/* the number of elments in `window_associations` */
+/* the number of elements in `window_associations` */
 unsigned number_of_window_associations;
 
 /* the number of all windows within the linked list, this value is kept up to
@@ -42,10 +42,11 @@ FcWindow *Window_first;
 /* the currently focused window */
 FcWindow *Window_focus;
 
-/* the last pressed window, this only gets set when a window is pressed by a
- * grabbed button
- */
+/* the last pressed window */
 FcWindow *Window_pressed;
+
+/* the selected window used for actions */
+FcWindow *Window_selected;
 
 /* Increment the reference count of the window. */
 inline void reference_window(FcWindow *window)
@@ -95,7 +96,7 @@ void clear_window_associations(void)
     number_of_window_associations = 0;
 }
 
-/* Run the action associated to given window. */
+/* Run the actions associated to given window. */
 bool run_window_association(FcWindow *window)
 {
     if (window->instance == NULL && window->class == NULL) {
@@ -112,10 +113,8 @@ bool run_window_association(FcWindow *window)
             LOG_DEBUG("running associated actions: %A\n",
                     &association->actions);
 
-            FcWindow *const old_pressed = Window_pressed;
-            Window_pressed = window;
+            Window_selected = window;
             run_action_list(&association->actions);
-            Window_pressed = old_pressed;
             return true;
         }
     }
@@ -193,7 +192,12 @@ FcWindow *create_window(Window id)
     FcWindow *previous;
     window_mode_t mode;
 
-    XGetWindowAttributes(display, id, &attributes);
+    if (XGetWindowAttributes(display, id, &attributes) == 0) {
+        /* the window got invalid because it was abruptly destroyed */
+        LOG_DEBUG("window %#lx abruptly disappeared\n",
+                id);
+        return NULL;
+    }
 
     /* Override redirect is used by windows to indicate that our window manager
      * should not tamper with them.  We also check if the class is InputOnly
@@ -367,6 +371,10 @@ void destroy_window(FcWindow *window)
 
     if (window == Window_pressed) {
         Window_pressed = NULL;
+    }
+
+    if (window == Window_selected) {
+        Window_selected = NULL;
     }
 
     /* this should also never happen but we check just in case */

@@ -51,8 +51,6 @@ void run_external_command(const char *command)
     fprintf(stderr, "fensterchef command: command was dispatched, "
                 "waiting until execution...\n");
 
-    XFlush(display);
-
     /* wait until the property gets removed */
     while (true) {
         XNextEvent(display, &event);

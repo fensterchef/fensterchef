@@ -3,11 +3,11 @@
 
 #include <stdint.h>
 
-#include "bits/window.h"
 #include "bits/frame.h"
+#include "bits/window.h"
 #include "configuration.h"
 #include "monitor.h"
-#include "utility/utility.h"
+#include "utility/attributes.h"
 #include "window_state.h"
 
 #include "x11_management.h"
@@ -37,9 +37,10 @@ struct window_association {
  * linked list and has a unique id (number).
  */
 struct fensterchef_window {
-    /* reference counter to keep the pointer around for longer after the window
-     * has been destroyed; a destroyed but still referenced window will have
-     * `client.id` set to `None`, all other struct members are invalid
+    /* Reference counter to keep the pointer around for longer after the window
+     * has been destroyed.  A destroyed but still referenced window will have
+     * `client.id` set to `None`.  All other struct members are invalid at that
+     * point.
      */
     unsigned reference_count;
 
@@ -154,10 +155,13 @@ extern FcWindow *Window_server_top;
 /* the currently focused window */
 extern FcWindow *Window_focus;
 
-/* the last pressed window, this only gets set when a window is pressed by a
- * grabbed button or when an association runs
+/* The last pressed window.  This only gets set when a window is pressed by a
+ * grabbed button or when an association runs.
  */
 extern FcWindow *Window_pressed;
+
+/* the selected window used for actions */
+extern FcWindow *Window_selected;
 
 /* Increment the reference count of the window. */
 void reference_window(FcWindow *window);
@@ -175,7 +179,7 @@ void dereference_window(FcWindow *window);
 void add_window_associations(struct window_association *associations,
         unsigned number_of_associations);
 
-/* Run the action associated to given window.
+/* Run the actions associated to given window.
  *
  * @return true if any association existed, false otherwise.
  */

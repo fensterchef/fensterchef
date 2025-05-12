@@ -3,7 +3,7 @@
 
 #include <X11/X.h>
 
-#include "utility/utility.h"
+#include "utility/attributes.h"
 
 /* internal cache points for cursor constants */
 typedef enum cursor {

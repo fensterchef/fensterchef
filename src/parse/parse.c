@@ -165,6 +165,7 @@ int parse_and_run_actions(Parser *parser)
     make_real_action_list(&actions, &list);
     LOG_DEBUG("running actions: %A\n",
             &actions);
+    Window_selected = Window_focus;
     run_action_list(&actions);
 
     clear_parse_list(&list);
