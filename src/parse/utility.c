@@ -4,6 +4,7 @@
 
 #include <X11/keysym.h>
 
+#include "binding.h"
 #include "parse/parse.h"
 #include "parse/input.h"
 #include "parse/utility.h"
@@ -81,8 +82,11 @@ static inline bool is_word_character(int character)
         return false;
     }
 
-    if (character == ' ' || character == '!' || character == '\"' ||
+    if (character == ' ' || character == '\"' ||
             character == '\'' || character == ',' || character == ';' ||
+            character == '(' || character == ')' ||
+            character == '{' || character == '}' ||
+            character == '&' || character == '|' ||
             character == '+') {
         return false;
     }

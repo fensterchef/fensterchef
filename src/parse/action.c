@@ -1,12 +1,14 @@
 #include <string.h>
 
 #include "core/log.h"
+#include "core/window.h"
 #include "parse/action.h"
 #include "parse/input.h"
+#include "parse/top.h"
 #include "parse/utility.h"
 #include "utility/utility.h"
 
-/* Find a section in the action strings that match the word loaded into
+/* Find a section in the action strings that match the string loaded into
  * @parser.
  *
  * @return ERROR if no action matches.
@@ -15,6 +17,7 @@ static int resolve_action_word(Parser *parser, struct parse_action_list *list)
 {
     action_type_t count = 0;
 
+    /* TODO: can this be reduced to log(N) exploiting the sorted property? */
     for (action_type_t i = 0; i < ACTION_SIMPLE_MAX; i++) {
         const char *action, *space;
         unsigned skip_length;
@@ -60,7 +63,7 @@ static int resolve_action_word(Parser *parser, struct parse_action_list *list)
     return count == 0 ? ERROR : OK;
 }
 
-/* Read the next word and find the actions where the word matches.
+/* Read the next string and find the actions where it matches.
  *
  * @return ERROR if no action matches.
  */
@@ -69,6 +72,11 @@ static int read_and_resolve_next_action_word(Parser *parser,
 {
     action_type_t count = 0;
     struct parse_generic_data data;
+
+    /* also skip new lines if there is an open bracket */
+    if (list->bracket_count > 0) {
+        skip_space(parser);
+    }
 
     if (read_string(parser) != OK) {
         return ERROR;
@@ -221,25 +229,25 @@ static void print_action_possibilities(struct parse_action_list *list)
 /* Parse the next action word or check for an action separator.
  *
  * @list is the place to append the parsed action to.
- *
- * @return ERROR when there are no following actions, otherwise OK.
  */
-static int parse_next_action_part(Parser *parser, size_t item_index,
+static void parse_next_action_part(Parser *parser,
         struct parse_action_list *list)
 {
-    int error = OK;
     int character;
 
+    skip_blanks(parser);
     character = peek_stream_character(parser);
-    if (character == EOF || character == ',' || character == '\n') {
+    if (character == EOF || character == '\n' || character == ',' ||
+            character == ')') {
         const char *const action = get_action_string(list->first_action);
         if (action[list->actions[list->first_action].offset] != '\0') {
             parser->start_index = parser->index;
             emit_parse_error(parser, "incomplete action");
             print_action_possibilities(list);
         } else {
-            list->items[item_index].type = list->first_action;
-            list->items[item_index].data_count =
+            LIST_APPEND(list->items, NULL, 1);
+            list->items[list->items_length - 1].type = list->first_action;
+            list->items[list->items_length - 1].data_count =
                 list->actions[list->first_action].data_length;
             LIST_APPEND(list->data,
                 list->actions[list->first_action].data,
@@ -248,73 +256,59 @@ static int parse_next_action_part(Parser *parser, size_t item_index,
             /* reset the count so the memory is not freed */
             list->actions[list->first_action].data_length = 0;
         }
-
-        if (character == ',') {
-            /* skip ',' */
-            (void) get_stream_character(parser);
-            skip_space(parser);
-            if (read_string(parser) != OK) {
-                emit_parse_error(parser, "unexpected token");
-                skip_all_statements(parser);
-                error = ERROR;
-            }
-        } else {
-            error = ERROR;
-        }
     } else {
         if (read_and_resolve_next_action_word(parser, list) == ERROR) {
             emit_parse_error(parser, "invalid action word");
             skip_statement(parser);
-            error = ERROR;
         } else {
-            error = parse_next_action_part(parser, item_index, list);
+            parse_next_action_part(parser, list);
         }
     }
-
-    return error;
 }
 
-/* Parse an action.
- *
- * Expects that a string has been read into @parser.
- *
- * @return ERROR if there is no action, OK otherwise.
- */
-int continue_parsing_action(Parser *parser, struct parse_action_list *list)
+/* Parse an action list. */
+int continue_parsing_actions(Parser *parser, struct parse_action_list *list)
 {
-    int error = OK;
-    size_t item_index;
-
-    ZERO(list, 1);
-
-    do {
-        item_index = list->items_length;
-        LIST_APPEND(list->items, NULL, 1);
-
-        if (resolve_action_word(parser, list) != OK) {
-            error = ERROR;
-            break;
-        }
-    } while (parse_next_action_part(parser, item_index, list) == OK);
-
-    if (error != OK) {
-        /* free all memory again */
-        free(list->items);
-        for (size_t i = 0; i < list->data_length; i++) {
-            clear_generic_data(&list->data[i]);
-        }
-        free(list->data);
+    if (resolve_action_word(parser, list) == OK) {
+        parse_next_action_part(parser, list);
+        return OK;
+    } else {
+        return ERROR;
     }
+}
 
-    /* always free the action memory */
+/* Clear all memory within @list. */
+void clear_parse_list(struct parse_action_list *list)
+{
+    free(list->items);
+    for (size_t i = 0; i < list->data_length; i++) {
+        clear_generic_data(&list->data[i]);
+    }
+    free(list->data);
+    clear_parse_list_data(list);
+}
+
+/* Clear the data within @list that is needed for parsing and the
+ * associations.
+ */
+void clear_parse_list_data(struct parse_action_list *list)
+{
+    /* free the associations */
+    for (size_t i = 0; i < list->associations_length; i++) {
+        struct window_association *const association = &list->associations[i];
+        free(association->instance_pattern);
+        free(association->class_pattern);
+        clear_action_list(&association->actions);
+    }
+    free(list->associations);
+
+    /* free the action parse data */
     for (action_type_t i = 0; i < ACTION_SIMPLE_MAX; i++) {
         for (size_t j = 0; j < list->actions[i].data_length; j++) {
             clear_generic_data(&list->actions[i].data[j]);
         }
         free(list->actions[i].data);
     }
-
-    return error;
 }
 
 /* Make a real action list from a parser action list. */

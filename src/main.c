@@ -23,7 +23,8 @@ int main(int argc, char **argv)
     parse_program_arguments(argc, argv);
 
     LOG("parsed arguments, starting to log\n");
-    LOG("welcome to " FENSTERCHEF_NAME " " FENSTERCHEF_VERSION "\n");
+    LOG("welcome to " COLOR(YELLOW) FENSTERCHEF_NAME " " COLOR(GREEN)
+                FENSTERCHEF_VERSION CLEAR_COLOR "\n");
     LOG("the configuration file resides in %s\n",
             get_configuration_file());
 

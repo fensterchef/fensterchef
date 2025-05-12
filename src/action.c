@@ -112,7 +112,8 @@ void log_action_list(const struct action_list *list)
         }
 
         item = &list->items[i];
-        if (item->type == ACTION_BUTTON_BINDING) {
+        switch (item->type) {
+        case ACTION_BUTTON_BINDING: {
             const struct button_binding *const binding = &data->u.button;
             if (binding->is_release) {
                 fprintf(stderr, COLOR(YELLOW) "release ");
@@ -124,11 +125,13 @@ void log_action_list(const struct action_list *list)
                 fprintf(stderr, COLOR(BLUE) "%u" CLEAR_COLOR "+",
                         binding->modifiers);
             }
-            _log_formatted("%u %A",
+            _log_formatted("%u ( %A )",
                     binding->modifiers, &binding->actions);
             data++;
             continue;
-        } else if (item->type == ACTION_KEY_BINDING) {
+        }
+
+        case ACTION_KEY_BINDING: {
             const struct key_binding *const binding = &data->u.key;
             if (binding->is_release) {
                 fprintf(stderr, COLOR(YELLOW) "release ");
@@ -137,10 +140,46 @@ void log_action_list(const struct action_list *list)
                 fprintf(stderr, COLOR(BLUE) "%u" CLEAR_COLOR "+",
                         binding->modifiers);
             }
-            _log_formatted("%ld %A",
+            _log_formatted("%ld ( %A )",
                     binding->key_symbol, &binding->actions);
             data++;
             continue;
+        }
+
+        case ACTION_CLEAR_BUTTON_BINDING: {
+            const struct button_binding *const binding = &data->u.button;
+            fprintf(stderr, COLOR(YELLOW) "unbind ");
+            if (binding->is_release) {
+                fprintf(stderr, COLOR(YELLOW) "release ");
+            }
+            if (binding->modifiers != 0) {
+                fprintf(stderr, COLOR(BLUE) "%u" CLEAR_COLOR "+",
+                        binding->modifiers);
+            }
+            fprintf(stderr, COLOR(GREEN) "%u" CLEAR_COLOR,
+                    binding->button);
+            data++;
+            continue;
+        }
+
+        case ACTION_CLEAR_KEY_BINDING: {
+            const struct key_binding *const binding = &data->u.key;
+            fprintf(stderr, COLOR(YELLOW) "unbind ");
+            if (binding->is_release) {
+                fprintf(stderr, COLOR(YELLOW) "release ");
+            }
+            if (binding->modifiers != 0) {
+                fprintf(stderr, COLOR(BLUE) "%u" CLEAR_COLOR "+",
+                        binding->modifiers);
+            }
+            fprintf(stderr, COLOR(GREEN) "%ld" CLEAR_COLOR,
+                    binding->key_symbol);
+            data++;
+            continue;
+        }
+
+        default:
+            break;
         }
         action = action_strings[item->type];
         previous_data = data;

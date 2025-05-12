@@ -1,14 +1,18 @@
 #ifndef PARSE__UTILITY_H
 #define PARSE__UTILITY_H
 
-#include <X11/Xlib.h>
-
 /**
  * Parse very simple constructs like repeated space and resolve integers and
  * strings.
  *
  * This file is meant to be private to the parser.
  */
+
+#include <X11/Xlib.h>
+
+#include "parse/data_type.h"
+#include "parse/parse.h"
+#include "utility/utility.h"
 
 /* Skip to the beginning of the next line. */
 void skip_line(Parser *parser);

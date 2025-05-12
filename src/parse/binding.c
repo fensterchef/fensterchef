@@ -1,12 +1,47 @@
+/**
+ * This is how a binding is parsed:
+ *
+ * release? transparent? MODIFIERS+BUTTON|KEY_SYMBOL ACTIONS
+ * --------------------------------
+ *    continue_parsing_modifiers   -----------------
+ *                                          |        -------
+ *                                          |           |
+ *                          continue_pasing_button_or_key_symbol
+ *                                                      |
+ *                                              finish_parsing_binding
+ */
+
 #include "core/x11_synchronize.h"
 #include "parse/action.h"
+#include "parse/data_type.h"
 #include "parse/binding.h"
 #include "parse/input.h"
 #include "parse/parse.h"
+#include "parse/top.h"
 #include "parse/utility.h"
 
+/* parse information about a binding */
+struct parse_binding {
+    /* if there were were any modifiers */
+    bool has_anything;
+    /* the position of the transparent keyword if any */
+    size_t transparent_position;
+    /* if `release` was specified */
+    bool is_release;
+    /* if `transparent` was specified */
+    bool is_transparent;
+    /* the specified X key/button modifiers */
+    unsigned modifiers;
+    /* the X button index */
+    button_t button_index;
+    /* the key symbol */
+    KeySym key_symbol;
+    /* the key code */
+    KeyCode key_code;
+};
+
 /* Parse binding modifiers. */
-int continue_parsing_modifiers(Parser *parser,
+static int continue_parsing_modifiers(Parser *parser,
         struct parse_binding *binding)
 {
     int character;
@@ -64,7 +99,7 @@ int continue_parsing_modifiers(Parser *parser,
 
 
 /* Parse the following button or key symbol. */
-int continue_parsing_button_or_key_symbol(Parser *parser,
+static int continue_parsing_button_or_key_symbol(Parser *parser,
         struct parse_binding *binding)
 {
     unsigned flags;
@@ -95,26 +130,22 @@ int continue_parsing_button_or_key_symbol(Parser *parser,
 }
 
 /* Parse the next binding definition in @parser. */
-int finish_parsing_binding(Parser *parser, struct parse_binding *binding)
+static int finish_parsing_binding(Parser *parser, struct parse_binding *binding,
+        struct parse_action_list *list)
 {
-    struct parse_action_list list;
+    struct parse_action_list sub_list;
 
-    if (read_string(parser) != OK) {
-        emit_parse_error(parser, "expected action list");
-        skip_all_statements(parser);
+    ZERO(&sub_list, 1);
+    if (parse_top(parser, &sub_list) != OK) {
+        clear_parse_list(&sub_list);
         return ERROR;
     }
 
-    if (parser->is_string_quoted) {
+    if (sub_list.associations_length > 0) {
         emit_parse_error(parser,
-                "expected word and not a string for binding actions");
-        skip_all_statements(parser);
-        return ERROR;
-    } else if (continue_parsing_action(parser, &list) != OK) {
-        emit_parse_error(parser, "invalid action");
-        skip_all_statements(parser);
-        return ERROR;
+                "can not have associations within bindings");
     }
+    clear_parse_list_data(&sub_list);
 
     if (binding->button_index != BUTTON_NONE) {
         struct button_binding button;
@@ -125,48 +156,48 @@ int finish_parsing_binding(Parser *parser, struct parse_binding *binding)
         button.is_transparent = binding->is_transparent;
         button.modifiers = binding->modifiers;
         button.button = binding->button_index;
-        make_real_action_list(&button.actions, &list);
+        make_real_action_list(&button.actions, &sub_list);
 
         item.type = ACTION_BUTTON_BINDING;
         item.data_count = 1;
-        LIST_APPEND_VALUE(parser->items, item);
+        LIST_APPEND_VALUE(list->items, item);
 
         data.flags = 0;
         data.type = PARSE_DATA_TYPE_BUTTON;
         data.u.button = button;
-        LIST_APPEND_VALUE(parser->data, data);
+        LIST_APPEND_VALUE(list->data, data);
     } else {
+        struct key_binding key;
+        struct action_list_item item;
+        struct parse_generic_data data;
+
         if (binding->is_transparent) {
-            parser->index = binding->transparent_position;
+            parser->start_index = binding->transparent_position;
             emit_parse_error(parser,
                     "key bindings do not support 'transparent'");
-        } else {
-            struct key_binding key;
-            struct action_list_item item;
-            struct parse_generic_data data;
-
-            key.is_release = binding->is_release;
-            key.modifiers = binding->modifiers;
-            key.key_symbol = binding->key_symbol;
-            key.key_code = binding->key_code;
-            make_real_action_list(&key.actions, &list);
-
-            item.type = ACTION_KEY_BINDING;
-            item.data_count = 1;
-            LIST_APPEND_VALUE(parser->items, item);
-
-            data.flags = 0;
-            data.type = PARSE_DATA_TYPE_KEY;
-            data.u.key = key;
-            LIST_APPEND_VALUE(parser->data, data);
         }
+
+        key.is_release = binding->is_release;
+        key.modifiers = binding->modifiers;
+        key.key_symbol = binding->key_symbol;
+        key.key_code = binding->key_code;
+        make_real_action_list(&key.actions, &sub_list);
+
+        item.type = ACTION_KEY_BINDING;
+        item.data_count = 1;
+        LIST_APPEND_VALUE(list->items, item);
+
+        data.flags = 0;
+        data.type = PARSE_DATA_TYPE_KEY;
+        data.u.key = key;
+        LIST_APPEND_VALUE(list->data, data);
     }
 
     return OK;
 }
 
 /* Parse a full binding definition. */
-void continue_parsing_binding(Parser *parser)
+void continue_parsing_binding(Parser *parser, struct parse_action_list *list)
 {
     struct parse_binding binding;
 
@@ -186,14 +217,14 @@ void continue_parsing_binding(Parser *parser)
         }
     }
 
-    finish_parsing_binding(parser, &binding);
+    finish_parsing_binding(parser, &binding, list);
 }
 
 /* Parse a full unbind statement.
  *
  * Expects that an `unbind` has already been read.
  */
-void continue_parsing_unbind(Parser *parser)
+void continue_parsing_unbind(Parser *parser, struct parse_action_list *list)
 {
     struct parse_binding binding;
 
@@ -241,12 +272,12 @@ void continue_parsing_unbind(Parser *parser)
 
         item.type = ACTION_CLEAR_BUTTON_BINDING;
         item.data_count = 1;
-        LIST_APPEND_VALUE(parser->items, item);
+        LIST_APPEND_VALUE(list->items, item);
 
         data.flags = 0;
         data.type = PARSE_DATA_TYPE_BUTTON;
         data.u.button = button;
-        LIST_APPEND_VALUE(parser->data, data);
+        LIST_APPEND_VALUE(list->data, data);
     } else {
         struct key_binding key;
         struct action_list_item item;
@@ -260,11 +291,11 @@ void continue_parsing_unbind(Parser *parser)
 
         item.type = ACTION_CLEAR_KEY_BINDING;
         item.data_count = 1;
-        LIST_APPEND_VALUE(parser->items, item);
+        LIST_APPEND_VALUE(list->items, item);
 
         data.flags = 0;
         data.type = PARSE_DATA_TYPE_KEY;
         data.u.key = key;
-        LIST_APPEND_VALUE(parser->data, data);
+        LIST_APPEND_VALUE(list->data, data);
     }
 }

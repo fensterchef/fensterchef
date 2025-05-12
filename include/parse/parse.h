@@ -5,6 +5,7 @@
 #include "parse/data_type.h"
 #include "utility/list.h"
 #include "utility/types.h"
+#include "utility/utility.h"
 
 /* maximum value for a literal integer */
 #define PARSE_INTEGER_LIMIT 1000000
@@ -19,6 +20,33 @@
  */
 #define PARSE_MAX_ERROR_COUNT 30
 
+/* A list of actions with explicit count and capacity.  It also includes
+ * additional parsing information and associations.
+ */
+struct parse_action_list {
+    /* the number of open round brackets '(' */
+    unsigned bracket_count;
+    /* the current action parsing information */
+    struct parse_action_information {
+        /* Data for this action. */
+        LIST(struct parse_generic_data, data);
+        /* The offset within the string identifiers of the actions.
+         * If this is -1, then the action was disregarded.
+         */
+        int offset;
+    } actions[ACTION_SIMPLE_MAX];
+    /* The first and last (exclusive) action still valid.  There might be
+     * invalid actions inbetween, check the offset against -1 for that.
+     */
+    action_type_t first_action, last_action;
+    /* the action items being parsed */
+    LIST(struct action_list_item, items);
+    /* data for the action items being parsed */
+    LIST(struct parse_generic_data, data);
+    /* list of associations */
+    LIST(struct window_association, associations);
+};
+
 /* the parser object */
 typedef struct parser {
     /* the upper parser in the parsing process */
@@ -26,29 +54,21 @@ typedef struct parser {
 
     /* the start index of the last item */
     size_t start_index;
-    /* if the parser had any error */
-    int error_count;
+    /* the number of errors the parser had */
+    unsigned error_count;
 
     /* the path of the file, this is `NULL` if the source is a string */
     utf8_t *file_path;
-    /* the current index within the string */
-    size_t index;
-    /* the length of the the string */
-    size_t length;
 
-    /* last read string */
+    /* last read string (word or quoted string) */
     LIST(utf8_t, string);
     /* if this string has quotes */
     bool is_string_quoted;
 
-    /* the items being parsed */
-    LIST(struct action_list_item, items);
-    /* data for the action list items */
-    LIST(struct parse_generic_data, data);
-
-    /* list of associations */
-    LIST(struct window_association, associations);
-
+    /* the current index within the input stream */
+    size_t index;
+    /* the length of the the input stream */
+    size_t length;
     /* the text input stream */
     utf8_t input[];
 } Parser;
@@ -71,25 +91,13 @@ Parser *create_string_parser(const utf8_t *string);
 /* Destroy a previously allocated input parse object. */
 void destroy_parser(_Nullable Parser *parser);
 
-/* Start parsing the input within the parser object.
- *
- * The stream is activated using `create_file_stream()` or
- * `create_string_stream()`.
+/* Test the parser functionality.
  *
  * This function prints the kind of error to `stderr`.
  *
  * @return ERROR if a parsing error occured, OK otherwise.
  */
-int start_parser(Parser *parser);
-
-/* Parse using given parser object and use it to override the configuration.
- *
- * All parsed actions, bindings etc. are put into the configuration if this
- * function succeeds.
- *
- * @return ERROR if a parsing error occured, OK otherwise.
- */
-int parse_and_replace_configuration(Parser *parser);
+int test_parser(Parser *parser);
 
 /* Parse using given parser object and rull all actions within it.
  *

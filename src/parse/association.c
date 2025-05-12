@@ -1,17 +1,21 @@
 #include "core/window.h"
 #include "parse/action.h"
 #include "parse/parse.h"
+#include "parse/top.h"
 #include "parse/utility.h"
 
 /* Parse the next assigment in the active stream. */
-void continue_parsing_association(Parser *parser)
+void continue_parsing_association(Parser *parser,
+        struct parse_action_list *list)
 {
     utf8_t *next, *separator;
     size_t length;
-    int backslash_count;
+    unsigned backslash_count;
+    size_t association_index;
     struct window_association association;
-    struct parse_action_list list;
+    struct parse_action_list sub_list;
 
+    /* separate the parser string into instance and class */
     next = parser->string;
     length = parser->string_length;
     /* handle any comma "," that is escaped by a backslash "\" */
@@ -41,26 +45,26 @@ void continue_parsing_association(Parser *parser)
     }
     association.class_pattern = xstrndup(next, length);
 
-    if (read_string(parser) != OK) {
+    /* save this to the association string for error printing */
+    association_index = parser->start_index;
+
+    ZERO(&sub_list, 1);
+    if (parse_top(parser, &sub_list) != OK) {
+        emit_parse_error(parser,
+                "expected actions after association pattern");
+        clear_parse_list(&sub_list);
         free(association.instance_pattern);
         free(association.class_pattern);
-        emit_parse_error(parser, "unexpected token");
         return;
     }
 
-    if (parser->is_string_quoted) {
-        free(association.instance_pattern);
-        free(association.class_pattern);
+    if (sub_list.associations_length > 0) {
+        parser->start_index = association_index;
         emit_parse_error(parser,
-                "expected word and not a string for association");
-        skip_all_statements(parser);
-    } else if (continue_parsing_action(parser, &list) == OK) {
-        make_real_action_list(&association.actions, &list);
-        LIST_APPEND_VALUE(parser->associations, association);
-    } else {
-        free(association.instance_pattern);
-        free(association.class_pattern);
-        emit_parse_error(parser, "invalid action word");
-        skip_all_statements(parser);
+                "can not have associations within this association");
     }
+    clear_parse_list_data(&sub_list);
+
+    make_real_action_list(&association.actions, &sub_list);
+    LIST_APPEND_VALUE(list->associations, association);
 }

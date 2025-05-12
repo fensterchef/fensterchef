@@ -18,7 +18,15 @@
 #95 Make select action
     Make an action that selects a window without focusing it for further actions
 
-#96 ...
+#96 New auto fill void
+    When a window is opened and there is an empty frame one the monitor with the
+    current frame, open the window in that empty frame
+
+#97 ? Improve grabbing efficiency
+    We always re-grab all bindings, even if just one binding is added.  Optimize
+    this.
+
+#98 ...
 
 #200 Make repository for fensterchef-menu
     Menus of all kind for any window manager
@@ -33,9 +41,6 @@
     Make an additional repository that hosts fensterland
 
 [In Progress]
-#83 Add binding bindings
-    Allow binding actions to add bindings.  This simply requires the parser to
-    parse bindings within bindings.
 
 [Recheck]
 #1 ! Hover events not working in firefox sometimes
@@ -79,10 +84,6 @@
 
 #7 ! Discord hides itself again on WM_CHANGE_STATE
     When starting Discord, it sometimes hides itself again
-    Try to check electron source code I guess... I do not know if it was made
-    using electron actually. Is this on purpose?? I believe it is.
-    Using WM_STATE I believe fixed this bug.  This causes a bug with stacking
-    orders.
 
 [Trash]
 #10 ? Add frame indication for empty frames
@@ -458,3 +459,7 @@
 
 #94 ! Fix misplacement of notification window
     With multiple monitors, the notification window is not clipped correctly
+
+#83 Add binding bindings
+    Allow binding actions to add bindings.  This simply requires the parser to
+    parse bindings within bindings.

@@ -70,7 +70,7 @@ static inline struct internal_button_binding *find_button_binding(
     return binding;
 }
 
-/* Set the speficied button binding. */
+/* Set the specified button binding. */
 void set_button_binding(const struct button_binding *button_binding)
 {
     unsigned index;
@@ -184,7 +184,7 @@ static inline struct internal_key_binding *find_key_binding(
     return binding;
 }
 
-/* Set the speficied key binding. */
+/* Set the specified key binding. */
 void set_key_binding(const struct key_binding *key_binding)
 {
     KeyCode key_code;
