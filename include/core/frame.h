@@ -105,6 +105,12 @@ Frame *create_frame(void);
  */
 void destroy_frame(Frame *frame);
 
+/* Get the frame above the given one that has no parent.
+ *
+ * @frame may be NULL, then simply NULL is returned.
+ */
+Frame *get_root_frame(_Nullable const Frame *frame);
+
 /* Look through all visible frames to find a frame with given @number. */
 Frame *get_frame_by_number(unsigned number);
 
@@ -144,15 +150,239 @@ void reload_frame(Frame *frame);
  * The related window is either a window covering the monitor the frame is on
  * or the window within the frame.
  *
- * If you just want to set the focused frame without focusing the a window:
+ * If you just want to set the focused frame without focusing a window:
  * `Frame_focus = frame` suffices.
  */
 void set_focus_frame(Frame *frame);
 
-/* Get the frame above the given one that has no parent.
+/* Note for all `get_XXX_frame()` functions that the frame returned usually is a
+ * parent frame, meaning it has children, for example:
+ * +---+---+---+
+ * |   | 2 | 4 |
+ * | 1 |   +---+
+ * |   +---+ 5 |
+ * |   | 3 |   |
+ * +---+---+---+
  *
- * @frame may be NULL, then simply NULL is returned.
+ * (pointers illustrated by above numbers)
+ *
+ * `get_left_frame(2)` -> 1
+ * `get_left_frame(3)` -> 1
+ * `get_right_frame(3)` -> 4, 5
+ * `get_right_frame(1)` -> 2, 3
+ * `get_above_frame(3)` -> 2
+ * `get_above_frame(2)` -> NULL
+ * `get_below_frame(1)` -> NULL
+ * `get_left_frame(4)` -> 2, 3
+ *
+ * These function do NOT move across monitors.
  */
-Frame *get_root_frame(_Nullable const Frame *frame);
+
+/* Get the frame on the left of @frame. */
+Frame *get_left_frame(Frame *frame);
+
+/* Get the frame above @frame. */
+Frame *get_above_frame(Frame *frame);
+
+/* Get the frame on the right of @frame. */
+Frame *get_right_frame(Frame *frame);
+
+/* Get the frame below @frame. */
+Frame *get_below_frame(Frame *frame);
+
+/* Get the most left within @frame.
+ *
+ * @frame can not be NULL.
+ * @y is a hint so that the best frame is picked if more are most left.
+ *
+ * @return always a leaf frame and never NULL.
+ */
+Frame *get_most_left_leaf_frame(Frame *frame, int y);
+
+/* Get the frame at the top within @frame.
+ *
+ * @frame can not be NULL.
+ * @x is a hint so that the best frame is picked if more are at the most above.
+ *
+ * @return always a leaf frame and never NULL.
+ */
+Frame *get_top_leaf_frame(Frame *frame, int x);
+
+/* Get the most right frame within @frame.
+ *
+ * @frame can not be NULL.
+ * @y is a hint so that the best frame is picked if more are most right.
+ *
+ * @return always a leaf frame and never NULL.
+ */
+Frame *get_most_right_leaf_frame(Frame *frame, int y);
+
+/* Get the frame at the bottom within @frame.
+ *
+ * @frame can not be NULL.
+ * @x is a hint so that the best frame is picked if more are at the most bottom.
+ *
+ * @return always a leaf frame and never NULL.
+ */
+Frame *get_bottom_leaf_frame(Frame *frame, int x);
+
+/* The `move_frame_XXX()` functions work analogous.  Here is an illustration:
+ * +-----+---+---+---+
+ * |     |   2   |   |
+ * |  1  +---+---+ 5 |
+ * |     | 3 | 4 |   |
+ * +-----+---+---+---+
+ *
+ * Cases 1-5 (moving frame N to the left):
+ * 1. Nothing happens
+ * 2. Remove and split to the right of 1
+ * 3. Remove and split to the left of 2,4
+ * 4. Remove and split to the left of 3
+ * 5. Remove and split to the right of 2
+ *
+ * These special cases are handled as well:
+ * S1. A frame is moved into a void
+ * S2. Movement across monitors
+ */
+
+/* Move @frame to the left.
+ *
+ * @return if the frame could be moved.
+ */
+bool move_frame_left(Frame *frame);
+
+/* Move @frame up.
+ *
+ * @return if the frame could be moved.
+ */
+bool move_frame_up(Frame *frame);
+
+/* Move @frame to the right.
+ *
+ * @return if the frame could be moved.
+ */
+bool move_frame_right(Frame *frame);
+
+/* Move @frame down.
+ *
+ * @return if the frame could be moved.
+ */
+bool move_frame_down(Frame *frame);
+
+/* Exchange @from with @to.
+ *
+ * The exchange must be well defined for the two frames. These cases lead to
+ * undefined behavior:
+ * - @to is within @from
+ * - @from is within @to
+ */
+void exchange_frames(Frame *from, Frame *to);
+
+/* Apply the auto equalizationg to given frame.
+ *
+ * This moves up while the split direction matches @direction.
+ */
+void apply_auto_equalize(Frame *to, frame_split_direction_t direction);
+
+/* Get the minimum size the given frame should have. */
+void get_minimum_frame_size(Frame *frame, Size *size);
+
+/* Set the size of a frame, this also resize the child frames and windows. */
+void resize_frame(Frame *frame, int x, int y, unsigned width, unsigned height);
+
+/* Set the size of a frame, this also resizes the child frames and windows.
+ *
+ * This function ignores the @frame->ratio and instead uses the existing ratio
+ * between the windows to size them.
+ *
+ * This function is good for reloading child frames if the parent resized.
+ */
+void resize_frame_and_ignore_ratio(Frame *frame, int x, int y,
+        unsigned width, unsigned height);
+
+/* Increases the @edge of @frame by @amount. */
+int bump_frame_edge(Frame *frame, frame_edge_t edge, int amount);
+
+/* Set the size of all children within @frame to be equal within a certain
+ * direction.
+ */
+void equalize_frame(Frame *frame, frame_split_direction_t direction);
+
+/* Split a frame horizontally or vertically.
+ *
+ * @split_from is the frame to split a frame off of.
+ * @other is put into the the slot created by the split. It may be NULL, then
+ *        one is allocated by this function and filled using the stash if
+ *        auto-fill-void is configured.
+ * @is_left_split controls where @other goes together with @direction,
+ *                either on the top/left or bottom/right.
+ */
+void split_frame(Frame *split_from, Frame *other, bool is_left_split,
+        frame_split_direction_t direction);
+
+/* Remove a frame from the screen.
+ *
+ * This keeps the children within @frame in tact meaning they are not destroyed
+ * or stashed. This needs to be done externally.
+ * Stashing the frame before removing it is a good approach.
+ *
+ * @frame shall not be a root frame.
+ */
+void remove_frame(Frame *frame);
+
+/* Take frame away from the screen, this leaves a singular empty frame.
+ *
+ * @frame is made into a completely empty frame as all children and windows are
+ *        taken out.
+ *
+ * Consider using `link_into_stash()` after calling this.
+ *
+ * @return may be NULL if the frame is not worth stashing.
+ */
+Frame *stash_frame_later(Frame *frame);
+
+/* Links a frame into the stash linked list.
+ *
+ * The stash object also gets linked into the frame number list as frame object.
+ *
+ * @frame may be NULL, then nothing happens.
+ *
+ * Use this on frames returned by `stash_frame_later()`.
+ */
+void link_frame_into_stash(Frame *frame);
+
+/* Take frame away from the screen, hiding all inner windows and leaves a
+ * singular empty frame.
+ *
+ * This is a simple wrapper around `stash_frame_later()` that calls
+ * `link_into_stash()` immediately.
+ *
+ * @return the stashed frame, there is actually no reason to do anything with
+ *         this beside checking if it's NULL.
+ */
+Frame *stash_frame(Frame *frame);
+
+/* Unlinks given @frame from the stash linked list.
+ *
+ * This allows to pop arbitrary frames from the stash and not only the last
+ * stashed frame.
+ *
+ * @frame must have been stashed by a previous call to `stash_frame_later()`.
+ */
+void unlink_frame_from_stash(Frame *frame);
+
+/* Pop a frame from the stashed frame list.
+ *
+ * The caller may use `replace_frame()` with this frame and then destroy it.
+ *
+ * @return NULL when there are no stashed frames.
+ */
+Frame *pop_stashed_frame(void);
+
+/* Puts a frame from the stash into given @frame.
+ *
+ * @frame must be empty with no windows or children.
+ */
+void fill_void_with_stash(Frame *frame);
 
 #endif

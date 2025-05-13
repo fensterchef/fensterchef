@@ -6,7 +6,7 @@
 #include "frame.h"
 #include "log.h"
 #include "window.h"
-#include "x11_synchronize.h"
+#include "x11/display.h"
 
 /* the home directory */
 const char *Fensterchef_home;
@@ -155,9 +155,9 @@ int dump_frames_and_windows(const char *file_path)
             window != NULL;
             window = window->next) {
         fprintf(file, "%s\n",
-                window->name);
+                window->properties.name);
         fprintf(file, "%p %#lx %u",
-                (void*) window, window->client.id, window->number);
+                (void*) window, window->reference.id, window->number);
         fputc(window->state.is_visible ? 'V' : 'I', file);
 
         switch (window->state.previous_mode) {

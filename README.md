@@ -2,7 +2,7 @@
 
 Fensterchef is a keyboard-centric tiling window manager for unix systems using
 X11.  It is meant to be highly configurable both through a custom configuration
-language and the source code which is made using clean code principles.
+language and the source code made by using clean code principles.
 
 ## Installation
 
@@ -10,11 +10,11 @@ language and the source code which is made using clean code principles.
 
 Depends on: X11, Xrandr>=1.2, Xcursor and Xft
 
-To build you need: coreutils, pkgconf, any C99 compiler and a unix shell
+Building requires: coreutils, gzip, pkgconf, a C99 compiler and a unix shell
 
-```sh
-git clone https://github.com/fensterchef/fensterchef.git
-sudo ./make install
+```
+git clone https://github.com/fensterchef/fensterchef.git && cd fensterchef &&
+sudo ./make install &&
 fensterchef --version
 ```
 

@@ -11,7 +11,6 @@
  *                                              finish_parsing_binding
  */
 
-#include "core/x11_synchronize.h"
 #include "parse/action.h"
 #include "parse/data_type.h"
 #include "parse/binding.h"
@@ -19,6 +18,7 @@
 #include "parse/parse.h"
 #include "parse/top.h"
 #include "parse/utility.h"
+#include "x11/display.h"
 
 /* parse information about a binding */
 struct parse_binding {

@@ -1,12 +1,15 @@
 #ifndef WINDOW_LIST_H
 #define WINDOW_LIST_H
 
-#include "window.h"
+#include <X11/X.h>
+
+#include "font.h"
+#include "x11/synchronize.h"
 
 /* user window list window */
 extern struct window_list {
     /* the X correspondence */
-    XClient client;
+    XReference reference;
     /* Xft drawing context */
     XftDraw *xft_draw;
     /* the currently selected window index */

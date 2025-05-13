@@ -3,7 +3,8 @@
 #include "configuration.h"
 #include "log.h"
 #include "notification.h"
-#include "x11_synchronize.h"
+#include "x11/display.h"
+#include "x11/synchronize.h"
 
 /* notification window */
 Notification *system_notification;
@@ -13,42 +14,42 @@ static int initialize_notification(Notification *notification)
 {
     XSetWindowAttributes attributes;
 
-    notification->client.x = -1;
-    notification->client.y = -1;
-    notification->client.width = 1;
-    notification->client.height = 1;
-    notification->client.border_width = configuration.border_size;
-    notification->client.border = configuration.foreground;
+    notification->reference.x = -1;
+    notification->reference.y = -1;
+    notification->reference.width = 1;
+    notification->reference.height = 1;
+    notification->reference.border_width = configuration.border_size;
+    notification->reference.border = configuration.foreground;
     notification->foreground = configuration.foreground;
-    attributes.border_pixel = notification->client.border;
+    attributes.border_pixel = notification->reference.border;
     attributes.backing_pixel = configuration.background;
     /* indicate to not manage the window */
     attributes.override_redirect = True;
-    notification->client.id = XCreateWindow(display,
-                DefaultRootWindow(display), notification->client.x,
-                notification->client.y, notification->client.width,
-                notification->client.height,
-                notification->client.border_width, CopyFromParent,
+    notification->reference.id = XCreateWindow(display,
+                DefaultRootWindow(display), notification->reference.x,
+                notification->reference.y, notification->reference.width,
+                notification->reference.height,
+                notification->reference.border_width, CopyFromParent,
                 InputOutput, (Visual*) CopyFromParent,
                 CWBorderPixel | CWBackPixel | CWOverrideRedirect,
                 &attributes);
 
-    if (notification->client.id == None) {
+    if (notification->reference.id == None) {
         LOG_ERROR("failed creating notification window\n");
         return ERROR;
     }
 
     const char *const notification_name = "[fensterchef] notification";
-    XStoreName(display, notification->client.id, notification_name);
+    XStoreName(display, notification->reference.id, notification_name);
 
     /* create an XftDraw object if not done already */
-    notification->xft_draw = XftDrawCreate(display, notification->client.id,
+    notification->xft_draw = XftDrawCreate(display, notification->reference.id,
             DefaultVisual(display, DefaultScreen(display)),
             DefaultColormap(display, DefaultScreen(display)));
 
     if (notification->xft_draw == NULL) {
         LOG_ERROR("could not create XftDraw for the notification window\n");
-        XDestroyWindow(display, notification->client.id);
+        XDestroyWindow(display, notification->reference.id);
         return ERROR;
     }
     return OK;
@@ -120,15 +121,15 @@ static int render_notification(Notification *notification,
     }
 
     /* set the window size, position and set it above */
-    configure_client(&notification->client,
+    configure_client(&notification->reference,
             x, y, text.width, text.height,
-            notification->client.border_width);
+            notification->reference.border_width);
 
     /* put the window at the top */
-    XRaiseWindow(display, notification->client.id);
+    XRaiseWindow(display, notification->reference.id);
 
     /* show the window */
-    map_client(&notification->client);
+    map_client(&notification->reference);
 
     /* draw background and text */
     XftDrawRect(notification->xft_draw, &background_color,
@@ -140,8 +141,8 @@ static int render_notification(Notification *notification,
 
     LOG_DEBUG("showed notification: %s at %R with offset: %P\n",
             message,
-            notification->client.x, notification->client.y,
-            notification->client.width, notification->client.height,
+            notification->reference.x, notification->reference.y,
+            notification->reference.width, notification->reference.height,
             text.x, text.y);
 
     free_xft_color(&background_color);
@@ -168,15 +169,16 @@ void set_system_notification(const utf8_t *message, int x, int y)
     }
 
     /* change border color and size of the notification window */
-    change_client_attributes(&system_notification->client,
+    change_client_attributes(&system_notification->reference,
             configuration.border_color);
     system_notification->background = configuration.background;
 
     /* set the window size, position and set it above */
-    configure_client(&system_notification->client,
-            system_notification->client.x, system_notification->client.y,
-            system_notification->client.width,
-            system_notification->client.height,
+    configure_client(&system_notification->reference,
+            system_notification->reference.x,
+            system_notification->reference.y,
+            system_notification->reference.width,
+            system_notification->reference.height,
             configuration.border_size);
 
     if (render_notification(system_notification, message, x, y) == ERROR) {

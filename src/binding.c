@@ -1,6 +1,7 @@
 #include "binding.h"
 #include "log.h"
-#include "x11_synchronize.h"
+#include "x11/display.h"
+#include "x11/synchronize.h"
 
 /* additional modifiers on top of the ones used in binding setting */
 static unsigned modifiers_addition = Mod4Mask;

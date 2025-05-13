@@ -5,10 +5,10 @@
 #include "frame.h"
 #include "log.h"
 #include "notification.h"
-#include "frame_stashing.h"
+#include "window.h"
 #include "window_list.h"
-#include "window_stacking.h"
-#include "x11_synchronize.h"
+#include "x11/display.h"
+#include "x11/management.h"
 
 /* user window list window */
 struct window_list WindowList;
@@ -18,40 +18,40 @@ static int initialize_window_list(void)
 {
     XSetWindowAttributes attributes;
 
-    if (WindowList.client.id == None) {
-        WindowList.client.x = -1;
-        WindowList.client.y = -1;
-        WindowList.client.width = 1;
-        WindowList.client.height = 1;
-        WindowList.client.border_width = configuration.border_size;
-        WindowList.client.border = configuration.border_color;
-        attributes.border_pixel = WindowList.client.border;
+    if (WindowList.reference.id == None) {
+        WindowList.reference.x = -1;
+        WindowList.reference.y = -1;
+        WindowList.reference.width = 1;
+        WindowList.reference.height = 1;
+        WindowList.reference.border_width = configuration.border_size;
+        WindowList.reference.border = configuration.border_color;
+        attributes.border_pixel = WindowList.reference.border;
         attributes.backing_pixel = configuration.background;
         attributes.event_mask = KeyPressMask | ExposureMask | FocusChangeMask;
         /* indicate to not manage the window */
         attributes.override_redirect = True;
-        WindowList.client.id = XCreateWindow(display,
-                    DefaultRootWindow(display), WindowList.client.x,
-                    WindowList.client.y, WindowList.client.width,
-                    WindowList.client.height,
-                    WindowList.client.border_width, CopyFromParent,
+        WindowList.reference.id = XCreateWindow(display,
+                    DefaultRootWindow(display), WindowList.reference.x,
+                    WindowList.reference.y, WindowList.reference.width,
+                    WindowList.reference.height,
+                    WindowList.reference.border_width, CopyFromParent,
                     InputOutput, (Visual*) CopyFromParent,
                     CWBorderPixel | CWBackPixel | CWOverrideRedirect |
                         CWEventMask,
                     &attributes);
 
-        if (WindowList.client.id == None) {
+        if (WindowList.reference.id == None) {
             LOG_ERROR("failed creating window list window\n");
             return ERROR;
         }
 
         const char *const window_list_name = "[fensterchef] window list";
-        XStoreName(display, WindowList.client.id, window_list_name);
+        XStoreName(display, WindowList.reference.id, window_list_name);
     }
 
     /* create an XftDraw object if not done already */
     if (WindowList.xft_draw == NULL) {
-        WindowList.xft_draw = XftDrawCreate(display, WindowList.client.id,
+        WindowList.xft_draw = XftDrawCreate(display, WindowList.reference.id,
                 DefaultVisual(display, DefaultScreen(display)),
                 DefaultColormap(display, DefaultScreen(display)));
 
@@ -84,7 +84,8 @@ static inline int get_window_string(FcWindow *window, utf8_t *buffer,
         size_t buffer_size)
 {
     return snprintf(buffer, buffer_size, "%u%c%s",
-            window->number, get_indicator_character(window), window->name);
+            window->number, get_indicator_character(window),
+            window->properties.name);
 }
 
 /* Get the window currently selected in the window list. */
@@ -207,13 +208,13 @@ static int render_window_list(void)
     height = MIN(height, monitor->height);
 
     /* change border color of the window list window */
-    change_client_attributes(&WindowList.client, configuration.foreground);
+    change_client_attributes(&WindowList.reference, configuration.foreground);
 
     /* set the list position and size so it is in the top right of the monitor
      * containing the focus frame
      * TODO: make this configurable
      */
-    configure_client(&WindowList.client,
+    configure_client(&WindowList.reference,
             monitor->x + monitor->width - width -
                 configuration.border_size * 2, monitor->y,
             width, height, configuration.border_size);
@@ -318,7 +319,7 @@ static void handle_key_press(XKeyPressedEvent *event)
 {
     KeySym key_symbol;
 
-    if (event->window != WindowList.client.id) {
+    if (event->window != WindowList.reference.id) {
         return;
     }
 
@@ -328,7 +329,7 @@ static void handle_key_press(XKeyPressedEvent *event)
     case XK_q:
     case XK_n:
     case XK_Escape:
-        unmap_client(&WindowList.client);
+        unmap_client(&WindowList.reference);
         break;
 
     /* confirm selection */
@@ -339,7 +340,7 @@ static void handle_key_press(XKeyPressedEvent *event)
             focus_and_let_window_appear(selected, !!(event->state & ShiftMask));
             WindowList.should_revert_focus = false;
         }
-        unmap_client(&WindowList.client);
+        unmap_client(&WindowList.reference);
         break;
     }
 
@@ -379,7 +380,8 @@ static void handle_focus_out(XFocusOutEvent *event)
     /* if the this event is for the window list and it is mapped (we also get
      * this event after the window was unmapped)
      */
-    if (event->window != WindowList.client.id || !WindowList.client.is_mapped) {
+    if (event->window != WindowList.reference.id ||
+            !WindowList.reference.is_mapped) {
         return;
     }
 
@@ -389,13 +391,14 @@ static void handle_focus_out(XFocusOutEvent *event)
     }
 
     /* refocus the window list */
-    XSetInputFocus(display, WindowList.client.id, RevertToParent, CurrentTime);
+    XSetInputFocus(display, WindowList.reference.id,
+            RevertToParent, CurrentTime);
 }
 
 /* Handle an UnmapNotify event. */
 static void handle_unmap_notify(XUnmapEvent *event)
 {
-    if (event->window != WindowList.client.id) {
+    if (event->window != WindowList.reference.id) {
         return;
     }
 
@@ -427,7 +430,7 @@ void handle_window_list_event(XEvent *event)
     }
 
     /* re-rendering after every event allows to react to dynamic changes */
-    if (WindowList.client.is_mapped) {
+    if (WindowList.reference.is_mapped) {
         render_window_list();
     }
 }
@@ -443,8 +446,8 @@ int show_window_list(void)
     }
 
     /* if the window list is already shown, toggle the visibity */
-    if (WindowList.client.is_mapped) {
-        unmap_client(&WindowList.client);
+    if (WindowList.reference.is_mapped) {
+        unmap_client(&WindowList.reference);
         return OK;
     }
 
@@ -474,10 +477,11 @@ int show_window_list(void)
     }
 
     /* show the window list window on screen */
-    map_client_raised(&WindowList.client);
+    map_client_raised(&WindowList.reference);
 
     /* focus the window list */
-    XSetInputFocus(display, WindowList.client.id, RevertToParent, CurrentTime);
+    XSetInputFocus(display, WindowList.reference.id,
+            RevertToParent, CurrentTime);
     WindowList.should_revert_focus = true;
     return OK;
 }

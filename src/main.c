@@ -6,8 +6,8 @@
 #include "log.h"
 #include "monitor.h"
 #include "program_options.h"
-#include "window_properties.h"
-#include "x11_synchronize.h"
+#include "x11/display.h"
+#include "x11/synchronize.h"
 
 /* FENSTERCHEF main entry point. */
 int main(int argc, char **argv)
@@ -30,9 +30,6 @@ int main(int argc, char **argv)
 
     /* open connection to the X server */
     open_connection();
-
-    /* initialize the X atoms */
-    initialize_atoms();
 
     /* try to take control of the window manager role */
     take_control();
@@ -71,9 +68,5 @@ int main(int argc, char **argv)
     XFlush(display);
 
     /* run the main event loop */
-    while (next_cycle() == OK) {
-        /* nothing to do */
-    }
-
-    quit_fensterchef(Fensterchef_is_running ? EXIT_FAILURE : EXIT_SUCCESS);
+    run_event_loop();
 }

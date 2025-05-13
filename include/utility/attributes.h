@@ -26,4 +26,9 @@
 /* Mark a pointer parameter to a function as "stores output of the function". */
 #define _Out
 
+/* Mark a pointer parameter to a function as "stores output of the function" but
+ * also that it acts as input parameter.
+ */
+#define _Inout
+
 #endif

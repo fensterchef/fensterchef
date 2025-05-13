@@ -1,23 +1,21 @@
 #!/bin/sh
 
-CC=cc
+CC="${CC-cc}"
 CFLAGS='-std=c99 -Iinclude -Iinclude/core -Wall -Wextra -O3 -DNO_ANSII_COLORS'
-LDLIBS=
-# Packages (added to CFLAGS and LDLIBS before compiling/linking)
+LDLIBS="$LDLIBS"
 PACKAGES='x11 xrandr xcursor xft fontconfig'
-PREFIX=/usr
-SOURCES=src/*.c\ src/utility/*.c\ src/parse/*.c
+PREFIX="${PREFIX-/usr}"
+SOURCES=src/utility/*.c\ src/*.c\ src/x11/*.c\ src/parse/*.c
 
 usage() {
-    echo "Usage: $0 [VARIABLE[+]=VALUE]... TARGET"
+    echo "Usage: $0 TARGET..."
     echo 'Targets: fensterchef install uninstall clean'
-    echo 'Variables: CC CFLAGS LDLIBS PACKAGES PREFIX SOURCES'
+    echo 'Variables: CC PREFIX'
     exit $1
 }
 
 _command() {
-    echo "$@"
-    "$@" || exit 1
+    echo "$@" >&2 && "$@" || exit 1
 }
 
 fensterchef() {
@@ -27,45 +25,32 @@ fensterchef() {
 }
 
 install() {
-    if [ -f fensterchef ] ; then
-        echo 'fensterchef has been built already'
-    else
-        fensterchef
-    fi
+    [ -f fensterchef ] && echo 'fensterchef has been built already' >&2 || fensterchef
     _command mkdir -p "$PREFIX/share/licenses"
-    _command mkdir -p "$PREFIX/bin"
-    _command mkdir -p "$PREFIX/share/man/man1"
-    _command mkdir -p "$PREFIX/share/man/man5"
     _command cp LICENSE.txt "$PREFIX/share/licenses"
+    _command mkdir -p "$PREFIX/bin"
     _command cp fensterchef "$PREFIX/bin"
-    _command gzip --best -c doc/fensterchef.1 >"$PREFIX/share/man/man1/fensterchef.1"
-    _command gzip --best -c doc/fensterchef.5 >"$PREFIX/share/man/man5/fensterchef.5"
+    _command mkdir -p "$PREFIX/share/man/man1"
+    _command gzip --best -c doc/fensterchef.1 >"$PREFIX/share/man/man1/fensterchef.1.gz"
+    _command mkdir -p "$PREFIX/share/man/man5"
+    _command gzip --best -c doc/fensterchef.5 >"$PREFIX/share/man/man5/fensterchef.5.gz"
 }
 
 uninstall() {
     license="$PREFIX/share/licenses/fensterchef/"
-    if [ -d "$license" ] ; then
-        _command rm -rf "$license"
-    fi
-
+    [ -d "$license" ] && _command rm -rf "$license"
     for f in "$PREFIX/bin/fensterchef" \
              "$PREFIX/share/man/man1/fensterchef.1" \
              "$PREFIX/share/man/man1/fensterchef.5" ; do
-        if [ -f "$f" ] ; then
-            _command rm -f "$f"
-        fi
+        [ -f "$f" ] && _command rm -f "$f"
     done
 }
 
 clean() {
-    if [ -f fensterchef ] ; then
-        _command rm fensterchef
-    fi
+    [ -f fensterchef ] && _command rm fensterchef
 }
 
-if [ $# -eq 0 ] ; then
-    usage 0
-fi
+[ $# -eq 0 ] && usage 0
 
 while [ $# -ne 0 ] ; do
     case "$1" in
@@ -74,17 +59,6 @@ while [ $# -ne 0 ] ; do
     install) install ;;
     uninstall) uninstall ;;
     clean) clean ;;
-    # Overriding/appending of variables
-    CC=*) CC=`expr "$1" : 'CC=\(.*\)'` ;;
-    CFLAGS=*) CFLAGS=`expr "$1" : 'CFLAGS=\(.*\)'` ;;
-    CFLAGS+=*) CFLAGS="$CFLAGS `expr "$1" : 'CFLAGS+=\(.*\)'`" ;;
-    LDLIBS=*) LDLIBS=`expr "$1" : 'LDLIBS=\(.*\)'` ;;
-    LDLIBS+=*) LDLIBS="$LDLIBS `expr "$1" : 'LDLIBS+=\(.*\)'`" ;;
-    PACKAGES=*) PACKAGES=`expr "$1" : 'PACKAGES=\(.*\)'` ;;
-    PACKAGES+=*) PACKAGES="$PACKAGES `expr "$1" : 'PACKAGES+=\(.*\)'`" ;;
-    PREFIX=*) PREFIX=`expr "$1" : 'PREFIX=\(.*\)'` ;;
-    SOURCES=*) SOURCES=`expr "$1" : 'SOURCES=\(.*\)'` ;;
-    SOURCES+=*) SOURCES="$SOURCES `expr "$1" : 'SOURCES+=\(.*\)'`" ;;
     *)
         echo "what is \"$1\"?"
         usage 1

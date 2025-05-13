@@ -1,5 +1,5 @@
-#ifndef EVENT_H
-#define EVENT_H
+#ifndef X11__EVENT_H
+#define X11__EVENT_H
 
 /**
  * This handles all kinds of X events.
@@ -12,8 +12,10 @@
  * to do now but to take note of it.
  */
 
+#include <X11/Xlib.h>
+
 #include "bits/window.h"
-#include "x11_management.h"
+#include "x11/ewmh.h"
 
 /* Create a signal handler for `SIGALRM`. */
 void initialize_signal_handlers(void);
@@ -25,10 +27,8 @@ void initialize_signal_handlers(void);
  */
 int next_cycle(void);
 
-/* Start resizing a window using the mouse. */
-void initiate_window_move_resize(FcWindow *window,
-        wm_move_resize_direction_t direction,
-        int start_x, int start_y);
+/* Run the main event loop that handles all X events. */
+void run_event_loop(void);
 
 /* Handle the given X event. */
 void handle_event(XEvent *event);

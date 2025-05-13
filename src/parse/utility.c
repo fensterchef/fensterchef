@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include <X11/keysym.h>
+#include <X11/Xlib.h>
 
 #include "core/binding.h"
 #include "core/log.h"

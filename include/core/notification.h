@@ -1,14 +1,14 @@
 #ifndef NOTIFICATION_H
 #define NOTIFICATION_H
 
-#include "font.h" /* XftDraw */
-#include "utility/utility.h" /* utf8_t */
-#include "x11_management.h" /* XClient */
+#include "font.h"
+#include "utility/types.h"
+#include "x11/synchronize.h"
 
 /* notification window */
 typedef struct notification {
     /* the X correspondence */
-    XClient client;
+    XReference reference;
     /* Xft drawing context */
     XftDraw *xft_draw;
     /* text color */

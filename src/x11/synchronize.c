@@ -1,72 +1,16 @@
-#include <X11/XKBlib.h>
-#include <X11/Xproto.h>
+#include <X11/Xatom.h>
 
 #include "binding.h"
 #include "cursor.h"
 #include "frame.h"
 #include "log.h"
 #include "window.h"
-#include "window_properties.h"
-#include "window_stacking.h"
-#include "x11_synchronize.h"
+#include "x11/display.h"
 
 /* hints set by all parts of the program indicating that a specific part needs
  * to be synchronized
  */
 unsigned synchronization_flags;
-
-/* first index of an xkb event */
-int xkb_event_base, xkb_error_base;
-
-/* first index of a randr event */
-int randr_event_base, randr_error_base;
-
-/* display to the X server */
-Display *display;
-
-/* Open the X11 display (X server connection). */
-void open_connection(void)
-{
-    int major_version, minor_version;
-    int status;
-
-    major_version = XkbMajorVersion;
-    minor_version = XkbMinorVersion;
-    display = XkbOpenDisplay(NULL, &xkb_event_base, &xkb_error_base,
-            &major_version, &minor_version, &status);
-    if (display == NULL) {
-        LOG_ERROR("could not open display: " COLOR(RED));
-        switch (status) {
-        case XkbOD_BadLibraryVersion:
-            fprintf(stderr, "using a bad XKB library version\n");
-            break;
-
-        case XkbOD_ConnectionRefused:
-            fprintf(stderr, "could not open connection\n");
-            break;
-
-        case XkbOD_BadServerVersion:
-            fprintf(stderr, "the server and client XKB versions mismatch\n");
-            break;
-
-        case XkbOD_NonXkbServer:
-            fprintf(stderr, "the server does not have the XKB extension\n");
-            break;
-        }
-        exit(EXIT_FAILURE);
-    }
-
-    /* receive events when the keyboard changes */
-    XkbSelectEventDetails(display, XkbUseCoreKbd, XkbNewKeyboardNotify,
-            XkbNKN_KeycodesMask,
-            XkbNKN_KeycodesMask);
-    /* listen for changes to key symbols and the modifier map */
-    XkbSelectEventDetails(display, XkbUseCoreKbd, XkbMapNotify,
-            XkbAllClientInfoMask,
-            XkbAllClientInfoMask);
-
-    LOG("%D\n", display);
-}
 
 /* Set the client list root property. */
 static void synchronize_client_list(void)
@@ -96,7 +40,7 @@ static void synchronize_client_list(void)
 
     /* sort the list in order of the Z stacking (bottom to top) */
     for (window = Window_bottom; window != NULL; window = window->above) {
-        client_list.ids[index] = window->client.id;
+        client_list.ids[index] = window->reference.id;
         index++;
     }
     /* set the `_NET_CLIENT_LIST_STACKING` property */
@@ -107,7 +51,7 @@ static void synchronize_client_list(void)
     index = 0;
     /* sort the list in order of their age (oldest to newest) */
     for (window = Window_oldest; window != NULL; window = window->newer) {
-        client_list.ids[index] = window->client.id;
+        client_list.ids[index] = window->reference.id;
         index++;
     }
     /* set the `_NET_CLIENT_LIST` property */
@@ -149,7 +93,7 @@ void synchronize_with_server(unsigned flags)
         for (FcWindow *window = Window_first;
                 window != NULL;
                 window = window->next) {
-            grab_configured_buttons(window->client.id);
+            grab_configured_buttons(window->reference.id);
         }
         synchronization_flags &= ~SYNCHRONIZE_BUTTON_BINDING;
     }
@@ -211,24 +155,24 @@ void synchronize_with_server(unsigned flags)
         if (!window->state.is_visible) {
             continue;
         }
-        configure_client(&window->client, window->x, window->y,
+        configure_client(&window->reference, window->x, window->y,
                 window->width, window->height, window->border_size);
-        change_client_attributes(&window->client, window->border_color);
+        change_client_attributes(&window->reference, window->border_color);
 
         atoms[0] = ATOM(_NET_WM_STATE_HIDDEN);
         remove_window_states(window, atoms, 1);
 
-        if (window->wm_state != NormalState) {
-            window->wm_state = NormalState;
+        if (window->properties.wm_state != NormalState) {
+            window->properties.wm_state = NormalState;
             atoms[0] = NormalState;
             /* no icon */
             atoms[1] = None;
-            XChangeProperty(display, window->client.id, ATOM(WM_STATE),
+            XChangeProperty(display, window->reference.id, ATOM(WM_STATE),
                     ATOM(WM_STATE), 32, PropModeReplace,
                     (unsigned char*) atoms, 2);
         }
 
-        map_client(&window->client);
+        map_client(&window->reference);
     }
 
     /* unmap all invisible windows */
@@ -242,16 +186,121 @@ void synchronize_with_server(unsigned flags)
         atoms[0] = ATOM(_NET_WM_STATE_HIDDEN);
         add_window_states(window, atoms, 1);
 
-        if (window->wm_state != WithdrawnState) {
-            window->wm_state = WithdrawnState;
+        if (window->properties.wm_state != WithdrawnState) {
+            window->properties.wm_state = WithdrawnState;
             atoms[0] = WithdrawnState;
             /* no icon */
             atoms[1] = None;
-            XChangeProperty(display, window->client.id, ATOM(WM_STATE),
+            XChangeProperty(display, window->reference.id, ATOM(WM_STATE),
                     ATOM(WM_STATE), 32, PropModeReplace,
                     (unsigned char*) atoms, 2);
         }
 
-        unmap_client(&window->client);
+        unmap_client(&window->reference);
+    }
+}
+
+/* Show the client on the X server. */
+void map_client(XReference *reference)
+{
+    if (reference->is_mapped) {
+        return;
+    }
+
+    LOG("showing client %w\n", reference->id);
+
+    reference->is_mapped = true;
+
+    XMapWindow(display, reference->id);
+}
+
+/* Show the client on the X server at the top. */
+void map_client_raised(XReference *reference)
+{
+    if (reference->is_mapped) {
+        return;
+    }
+
+    LOG("showing client %w raised\n", reference->id);
+
+    reference->is_mapped = true;
+
+    XMapRaised(display, reference->id);
+}
+
+/* Hide the client on the X server. */
+void unmap_client(XReference *reference)
+{
+    if (!reference->is_mapped) {
+        return;
+    }
+
+    LOG("hiding client %w\n", reference->id);
+
+    reference->is_mapped = false;
+
+    XUnmapWindow(display, reference->id);
+}
+
+/* Set the size of a window associated to the X server. */
+void configure_client(XReference *reference, int x, int y, unsigned width,
+        unsigned height, unsigned border_width)
+{
+    XWindowChanges changes;
+    unsigned mask = 0;
+
+    if (reference->x != x) {
+        reference->x = x;
+        changes.x = x;
+        mask |= CWX;
+    }
+
+    if (reference->y != y) {
+        reference->y = y;
+        changes.y = y;
+        mask |= CWY;
+    }
+
+    if (reference->width != width) {
+        reference->width = width;
+        changes.width = width;
+        mask |= CWWidth;
+    }
+
+    if (reference->height != height) {
+        reference->height = height;
+        changes.height = height;
+        mask |= CWHeight;
+    }
+
+    if (reference->border_width != border_width) {
+        reference->border_width = border_width;
+        changes.border_width = border_width;
+        mask |= CWBorderWidth;
+    }
+
+    if (mask != 0) {
+        LOG("configuring client %w to %R %u\n",
+                reference->id, x, y, width, height, border_width);
+        XConfigureWindow(display, reference->id, mask, &changes);
+    }
+}
+
+/* Set the client border color. */
+void change_client_attributes(XReference *reference, unsigned border_color)
+{
+    XSetWindowAttributes attributes;
+    unsigned mask = 0;
+
+    if (reference->border != border_color) {
+        reference->border = border_color;
+        attributes.border_pixel = border_color;
+        mask |= CWBorderPixel;
+    }
+
+    if (mask != 0) {
+        LOG("changing attributes of client %w to " COLOR(GREEN) "#%08x\n",
+                reference->id, border_color);
+        XChangeWindowAttributes(display, reference->id, mask, &attributes);
     }
 }

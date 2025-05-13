@@ -4,7 +4,7 @@
 #include "font.h"
 #include "log.h"
 #include "utility/utility.h"
-#include "x11_synchronize.h"
+#include "x11/display.h"
 
 /* a list of known fonts */
 struct font {

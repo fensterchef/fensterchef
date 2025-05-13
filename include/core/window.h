@@ -3,14 +3,15 @@
 
 #include <stdint.h>
 
+#include <X11/Xutil.h>
+
 #include "bits/frame.h"
 #include "bits/window.h"
 #include "configuration.h"
 #include "monitor.h"
 #include "utility/attributes.h"
-#include "window_state.h"
-
-#include "x11_management.h"
+#include "x11/ewmh.h"
+#include "x11/synchronize.h"
 
 /* the maximum width or height of a window */
 #define WINDOW_MAXIMUM_SIZE UINT16_MAX
@@ -33,20 +34,25 @@ struct window_association {
     struct action_list actions;
 };
 
-/* A window is a wrapper around an X window, it is always part of a few global
- * linked list and has a unique id (number).
- */
-struct fensterchef_window {
-    /* Reference counter to keep the pointer around for longer after the window
-     * has been destroyed.  A destroyed but still referenced window will have
-     * `client.id` set to `None`.  All other struct members are invalid at that
-     * point.
-     */
-    unsigned reference_count;
+/* the mode of the window */
+typedef enum window_mode {
+    /* the window is part of the tiling layout (if visible) */
+    WINDOW_MODE_TILING,
+    /* the window is a floating window */
+    WINDOW_MODE_FLOATING,
+    /* the window is a fullscreen window */
+    WINDOW_MODE_FULLSCREEN,
+    /* the window is attached to an edge of the screen, usually not focusable */
+    WINDOW_MODE_DOCK,
+    /* the window is in the background */
+    WINDOW_MODE_DESKTOP,
 
-    /* the server's view of the window */
-    XClient client;
+    /* the maximum value of a window mode */
+    WINDOW_MODE_MAX,
+} window_mode_t;
 
+/* properties a window can have */
+typedef struct window_properties {
     /* window name */
     utf8_t *name;
 
@@ -80,6 +86,40 @@ struct fensterchef_window {
      * `WM_STATE_NORMAL` or `WM_STATE_WITHDRAWN`
      */
     Atom wm_state;
+} WindowProperties;
+
+/* The state of the window signals our window manager what kind of window it is
+ * and how the window should behave.
+ */
+typedef struct window_state {
+    /* if the window is visible (mapped) */
+    bool is_visible;
+    /* if the user ever requested to close the window */
+    bool was_close_requested;
+    /* when the user requested to close the window */
+    time_t user_request_close_time;
+    /* the current window mode */
+    window_mode_t mode;
+    /* the previous window mode */
+    window_mode_t previous_mode;
+} WindowState;
+
+/* A window is a wrapper around an X window, it is always part of a few global
+ * linked list and has a unique id (number).
+ */
+struct fensterchef_window {
+    /* Reference counter to keep the pointer around for longer after the window
+     * has been destroyed.  A destroyed but still referenced window will have
+     * `client.id` set to `None`.  All other struct members are invalid at that
+     * point.
+     */
+    unsigned reference_count;
+
+    /* the server's view of the window */
+    XReference reference;
+
+    /* the X properties of this window */
+    WindowProperties properties;
 
     /* the window state */
     WindowState state;
@@ -163,13 +203,19 @@ extern FcWindow *Window_pressed;
 /* the selected window used for actions */
 extern FcWindow *Window_selected;
 
-/* Increment the reference count of the window. */
-void reference_window(FcWindow *window);
+/* Add window states to the window's properties. */
+void add_window_states(FcWindow *window, Atom *states,
+        unsigned number_of_states);
 
-/* Decrement the reference count of the window and free @window when it reaches
- * 0.
- */
-void dereference_window(FcWindow *window);
+/* Remove window states from the window's properties. */
+void remove_window_states(FcWindow *window, Atom *states,
+        unsigned number_of_states);
+
+/* Clear all currently set window associations. */
+void clear_window_associations(void);
+
+/* Update the property within @window corresponding to given @atom. */
+bool cache_window_property(FcWindow *window, Atom atom);
 
 /* Add a new association from window instance/class to actions.
  *
@@ -185,8 +231,13 @@ void add_window_associations(struct window_association *associations,
  */
 bool run_window_association(FcWindow *window);
 
-/* Clear all currently set window associations. */
-void clear_window_associations(void);
+/* Increment the reference count of the window. */
+void reference_window(FcWindow *window);
+
+/* Decrement the reference count of the window and free @window when it
+ * reaches 0.
+ */
+void dereference_window(FcWindow *window);
 
 /* Create a window object and add it to all window lists.
  *
@@ -200,8 +251,38 @@ FcWindow *create_window(Window id);
  */
 void destroy_window(FcWindow *window);
 
+/* Get the internal window that has the associated X window.
+ *
+ * @return NULL when none has this X window.
+ */
+FcWindow *get_fensterchef_window(Window id);
+
 /* Get a window with given @id or NULL if no window has that id. */
 FcWindow *get_window_by_number(unsigned id);
+
+/* Get the frame this window is contained in.
+ *
+ * @return NULL when the window is not in any frame.
+ */
+Frame *get_window_frame(const FcWindow *window);
+
+/* Check if @window supports @protocol. */
+bool supports_window_protocol(FcWindow *window, Atom protocol);
+
+/* Check if @window has @state. */
+bool has_window_state(FcWindow *window, Atom state);
+
+/* Get the side of a monitor @window would like to attach to.
+ *
+ * This is based on the window strut if it is set, otherwise the gravity in the
+ * size hints is used.
+ *
+ * @return StaticGravity if there is no preference.
+ */
+int get_window_gravity(FcWindow *window);
+
+/* Check if @window should have a border. */
+bool is_window_borderless(FcWindow *window);
 
 /* time in seconds to wait for a second close */
 #define REQUEST_CLOSE_MAX_DURATION 2
@@ -211,10 +292,6 @@ FcWindow *get_window_by_number(unsigned id);
  * `REQUEST_CLOSE_MAX_DURATION` to forcefully kill it.
  */
 void close_window(FcWindow *window);
-
-/* Adjust given @x and @y such that it follows the @gravity. */
-void adjust_for_window_gravity(Monitor *monitor, int *x, int *y,
-        unsigned int width, unsigned int height, int gravity);
 
 /* Get the minimum size the window should have. */
 void get_minimum_window_size(const FcWindow *window, Size *size);
@@ -230,17 +307,66 @@ void get_maximum_window_size(const FcWindow *window, Size *size);
 void set_window_size(FcWindow *window, int x, int y, unsigned int width,
         unsigned int height);
 
-/* Get the internal window that has the associated X window.
- *
- * @return NULL when none has this X window.
- */
-FcWindow *get_fensterchef_window(Window id);
+/* Reset the position and size of given window according to its window mode. */
+void reset_window_size(FcWindow *window);
 
-/* Get the frame this window is contained in.
+/* Change the mode to given value and reconfigures the window if it is visible.
  *
- * @return NULL when the window is not in any frame.
+ * @force_mode is used to force the change of the window mode.
  */
-Frame *get_window_frame(const FcWindow *window);
+void set_window_mode(FcWindow *window, window_mode_t mode);
+
+/* Show the window by positioning it and mapping it to the X server.
+ *
+ * Note that this removes the given window from the taken window list.
+ */
+void show_window(FcWindow *window);
+
+/* Hide @window and adjust the tiling and focus.
+ *
+ * When the window is a tiling window, this places the next available window in
+ * the formed gap.
+ *
+ * The next window is focused.
+ */
+void hide_window(FcWindow *window);
+
+/* Hide the window without touching the tiling or focus.
+ *
+ * Note: The focus however is removed if @window is the focus.
+ *
+ * To abrubtly show a window, simply do: `window->state.is_visible = true`.
+ */
+void hide_window_abruptly(FcWindow *window);
+
+/* Remove @window from the Z linked list. */
+void unlink_window_from_z_list(FcWindow *window);
+
+/* Links the window into the z linked list at a specific place.
+ *
+ * The window should have been unlinked from the Z linked list first.
+ *
+ * @below may be NULL in which case the window is inserted at the bottom.
+ */
+void link_window_above_in_z_list(FcWindow *window, _Nullable FcWindow *below);
+
+/* Remove @window from the Z server linked list. */
+void unlink_window_from_z_server_list(FcWindow *window);
+
+/* Links the window into the z linked list at a specific place.
+ *
+ * The window should have been unlinked from the Z server linked list first.
+ *
+ * @below must NOT be NULL.
+ */
+void link_window_above_in_z_server_list(FcWindow *window,
+        _Nonnull FcWindow *below);
+
+/* Put the window on the best suited Z stack position. */
+void update_window_layer(FcWindow *window);
+
+/* Synchronize the window stacking order with the server. */
+void synchronize_window_stacking_order(void);
 
 /* Check if the window accepts input focus. */
 bool is_window_focusable(FcWindow *window);

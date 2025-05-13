@@ -3,9 +3,9 @@
 #include <string.h>
 #include <time.h>
 
-#include <X11/XKBlib.h>
-
+#include <X11/Xatom.h>
 #include <X11/extensions/Xrandr.h>
+#include <X11/XKBlib.h>
 
 #include "action.h"
 #include "event.h"
@@ -14,8 +14,8 @@
 #include "notification.h"
 #include "window.h"
 #include "window_list.h"
-#include "window_properties.h"
-#include "x11_synchronize.h"
+#include "x11/display.h"
+#include "x11/ewmh.h"
 
 /* the severity of the logging */
 log_severity_t log_severity = LOG_SEVERITY_INFO;
@@ -413,12 +413,12 @@ static void log_x_window(Window window)
 
     log_hexadecimal(window);
     fputs(COLOR(YELLOW), stderr);
-    if (window == wm_check_window) {
+    if (window == ewmh_window) {
         fputs("<check>", stderr);
-    } else if (window == WindowList.client.id) {
+    } else if (window == WindowList.reference.id) {
         fputs("<window list>", stderr);
     } else if (system_notification != NULL &&
-            window == system_notification->client.id) {
+            window == system_notification->reference.id) {
         fputs("<notification>", stderr);
     } else if (window == DefaultRootWindow(display)) {
         fputs("<root>", stderr);
@@ -426,7 +426,7 @@ static void log_x_window(Window window)
         for (FcWindow *fwindow = Window_first;
                 fwindow != NULL;
                 fwindow = fwindow->next) {
-            if (fwindow->client.id == window) {
+            if (fwindow->reference.id == window) {
                 fprintf(stderr, "<%u>", fwindow->number);
                 break;
             }
@@ -1151,7 +1151,7 @@ static void log_event(XEvent *event)
 /* Log a window to standard error output. */
 static void log_window(const FcWindow *window)
 {
-    log_hexadecimal(window->client.id);
+    log_hexadecimal(window->reference.id);
     fprintf(stderr, COLOR(YELLOW) "<%u>" CLEAR_COLOR,
             window->number);
 }

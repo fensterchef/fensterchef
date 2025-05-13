@@ -5,7 +5,8 @@
 #include "cursor.h"
 #include "log.h"
 #include "utility/utility.h"
-#include "x11_synchronize.h"
+#include "x11/display.h"
+#include "x11/synchronize.h"
 
 /* the cursor cache */
 static struct cursor_cache_entry {

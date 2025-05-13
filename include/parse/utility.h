@@ -8,8 +8,6 @@
  * This file is meant to be private to the parser.
  */
 
-#include <X11/Xlib.h>
-
 #include "parse/data_type.h"
 #include "parse/parse.h"
 #include "utility/utility.h"

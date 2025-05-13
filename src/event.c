@@ -5,41 +5,23 @@
 #include <unistd.h>
 
 #include <X11/XKBlib.h>
-
 #include <X11/extensions/Xrandr.h>
 
 #include "binding.h"
-#include "configuration.h"
-#include "parse/input.h"
-#include "cursor.h"
 #include "event.h"
 #include "fensterchef.h"
 #include "frame.h"
-#include "frame_sizing.h"
 #include "log.h"
-#include "monitor.h"
 #include "notification.h"
-#include "utility/utility.h"
 #include "window.h"
 #include "window_list.h"
-#include "window_properties.h"
-#include "window_stacking.h"
-#include "x11_synchronize.h"
+#include "x11/display.h"
+#include "x11/ewmh.h"
+#include "x11/management.h"
+#include "x11/move_resize.h"
 
 /* signals whether the alarm signal was received */
 volatile sig_atomic_t has_timer_expired;
-
-/* this is used for moving/resizing a floating window */
-static struct {
-    /* the window that is being moved */
-    FcWindow *window;
-    /* how to move or resize the window */
-    wm_move_resize_direction_t direction;
-    /* initial position and size of the window */
-    Rectangle initial_geometry;
-    /* the initial position of the mouse */
-    Point start;
-} move_resize;
 
 /* Handle an incoming alarm. */
 static void alarm_handler(int signal_number)
@@ -133,7 +115,7 @@ int next_cycle(void)
     }
 
     if (has_timer_expired && system_notification != NULL) {
-        unmap_client(&system_notification->client);
+        unmap_client(&system_notification->reference);
         has_timer_expired = false;
     }
 
@@ -151,153 +133,13 @@ int next_cycle(void)
     return OK;
 }
 
-/* Start moving/resizing given window. */
-void initiate_window_move_resize(FcWindow *window,
-        wm_move_resize_direction_t direction,
-        int start_x, int start_y)
+/* Run the main event loop that handles all X events. */
+void run_event_loop(void)
 {
-    Window root;
-    Cursor cursor;
-
-    /* check if no window is already being moved/resized */
-    if (move_resize.window != NULL) {
-        return;
+    while (next_cycle() == OK) {
+        /* nothing */
     }
-
-    /* only allow sizing/moving of floating and tiling windows */
-    if (window->state.mode != WINDOW_MODE_FLOATING &&
-            window->state.mode != WINDOW_MODE_TILING) {
-        return;
-    }
-
-    LOG("starting to move/resize %W\n", window);
-
-    root = DefaultRootWindow(display);
-
-    /* get the mouse position if the caller does not supply it */
-    if (start_x < 0) {
-        Window other_root;
-        Window child;
-        int window_x;
-        int window_y;
-        unsigned int mask;
-
-        XQueryPointer(display, root, &other_root, &child,
-                &start_x, &start_y, /* root_x, root_y */
-                &window_x, &window_y, &mask);
-    }
-
-    /* figure out a good direction if the caller does not supply one */
-    if (direction == _NET_WM_MOVERESIZE_AUTO) {
-        const unsigned border = 2 * configuration.border_size;
-        /* check if the mouse is at the top */
-        if (start_y < window->y + configuration.resize_tolerance) {
-            if (start_x < window->x + configuration.resize_tolerance) {
-                direction = _NET_WM_MOVERESIZE_SIZE_TOPLEFT;
-            } else if (start_x - (int) (border + window->width) >=
-                    window->x - configuration.resize_tolerance) {
-                direction = _NET_WM_MOVERESIZE_SIZE_TOPRIGHT;
-            } else {
-                direction = _NET_WM_MOVERESIZE_SIZE_TOP;
-            }
-        /* check if the mouse is at the bottom */
-        } else if (start_y - (int) (border + window->height) >=
-                window->y - configuration.resize_tolerance) {
-            if (start_x < window->x + configuration.resize_tolerance) {
-                direction = _NET_WM_MOVERESIZE_SIZE_BOTTOMLEFT;
-            } else if (start_x - (int) (border + window->width) >=
-                    window->x - configuration.resize_tolerance) {
-                direction = _NET_WM_MOVERESIZE_SIZE_BOTTOMRIGHT;
-            } else {
-                direction = _NET_WM_MOVERESIZE_SIZE_BOTTOM;
-            }
-        /* check if the mouse is left */
-        } else if (start_x < window->x + configuration.resize_tolerance) {
-            direction = _NET_WM_MOVERESIZE_SIZE_LEFT;
-        /* check if the mouse is right */
-        } else if (start_x - (int) (border + window->width) >=
-                window->x - configuration.resize_tolerance) {
-            direction = _NET_WM_MOVERESIZE_SIZE_RIGHT;
-        /* fall back to simply moving (the mouse is within the window) */
-        } else {
-            direction = _NET_WM_MOVERESIZE_MOVE;
-        }
-    }
-
-    move_resize.window = window;
-    move_resize.direction = direction;
-    move_resize.initial_geometry.x = window->x;
-    move_resize.initial_geometry.y = window->y;
-    move_resize.initial_geometry.width = window->width;
-    move_resize.initial_geometry.height = window->height;
-    move_resize.start.x = start_x;
-    move_resize.start.y = start_y;
-
-    /* determine a fitting cursor */
-    switch (direction) {
-    case _NET_WM_MOVERESIZE_MOVE:
-        cursor = load_cursor(CURSOR_MOVING, NULL);
-        break;
-
-    case _NET_WM_MOVERESIZE_SIZE_LEFT:
-    case _NET_WM_MOVERESIZE_SIZE_RIGHT:
-        cursor = load_cursor(CURSOR_HORIZONTAL, NULL);
-        break;
-
-    case _NET_WM_MOVERESIZE_SIZE_TOP:
-    case _NET_WM_MOVERESIZE_SIZE_BOTTOM:
-        cursor = load_cursor(CURSOR_VERTICAL, NULL);
-        break;
-
-    default:
-        cursor = load_cursor(CURSOR_SIZING, NULL);
-    }
-
-    /* grab mouse events, we will then receive all mouse events */
-    XGrabPointer(display, root, False,
-            ButtonPressMask | ButtonReleaseMask | ButtonMotionMask,
-            GrabModeAsync, GrabModeAsync, root, cursor, CurrentTime);
-}
-
-/* Reset the position of the window being moved/resized. */
-static void cancel_window_move_resize(void)
-{
-    Frame *frame;
-
-    /* make sure a window is currently being moved/resized */
-    if (move_resize.window == NULL) {
-        return;
-    }
-
-    LOG("cancelling move/resize for %W\n", move_resize.window);
-
-    /* restore the old position and size as good as we can */
-    frame = get_window_frame(move_resize.window);
-    if (frame != NULL) {
-        bump_frame_edge(frame, FRAME_EDGE_LEFT,
-                move_resize.window->x - move_resize.initial_geometry.x);
-        bump_frame_edge(frame, FRAME_EDGE_TOP,
-                move_resize.window->y - move_resize.initial_geometry.y);
-        bump_frame_edge(frame, FRAME_EDGE_RIGHT,
-                (move_resize.initial_geometry.x +
-                 move_resize.initial_geometry.width) -
-                    (move_resize.window->x + move_resize.window->width));
-        bump_frame_edge(frame, FRAME_EDGE_BOTTOM,
-                (move_resize.initial_geometry.y +
-                 move_resize.initial_geometry.height) -
-                    (move_resize.window->y + move_resize.window->height));
-    } else {
-        set_window_size(move_resize.window,
-                move_resize.initial_geometry.x,
-                move_resize.initial_geometry.y,
-                move_resize.initial_geometry.width,
-                move_resize.initial_geometry.height);
-    }
-
-    /* release mouse events back to the applications */
-    XUngrabPointer(display, CurrentTime);
-
-    move_resize.window = NULL;
+    quit_fensterchef(Fensterchef_is_running ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
 /* Key press events are sent when a grabbed key is pressed. */
@@ -305,7 +147,7 @@ static void handle_key_press(XKeyPressedEvent *event)
 {
     if (system_notification != NULL) {
         alarm(0);
-        unmap_client(&system_notification->client);
+        unmap_client(&system_notification->reference);
     }
 
     Window_pressed = Window_focus;
@@ -324,8 +166,7 @@ static void handle_key_release(XKeyReleasedEvent *event)
 /* Button press events are sent when a grabbed button is pressed. */
 static void handle_button_press(XButtonPressedEvent *event)
 {
-    if (move_resize.window != NULL) {
-        cancel_window_move_resize();
+    if (cancel_window_move_resize()) {
         /* use this event only for stopping the resize */
         return;
     }
@@ -339,11 +180,7 @@ static void handle_button_press(XButtonPressedEvent *event)
 /* Button releases are sent when a grabbed button is released. */
 static void handle_button_release(XButtonReleasedEvent *event)
 {
-    if (move_resize.window != NULL) {
-        /* release mouse events back to the applications */
-        XUngrabPointer(display, CurrentTime);
-
-        move_resize.window = NULL;
+    if (finish_window_move_resize()) {
         /* use this event only for finishing the resize */
         return;
     }
@@ -359,138 +196,8 @@ static void handle_button_release(XButtonReleasedEvent *event)
  */
 static void handle_motion_notify(XMotionEvent *event)
 {
-    Rectangle new_geometry;
-    Size minimum, maximum;
-    int delta_x, delta_y;
-    int left_delta, top_delta, right_delta, bottom_delta;
-    Frame *frame;
-
-    if (move_resize.window == NULL) {
+    if (!handle_window_move_resize_motion(event)) {
         LOG_ERROR("receiving motion events without a window to move?\n");
-        return;
-    }
-
-    new_geometry = move_resize.initial_geometry;
-
-    get_minimum_window_size(move_resize.window, &minimum);
-    get_maximum_window_size(move_resize.window, &maximum);
-
-    delta_x = move_resize.start.x - event->x_root;
-    delta_y = move_resize.start.y - event->y_root;
-
-    /* prevent overflows and clip so that moving an edge when no more size is
-     * available does not move the window
-     */
-    if (delta_x < 0) {
-        left_delta = -MIN((unsigned) -delta_x,
-                new_geometry.width - minimum.width);
-    } else {
-        left_delta = MIN((unsigned) delta_x,
-                maximum.width - new_geometry.width);
-    }
-    if (delta_y < 0) {
-        top_delta = -MIN((unsigned) -delta_y,
-                new_geometry.height - minimum.height);
-    } else {
-        top_delta = MIN((unsigned) delta_y,
-                maximum.height - new_geometry.height);
-    }
-
-    /* prevent overflows */
-    if (delta_x > 0) {
-        right_delta = MIN((unsigned) delta_x, new_geometry.width);
-    } else {
-        right_delta = delta_x;
-    }
-    if (delta_y > 0) {
-        bottom_delta = MIN((unsigned) delta_y, new_geometry.height);
-    } else {
-        bottom_delta = delta_y;
-    }
-
-    switch (move_resize.direction) {
-    /* the top left corner of the window is being moved */
-    case _NET_WM_MOVERESIZE_SIZE_TOPLEFT:
-        new_geometry.x -= left_delta;
-        new_geometry.width += left_delta;
-        new_geometry.y -= top_delta;
-        new_geometry.height += top_delta;
-        break;
-
-    /* the top size of the window is being moved */
-    case _NET_WM_MOVERESIZE_SIZE_TOP:
-        new_geometry.y -= top_delta;
-        new_geometry.height += top_delta;
-        break;
-
-    /* the top right corner of the window is being moved */
-    case _NET_WM_MOVERESIZE_SIZE_TOPRIGHT:
-        new_geometry.width -= right_delta;
-        new_geometry.y -= top_delta;
-        new_geometry.height += top_delta;
-        break;
-
-    /* the right side of the window is being moved */
-    case _NET_WM_MOVERESIZE_SIZE_RIGHT:
-        new_geometry.width -= right_delta;
-        break;
-
-    /* the bottom right corner of the window is being moved */
-    case _NET_WM_MOVERESIZE_SIZE_BOTTOMRIGHT:
-        new_geometry.width -= right_delta;
-        new_geometry.height -= bottom_delta;
-        break;
-
-    /* the bottom side of the window is being moved */
-    case _NET_WM_MOVERESIZE_SIZE_BOTTOM:
-        new_geometry.height -= bottom_delta;
-        break;
-
-    /* the bottom left corner of the window is being moved */
-    case _NET_WM_MOVERESIZE_SIZE_BOTTOMLEFT:
-        new_geometry.x -= left_delta;
-        new_geometry.width += left_delta;
-        new_geometry.height -= bottom_delta;
-        break;
-
-    /* the bottom left corner of the window is being moved */
-    case _NET_WM_MOVERESIZE_SIZE_LEFT:
-        new_geometry.x -= left_delta;
-        new_geometry.width += left_delta;
-        break;
-
-    /* the entire window is being moved */
-    case _NET_WM_MOVERESIZE_MOVE:
-        new_geometry.x -= delta_x;
-        new_geometry.y -= delta_y;
-        break;
-
-    /* these are not relevant for mouse moving/resizing */
-    case _NET_WM_MOVERESIZE_SIZE_KEYBOARD:
-    case _NET_WM_MOVERESIZE_MOVE_KEYBOARD:
-    case _NET_WM_MOVERESIZE_CANCEL:
-    case _NET_WM_MOVERESIZE_AUTO:
-        break;
-    }
-
-    frame = get_window_frame(move_resize.window);
-    if (frame != NULL) {
-        bump_frame_edge(frame, FRAME_EDGE_LEFT,
-                move_resize.window->x - new_geometry.x);
-        bump_frame_edge(frame, FRAME_EDGE_TOP,
-                move_resize.window->y - new_geometry.y);
-        bump_frame_edge(frame, FRAME_EDGE_RIGHT,
-                (new_geometry.x + new_geometry.width) -
-                (move_resize.window->x + move_resize.window->width));
-        bump_frame_edge(frame, FRAME_EDGE_BOTTOM,
-                (new_geometry.y + new_geometry.height) -
-                (move_resize.window->y + move_resize.window->height));
-    } else {
-        set_window_size(move_resize.window,
-                new_geometry.x,
-                new_geometry.y,
-                new_geometry.width,
-                new_geometry.height);
     }
 }
 
@@ -506,14 +213,10 @@ static void handle_unmap_notify(XUnmapEvent *event)
         return;
     }
 
-    window->client.is_mapped = false;
+    window->reference.is_mapped = false;
 
-    /* if the currently moved window is unmapped */
-    if (window == move_resize.window) {
-        /* release mouse events back to the applications */
-        XUngrabPointer(display, CurrentTime);
-
-        move_resize.window = NULL;
+    if (finish_window_move_resize_for(window)) {
+        LOG("window that was moved/resized was unmapped\n");
     }
 
     hide_window(window);
@@ -580,8 +283,8 @@ static void handle_configure_request(XConfigureRequestEvent *event)
          */
         memset(&notify_event, 0, sizeof(notify_event));
         notify_event.type = ConfigureNotify;
-        notify_event.xconfigure.event = window->client.id;
-        notify_event.xconfigure.window = window->client.id;
+        notify_event.xconfigure.event = window->reference.id;
+        notify_event.xconfigure.window = window->reference.id;
         notify_event.xconfigure.x = window->x;
         notify_event.xconfigure.y = window->y;
         notify_event.xconfigure.width = window->width;
@@ -590,7 +293,7 @@ static void handle_configure_request(XConfigureRequestEvent *event)
             0 : window->border_size;
         LOG("sending fake configure notify event %V to %W\n",
                 &notify_event, window);
-        XSendEvent(display, window->client.id, false,
+        XSendEvent(display, window->reference.id, false,
                 StructureNotifyMask, &notify_event);
         return;
     }

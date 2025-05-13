@@ -1,6 +1,6 @@
 #include <errno.h>
 #include <inttypes.h>
-#include <string.h> /* strcmp() */
+#include <string.h>
 
 #include "action.h"
 #include "binding.h"
@@ -8,18 +8,15 @@
 #include "event.h"
 #include "fensterchef.h"
 #include "frame.h"
-#include "frame_moving.h"
-#include "frame_sizing.h"
-#include "frame_splitting.h"
-#include "frame_stashing.h"
 #include "log.h"
 #include "monitor.h"
 #include "notification.h"
 #include "parse/data_type.h"
 #include "parse/parse.h"
+#include "window.h"
 #include "window_list.h"
-#include "window_stacking.h"
-#include "x11_synchronize.h"
+#include "x11/display.h"
+#include "x11/move_resize.h"
 
 /* the corresponding string identifier for all actions */
 static const char *action_strings[ACTION_SIMPLE_MAX] = {
@@ -569,6 +566,7 @@ void do_action(action_type_t type, const struct parse_generic_data *data)
         if (window == NULL) {
             break;
         }
+        /* TODO: relink in the window list */
         window->number = data->u.integer;
         break;
 
