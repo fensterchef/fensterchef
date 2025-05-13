@@ -113,12 +113,6 @@ static int read_and_resolve_next_action_word(Parser *parser,
                     data.u.string);
             LIST_APPEND_VALUE(list->actions[i].data, data);
         } else {
-            /* the word needs to be unquoted */
-            if (parser->is_string_quoted) {
-                list->actions[i].offset = -1;
-                continue;
-            }
-
             /* check if an integer is expected and try to resolve it */
             if (action[0] == 'I') {
                 if (resolve_integer(parser, &data.flags, &data.u.integer) ==

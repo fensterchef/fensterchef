@@ -35,8 +35,13 @@ void skip_all_statements(Parser *parser);
 /* Read a string/word from the parser input.
  *
  * @return ERROR if there was no string, OK otherwise.
+ *
+ * Any alias that matches this string is resolved.
  */
 int read_string(Parser *parser);
+
+/* Read a string/word but do not resolve as an alias. */
+int read_string_no_alias(Parser *parser);
 
 /* Translate the string within @parser to a button index.
  *

@@ -3,6 +3,7 @@
 #include "core/log.h"
 #include "core/window.h"
 #include "parse/action.h"
+#include "parse/alias.h"
 #include "parse/association.h"
 #include "parse/binding.h"
 #include "parse/input.h"
@@ -128,6 +129,10 @@ int parse_top(Parser *parser, struct parse_action_list *list)
 
     if (parser->is_string_quoted) {
         continue_parsing_association(parser, list);
+    } else if (strcmp(parser->string, "alias") == 0) {
+        continue_parsing_alias(parser);
+    } else if (strcmp(parser->string, "unalias") == 0) {
+        continue_parsing_unalias(parser);
     } else if (strcmp(parser->string, "source") == 0) {
         continue_parsing_source(parser, list);
     } else if (strcmp(parser->string, "unbind") == 0) {

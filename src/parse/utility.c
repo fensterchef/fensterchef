@@ -4,7 +4,9 @@
 
 #include <X11/keysym.h>
 
-#include "binding.h"
+#include "core/binding.h"
+#include "core/log.h"
+#include "parse/alias.h"
 #include "parse/parse.h"
 #include "parse/input.h"
 #include "parse/utility.h"
@@ -87,15 +89,15 @@ static inline bool is_word_character(int character)
             character == '(' || character == ')' ||
             character == '{' || character == '}' ||
             character == '&' || character == '|' ||
-            character == '+') {
+            character == '+' || character == '=') {
         return false;
     }
 
     return true;
 }
 
-/* Read a string/word from the active input stream. */
-int read_string(Parser *parser)
+/* Read a string/word but do not resolve as an alias. */
+int read_string_no_alias(Parser *parser)
 {
     int character;
 
@@ -143,9 +145,29 @@ int read_string(Parser *parser)
         }
     }
 
-    /* append a nul-terminator but reduce the size again */
     LIST_APPEND_VALUE(parser->string, '\0');
     parser->string_length--;
+
+    return OK;
+}
+
+/* Read a string/word from the active input stream. */
+int read_string(Parser *parser)
+{
+    if (read_string_no_alias(parser) != OK) {
+        return ERROR;
+    }
+
+    if (!parser->is_string_quoted) {
+        const char *const alias = resolve_alias(parser->string);
+        if (alias != NULL) {
+            LOG_DEBUG("resolved %s to %s\n",
+                    parser->string, alias);
+
+            LIST_SET(parser->string, 0, alias, strlen(alias) + 1);
+            parser->string_length--;
+        }
+    }
     return OK;
 }
 

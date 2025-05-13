@@ -5,6 +5,7 @@
  * Parse a top level statement.
  *
  * ACTION
+ * ALIAS
  * ASSOCIATION
  * BINDING
  * SOURCE
