@@ -11,17 +11,9 @@
     to be made that set these individual settings.  Whether a setting is
     individual or not has to be stored within the window.
 
-#89 Improve focus management
-    Move focus X11 management into x11_synchronize (out of event.c) and bundle
-    all relevant parts.
-
 #96 New auto fill void
     When a window is opened and there is an empty frame one the monitor with the
     current frame, open the window in that empty frame
-
-#97 ? Improve grabbing efficiency
-    We always re-grab all bindings, even if just one binding is added.  Optimize
-    this.
 
 #98 ! Fix command program getting stuck
     When a command window is created, sometimes it gets stuck.  Meaning that it
@@ -32,7 +24,10 @@
 #100 ! Fix wrong order of window numbers
     When a window number changes, it has to move in the linked list
 
-#102 ...
+#103 ...
+
+#130 Add custom window borders
+    Yes, it is happening soon...
 
 #200 Make repository for fensterchef-menu
     Menus of all kind for any window manager
@@ -479,3 +474,11 @@
 
 #101 Restructure X11 and merge frame/window files
     Restructure the X11 management.  Then merge all frame/window files.
+
+#89 Improve focus management
+    Move focus X11 management into x11/synchronize.c (out of event.c) and bundle
+    all relevant parts.
+
+#97 Improve grabbing efficiency
+    We always re-grab all bindings, even if just one binding is added.  Optimize
+    this.

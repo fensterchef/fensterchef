@@ -119,7 +119,7 @@ void log_action_list(const struct action_list *list)
                 fprintf(stderr, COLOR(YELLOW) "transparent ");
             }
             if (binding->modifiers != 0) {
-                fprintf(stderr, COLOR(BLUE) "%u" CLEAR_COLOR "+",
+                fprintf(stderr, COLOR(GREEN) "%u" CLEAR_COLOR "+",
                         binding->modifiers);
             }
             _log_formatted("%u ( %A )",
@@ -134,10 +134,10 @@ void log_action_list(const struct action_list *list)
                 fprintf(stderr, COLOR(YELLOW) "release ");
             }
             if (binding->modifiers != 0) {
-                fprintf(stderr, COLOR(BLUE) "%u" CLEAR_COLOR "+",
+                fprintf(stderr, COLOR(GREEN) "%u" CLEAR_COLOR "+",
                         binding->modifiers);
             }
-            _log_formatted("%ld ( %A )",
+            _log_formatted(COLOR(BLUE) "%ld" CLEAR_COLOR " ( %A )",
                     binding->key_symbol, &binding->actions);
             data++;
             continue;
@@ -684,7 +684,6 @@ void do_action(action_type_t type, const struct parse_generic_data *data)
     /* set the default root cursor */
     case ACTION_CURSOR_ROOT:
         (void) load_cursor(CURSOR_ROOT, data->u.string);
-        synchronization_flags |= SYNCHRONIZE_ROOT_CURSOR;
         break;
 
     /* set the default cursor for vertical sizing */
@@ -1029,11 +1028,6 @@ void do_action(action_type_t type, const struct parse_generic_data *data)
             break;
         }
         hide_window(window);
-        break;
-
-    /* the modifiers to use for the following bindings */
-    case ACTION_MODIFIERS:
-        set_additional_modifiers(data->u.integer);
         break;
 
     /* the modifiers to ignore */

@@ -19,9 +19,7 @@ struct window_association *window_associations;
 /* the number of elements in `window_associations` */
 unsigned number_of_window_associations;
 
-/* the number of all windows within the linked list, this value is kept up to
- * date through `create_window()` and `destroy_window()`
- */
+/* the number of all windows within the linked list */
 unsigned Window_count;
 
 /* the window that was created before any other */
@@ -41,6 +39,9 @@ FcWindow *Window_first;
 
 /* the currently focused window */
 FcWindow *Window_focus;
+
+/* what the server thinks is the focused window */
+FcWindow *Window_server_focus;
 
 /* the last pressed window */
 FcWindow *Window_pressed;
@@ -596,6 +597,10 @@ void destroy_window(FcWindow *window)
         LOG_ERROR("destroying window with focus\n");
     }
 
+    if (window == Window_server_focus) {
+        Window_server_focus = NULL;
+    }
+
     if (window == Window_pressed) {
         Window_pressed = NULL;
     }
@@ -776,16 +781,13 @@ int get_window_gravity(FcWindow *window)
 void close_window(FcWindow *window)
 {
     time_t current_time;
-    bool supports_wm_delete_window;
-    XEvent event;
 
     current_time = time(NULL);
-    supports_wm_delete_window = is_atom_included(window->properties.protocols,
-            ATOM(WM_DELETE_WINDOW));
+
     /* if either WM_DELETE_WINDOW is not supported or a close was requested
-     * twice in a row
+     * twice in a row, forcefully kill the window's client
      */
-    if (!supports_wm_delete_window ||
+    if (!supports_window_protocol(window, ATOM(WM_DELETE_WINDOW)) ||
             (window->state.was_close_requested && current_time <=
                 window->state.user_request_close_time +
                     REQUEST_CLOSE_MAX_DURATION)) {
@@ -793,15 +795,7 @@ void close_window(FcWindow *window)
         return;
     }
 
-    ZERO(&event, 1);
-
-    /* bake an event for running a protocol on the window */
-    event.type = ClientMessage;
-    event.xclient.window = window->reference.id;
-    event.xclient.message_type = ATOM(WM_PROTOCOLS);
-    event.xclient.format = 32;
-    event.xclient.data.l[0] = ATOM(WM_DELETE_WINDOW);
-    XSendEvent(display, window->reference.id, False, NoEventMask, &event);
+    send_delete_window_message(window->reference.id);
 
     window->state.was_close_requested = true;
     window->state.user_request_close_time = current_time;
@@ -1549,32 +1543,6 @@ void update_window_layer(FcWindow *window)
             /* note the reverse order here, it is important */
             link_window_above_in_z_list(below, window);
             below = window;
-        }
-    }
-}
-
-/* Synchronize the window stacking order with the server. */
-void synchronize_window_stacking_order(void)
-{
-    FcWindow *window, *server_window;
-    XWindowChanges changes;
-
-    window = Window_top;
-    server_window = Window_server_top;
-    /* go through both lists from top to bottom at the same time */
-    for (; window != NULL && server_window != NULL; window = window->below) {
-        if (server_window == window) {
-            server_window = server_window->server_below;
-        } else {
-            unlink_window_from_z_server_list(window);
-            link_window_above_in_z_server_list(window, server_window);
-
-            changes.stack_mode = Above;
-            changes.sibling = server_window->reference.id;
-            XConfigureWindow(display, window->reference.id,
-                    CWStackMode | CWSibling, &changes);
-            LOG("putting window %W above %W\n",
-                    window, server_window);
         }
     }
 }

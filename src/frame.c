@@ -758,8 +758,8 @@ void get_minimum_frame_size(Frame *frame, Size *size)
             size->height = MAX(left_size.height, right_size.height);
         }
     } else {
-        size->width = FRAME_MINIMUM_SIZE;
-        size->height = FRAME_MINIMUM_SIZE;
+        size->width = FRAME_RESIZE_MINIMUM_SIZE;
+        size->height = FRAME_RESIZE_MINIMUM_SIZE;
     }
 
     get_frame_gaps(frame, &gaps);

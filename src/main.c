@@ -62,7 +62,7 @@ int main(int argc, char **argv)
     }
 
     /* do an inital synchronization */
-    synchronize_with_server(SYNCHRONIZE_ALL);
+    synchronize_with_server();
 
     /* before entering the loop, flush all the initialization calls */
     XFlush(display);

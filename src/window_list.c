@@ -8,7 +8,6 @@
 #include "window.h"
 #include "window_list.h"
 #include "x11/display.h"
-#include "x11/management.h"
 
 /* user window list window */
 struct window_list WindowList;
@@ -27,7 +26,7 @@ static int initialize_window_list(void)
         WindowList.reference.border = configuration.border_color;
         attributes.border_pixel = WindowList.reference.border;
         attributes.backing_pixel = configuration.background;
-        attributes.event_mask = KeyPressMask | ExposureMask | FocusChangeMask;
+        attributes.event_mask = KeyPressMask | ExposureMask;
         /* indicate to not manage the window */
         attributes.override_redirect = True;
         WindowList.reference.id = XCreateWindow(display,
@@ -338,7 +337,6 @@ static void handle_key_press(XKeyPressedEvent *event)
         FcWindow *const selected = get_selected_window();
         if (selected != NULL && selected != Window_focus) {
             focus_and_let_window_appear(selected, !!(event->state & ShiftMask));
-            WindowList.should_revert_focus = false;
         }
         unmap_client(&WindowList.reference);
         break;
@@ -374,64 +372,30 @@ static void handle_key_press(XKeyPressedEvent *event)
     }
 }
 
-/* Handle a FocusOut event. */
-static void handle_focus_out(XFocusOutEvent *event)
-{
-    /* if the this event is for the window list and it is mapped (we also get
-     * this event after the window was unmapped)
-     */
-    if (event->window != WindowList.reference.id ||
-            !WindowList.reference.is_mapped) {
-        return;
-    }
-
-    /* if someone grabbed the focus, we expect it to return soon */
-    if (event->mode == NotifyGrab) {
-        return;
-    }
-
-    /* refocus the window list */
-    XSetInputFocus(display, WindowList.reference.id,
-            RevertToParent, CurrentTime);
-}
-
-/* Handle an UnmapNotify event. */
-static void handle_unmap_notify(XUnmapEvent *event)
-{
-    if (event->window != WindowList.reference.id) {
-        return;
-    }
-
-    /* give focus back to the last window */
-    if (WindowList.should_revert_focus) {
-        set_input_focus(Window_focus);
-    }
-}
-
 /* Handle an incoming X event for the window list. */
 void handle_window_list_event(XEvent *event)
 {
-    /* remove the most significant bit, this gets the actual event type */
+    if (!WindowList.reference.is_mapped) {
+        return;
+    }
+
     switch (event->type) {
     /* a key was pressed */
     case KeyPress:
         handle_key_press(&event->xkey);
-        break;
-
-    /* the window list lost focus */
-    case FocusOut:
-        handle_focus_out(&event->xfocus);
-        break;
-
-    /* the window list was hidden */
-    case UnmapNotify:
-        handle_unmap_notify(&event->xunmap);
-        break;
-    }
-
-    /* re-rendering after every event allows to react to dynamic changes */
-    if (WindowList.reference.is_mapped) {
         render_window_list();
+        break;
+
+    /* re-render after a few chosen events */
+    case KeyRelease:
+    case ButtonPress:
+    case ButtonRelease:
+    case Expose:
+    case MapNotify:
+    case UnmapNotify:
+    case DestroyNotify:
+        render_window_list();
+        break;
     }
 }
 
@@ -482,6 +446,7 @@ int show_window_list(void)
     /* focus the window list */
     XSetInputFocus(display, WindowList.reference.id,
             RevertToParent, CurrentTime);
-    WindowList.should_revert_focus = true;
+
+    Window_server_focus = NULL;
     return OK;
 }

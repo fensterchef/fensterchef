@@ -1,6 +1,14 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
+/**
+ * Windows are referencing a specific X window and contain meta data about this
+ * X window.
+ *
+ * Windows need to be created using `create_window()` and destroyed using
+ * `destroy_window()`.
+ */
+
 #include <stdint.h>
 
 #include <X11/Xutil.h>
@@ -170,8 +178,8 @@ struct fensterchef_window {
     FcWindow *next;
 };
 
-/* the number of all windows within the linked list, this value is kept up to
- * date through `create_window()` and `destroy_window()`
+/* The number of all windows within the linked list.  This value is kept up to
+ * date through `create_window()` and `destroy_window()`.
  */
 extern unsigned Window_count;
 
@@ -194,6 +202,9 @@ extern FcWindow *Window_server_top;
 
 /* the currently focused window */
 extern FcWindow *Window_focus;
+
+/* what the server thinks is the focused window */
+extern FcWindow *Window_server_focus;
 
 /* The last pressed window.  This only gets set when a window is pressed by a
  * grabbed button or when an association runs.
@@ -364,9 +375,6 @@ void link_window_above_in_z_server_list(FcWindow *window,
 
 /* Put the window on the best suited Z stack position. */
 void update_window_layer(FcWindow *window);
-
-/* Synchronize the window stacking order with the server. */
-void synchronize_window_stacking_order(void);
 
 /* Check if the window accepts input focus. */
 bool is_window_focusable(FcWindow *window);

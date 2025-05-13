@@ -1,14 +1,16 @@
 #ifndef X11__MOVE_RESIZE_H
 #define X11__MOVE_RESIZE_H
 
+/**
+ * Resize or move a window using the mouse.
+ */
+
 #include <stdbool.h>
+
+#include <X11/Xlib.h>
 
 #include "bits/window.h"
 #include "x11/ewmh.h"
-
-/**
- * Resize or move a window with the mouse.
- */
 
 /* Start resizing a window using the mouse.
  *

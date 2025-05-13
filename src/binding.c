@@ -1,10 +1,8 @@
 #include "binding.h"
 #include "log.h"
+#include "window.h"
 #include "x11/display.h"
 #include "x11/synchronize.h"
-
-/* additional modifiers on top of the ones used in binding setting */
-static unsigned modifiers_addition = Mod4Mask;
 
 /* the modifiers to ignore */
 static unsigned modifiers_ignore = LockMask | Mod2Mask;
@@ -37,11 +35,12 @@ static struct internal_key_binding {
     struct internal_key_binding *next;
 } *key_bindings[KEYCODE_MAX - KEYCODE_MIN];
 
-/* Set the modifiers to add to the ones passed into the set binding function. */
-inline void set_additional_modifiers(unsigned modifiers)
-{
-    modifiers_addition = modifiers;
-}
+/* Grab a button on given window. */
+static void grab_button(Window window, bool is_release,
+        unsigned modifiers, int button);
+
+/* Grab a key on the root window. */
+static void grab_key(unsigned modifiers, KeyCode key_code);
 
 /* Set the modifiers to ignore. */
 inline void set_ignored_modifiers(unsigned modifiers)
@@ -87,7 +86,6 @@ void set_button_binding(const struct button_binding *button_binding)
     }
 
     modifiers = button_binding->modifiers;
-    modifiers |= modifiers_addition;
 
     binding = find_button_binding(button_binding->is_release, modifiers, index);
 
@@ -101,7 +99,12 @@ void set_button_binding(const struct button_binding *button_binding)
     }
 
     if (binding->actions.number_of_items == 0) {
-        synchronization_flags |= SYNCHRONIZE_BUTTON_BINDING;
+        for (FcWindow *window = Window_first;
+                window != NULL;
+                window = window->next) {
+            grab_button(window->reference.id, button_binding->is_release,
+                    modifiers, index);
+        }
     }
 
     /* clear any old binded actions */
@@ -144,7 +147,13 @@ void clear_button_binding(bool is_release,
     if (binding != NULL) {
         clear_action_list(&binding->actions);
         ZERO(&binding->actions, 1);
-        synchronization_flags |= SYNCHRONIZE_BUTTON_BINDING;
+        for (FcWindow *window = Window_first;
+                window != NULL;
+                window = window->next) {
+            XUngrabButton(display, button, modifiers, window->reference.id);
+        }
+        LOG_DEBUG("ungrabbing specific button %u+%d on all windows\n",
+                modifiers, button);
     }
 }
 
@@ -161,7 +170,12 @@ void clear_button_bindings(void)
             ZERO(&binding->actions, 1);
         }
     }
-    synchronization_flags |= SYNCHRONIZE_BUTTON_BINDING;
+
+    for (FcWindow *window = Window_first;
+            window != NULL;
+            window = window->next) {
+        XUngrabButton(display, AnyButton, AnyModifier, window->reference.id);
+    }
 }
 
 /**************************
@@ -199,7 +213,6 @@ void set_key_binding(const struct key_binding *key_binding)
     }
 
     modifiers = key_binding->modifiers;
-    modifiers |= modifiers_addition;
 
     binding = find_key_binding(key_binding->is_release, modifiers, key_code);
 
@@ -214,7 +227,7 @@ void set_key_binding(const struct key_binding *key_binding)
     }
 
     if (binding->actions.number_of_items == 0) {
-        synchronization_flags |= SYNCHRONIZE_KEY_BINDING;
+        grab_key(modifiers, key_code);
     }
 
     /* clear any old binded actions */
@@ -249,7 +262,9 @@ void clear_key_binding(bool is_release, unsigned modifiers, KeyCode key_code)
     if (binding != NULL) {
         clear_action_list(&binding->actions);
         ZERO(&binding->actions, 1);
-        synchronization_flags |= SYNCHRONIZE_KEY_BINDING;
+        XUngrabKey(display, key_code, modifiers, DefaultRootWindow(display));
+        LOG_DEBUG("ungrabbing specific key %u+%d\n",
+                modifiers, key_code);
     }
 }
 
@@ -265,7 +280,8 @@ void clear_key_bindings(void)
             ZERO(&binding->actions, 1);
         }
     }
-    synchronization_flags |= SYNCHRONIZE_KEY_BINDING;
+
+    XUngrabKey(display, AnyKey, AnyModifier, DefaultRootWindow(display));
 }
 
 /* Resolve all key symbols in case the mapping changed. */
@@ -326,6 +342,44 @@ void resolve_all_key_symbols(void)
  * Server synchronization *
  **************************/
 
+/* Grab a button on given window. */
+static void grab_button(Window window, bool is_release,
+        unsigned modifiers, int button)
+{
+    LOG_DEBUG("grabbing button for %w %u+%d\n",
+            window, modifiers, button);
+
+    /* Use every possible combination of modifiers we do not care about
+     * so that when the user has CAPS LOCK for example, it does not mess
+     * with button bindings.
+     */
+    for (unsigned i = modifiers_ignore;
+            true;
+            i = ((i - 1) & modifiers_ignore)) {
+        XGrabButton(display, button, (i | modifiers),
+                /* report all events with respect to this window */
+                window, True,
+                /* check if release is needed */
+                is_release ?
+                    ButtonPressMask | ButtonReleaseMask :
+                    ButtonPressMask,
+                /* SYNC means that pointer (mouse) events will be frozen
+                 * until we issue a AllowEvents request; this allows us
+                 * to make the decision to either drop the event or send
+                 * it on to the actually pressed client
+                 */
+                GrabModeSync,
+                /* do not freeze keyboard events */
+                GrabModeAsync,
+                /* no confinement of the pointer and no cursor change */
+                None, None);
+
+        if (i == 0) {
+            break;
+        }
+    }
+}
+
 /* Grab the button bindings for a window so we receive MousePress/MouseRelease
  * events for it.
  *
@@ -345,38 +399,34 @@ void grab_configured_buttons(Window window)
         for (; binding != NULL; binding = binding->next) {
             /* ignore bindings with no action */
             if (binding->actions.number_of_items == 0) {
+                LOG_DEBUG("button binding was created some "
+                        "day but the actions were removed\n");
                 continue;
             }
 
-            /* use every possible combination of modifiers we do not care about
-             * so that when the user has CAPS LOCK for example, it does not mess
-             * with button bindings
-             */
-            for (unsigned j = modifiers_ignore;
-                    true;
-                    j = ((j - 1) & modifiers_ignore)) {
-                XGrabButton(display, i, (j | binding->modifiers),
-                        /* report all events with respect to this window */
-                        window, True,
-                        /* check if release is needed */
-                        binding->is_release ?
-                            ButtonPressMask | ButtonReleaseMask :
-                            ButtonPressMask,
-                        /* SYNC means that pointer (mouse) events will be frozen
-                         * until we issue a AllowEvents request; this allows us
-                         * to make the decision to either drop the event or send
-                         * it on to the actually pressed client
-                         */
-                        GrabModeSync,
-                        /* do not freeze keyboard events */
-                        GrabModeAsync,
-                        /* no confinement of the pointer and no cursor change */
-                        None, None);
+            grab_button(window, binding->is_release, binding->modifiers, i);
+        }
+    }
+}
 
-                if (j == 0) {
-                    break;
-                }
-            }
+/* Grab a key on the root window. */
+static void grab_key(unsigned modifiers, KeyCode key_code)
+{
+    LOG_DEBUG("grabbing key for %u+%d\n",
+            modifiers, key_code);
+
+    /* iterate over all bit combinations */
+    for (unsigned i = modifiers_ignore;
+            true;
+            i = ((i - 1) & modifiers_ignore)) {
+        XGrabKey(display, key_code, (i | modifiers),
+                /* report all events with respect to the root */
+                DefaultRootWindow(display), True,
+                /* do not freeze pointer and keyboard events */
+                GrabModeAsync, GrabModeAsync);
+
+        if (i == 0) {
+            break;
         }
     }
 }
@@ -384,40 +434,22 @@ void grab_configured_buttons(Window window)
 /* Grab the key bindings so we receive KeyPress/KeyRelease events for them. */
 void grab_configured_keys(void)
 {
-    Window root;
     const struct internal_key_binding *binding;
 
-    root = DefaultRootWindow(display);
-
     /* remove all previously grabbed keys so that we can overwrite them */
-    XUngrabKey(display, AnyKey, AnyModifier, root);
+    XUngrabKey(display, AnyKey, AnyModifier, DefaultRootWindow(display));
 
     for (int i = KEYCODE_MIN; i < KEYCODE_MAX; i++) {
         binding = key_bindings[i - KEYCODE_MIN];
         for (; binding != NULL; binding = binding->next) {
             /* ignore bindings with no action */
             if (binding->actions.number_of_items == 0) {
-                LOG_DEBUG("binding was created some "
+                LOG_DEBUG("key binding was created some "
                         "day but the actions were removed\n");
                 continue;
             }
 
-            LOG_DEBUG("grabbing key for %u+%d\n",
-                    binding->modifiers, i);
-            /* iterate over all bit combinations */
-            for (unsigned j = modifiers_ignore;
-                    true;
-                    j = ((j - 1) & modifiers_ignore)) {
-                XGrabKey(display, i, (j | binding->modifiers),
-                        /* report all events with respect to the root */
-                        root, True,
-                        /* do not freeze pointer and keyboard events */
-                        GrabModeAsync, GrabModeAsync);
-
-                if (j == 0) {
-                    break;
-                }
-            }
+            grab_key(binding->modifiers, i);
         }
     }
 }

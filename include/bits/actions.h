@@ -134,8 +134,6 @@
     X(ACTION_MINIMIZE_WINDOW, "minimize window") \
     /* hide the window with given number */ \
     X(ACTION_MINIMIZE_WINDOW_I, "minimize window I") \
-    /* the modifiers to use for the following bindings */ \
-    X(ACTION_MODIFIERS, "modifiers I") \
     /* the modifiers to ignore */ \
     X(ACTION_MODIFIERS_IGNORE, "modifiers ignore I") \
     /* move the current frame down */ \

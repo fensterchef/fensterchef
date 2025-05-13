@@ -5,59 +5,113 @@
 #include "frame.h"
 #include "log.h"
 #include "window.h"
+#include "window_list.h"
 #include "x11/display.h"
 
-/* hints set by all parts of the program indicating that a specific part needs
- * to be synchronized
- */
-unsigned synchronization_flags;
+/* Synchronize the window stacking order with the server. */
+static void synchronize_window_stacking_order(void)
+{
+    FcWindow *window, *server_window;
+    XWindowChanges changes;
+
+    window = Window_top;
+    server_window = Window_server_top;
+    /* go through both lists from top to bottom at the same time */
+    for (; window != NULL && server_window != NULL; window = window->below) {
+        if (server_window == window) {
+            server_window = server_window->server_below;
+        } else {
+            unlink_window_from_z_server_list(window);
+            link_window_above_in_z_server_list(window, server_window);
+
+            changes.stack_mode = Above;
+            changes.sibling = server_window->reference.id;
+            XConfigureWindow(display, window->reference.id,
+                    CWStackMode | CWSibling, &changes);
+            LOG("putting window %W above %W\n",
+                    window, server_window);
+        }
+    }
+}
 
 /* Set the client list root property. */
 static void synchronize_client_list(void)
 {
-    /* a list of window ids that is synchronized with the actual windows */
-    static struct {
-        /* the id of the window */
-        Window *ids;
-        /* the number of allocated ids */
-        unsigned length;
-    } client_list;
+    /* two list of window ids that is synchronized with the actual windows */
+    static Window *stacking, *age;
+    /* the number of allocated and actual ids */
+    static unsigned capacity;
+    /* the previous length of windows */
+    static unsigned old_count;
 
     Window root;
     FcWindow *window;
-    unsigned index = 0;
+    unsigned index;
+    bool is_stacking_changed = false;
+    bool is_age_changed = false;
 
     root = DefaultRootWindow(display);
 
     /* allocate more ids if needed or trim if there are way too many */
-    if (Window_count > client_list.length ||
-            MAX(Window_count, 4) * 4 < client_list.length) {
+    if (Window_count > capacity || MAX(Window_count, 4) * 4 < capacity) {
         LOG_DEBUG("resizing client list to %u\n",
                 Window_count);
-        client_list.length = Window_count;
-        REALLOCATE(client_list.ids, client_list.length);
+        capacity = Window_count;
+        REALLOCATE(stacking, capacity);
+        REALLOCATE(age, capacity);
     }
-
-    /* sort the list in order of the Z stacking (bottom to top) */
-    for (window = Window_bottom; window != NULL; window = window->above) {
-        client_list.ids[index] = window->reference.id;
-        index++;
-    }
-    /* set the `_NET_CLIENT_LIST_STACKING` property */
-    XChangeProperty(display, root, ATOM(_NET_CLIENT_LIST_STACKING),
-            XA_WINDOW, 32, PropModeReplace,
-            (unsigned char*) client_list.ids, Window_count);
 
     index = 0;
-    /* sort the list in order of their age (oldest to newest) */
-    for (window = Window_oldest; window != NULL; window = window->newer) {
-        client_list.ids[index] = window->reference.id;
+    for (window = Window_bottom; window != NULL; window = window->above) {
+        if (index < old_count && stacking[index] != window->reference.id) {
+            is_stacking_changed = true;
+        }
+        stacking[index] = window->reference.id;
         index++;
     }
-    /* set the `_NET_CLIENT_LIST` property */
-    XChangeProperty(display, root, ATOM(_NET_CLIENT_LIST),
-            XA_WINDOW, 32, PropModeReplace,
-            (unsigned char*) client_list.ids, Window_count);
+
+    index = 0;
+    for (window = Window_oldest; window != NULL; window = window->newer) {
+        if (index < old_count && age[index] != window->reference.id) {
+            is_age_changed = true;
+        }
+        age[index] = window->reference.id;
+        index++;
+    }
+
+    /* set the _NET_CLIENT_LIST_STACKING property if it changed */
+    if (Window_count < old_count || is_stacking_changed) {
+        LOG_DEBUG("setting stacking list " COLOR(CYAN)
+                "_NET_CLIENT_LIST_STACKING" CLEAR_COLOR "\n");
+        XChangeProperty(display, root, ATOM(_NET_CLIENT_LIST_STACKING),
+                XA_WINDOW, 32, PropModeReplace,
+                (unsigned char*) stacking, Window_count);
+    } else if (Window_count > old_count) {
+        LOG_DEBUG("appending stacking list " COLOR(CYAN)
+                "_NET_CLIENT_LIST_STACKING" CLEAR_COLOR "\n");
+        XChangeProperty(display, root, ATOM(_NET_CLIENT_LIST_STACKING),
+                XA_WINDOW, 32, PropModeAppend,
+                (unsigned char*) &stacking[old_count],
+                Window_count - old_count);
+    }
+
+    /* set the _NET_CLIENT_LIST property if it changed */
+    if (Window_count < old_count || is_age_changed) {
+        LOG_DEBUG("setting client list " COLOR(CYAN)
+                "_NET_CLIENT_LIST" CLEAR_COLOR "\n");
+        XChangeProperty(display, root, ATOM(_NET_CLIENT_LIST),
+                XA_WINDOW, 32, PropModeReplace,
+                (unsigned char*) age, Window_count);
+    } else if (Window_count > old_count) {
+        LOG_DEBUG("appending stacking list " COLOR(CYAN)
+                "_NET_CLIENT_LIST" CLEAR_COLOR "\n");
+        XChangeProperty(display, root, ATOM(_NET_CLIENT_LIST),
+                XA_WINDOW, 32, PropModeAppend,
+                (unsigned char*) &age[old_count],
+                Window_count - old_count);
+    }
+
+    old_count = Window_count;
 }
 
 /* Recursively check if the window is contained within @frame. */
@@ -70,37 +124,61 @@ static bool is_window_part_of(FcWindow *window, Frame *frame)
     return frame->window == window;
 }
 
-/* Synchronize the local data with the X server. */
-void synchronize_with_server(unsigned flags)
+/* Set the input focus to @window. This window may be `NULL`. */
+static void set_input_focus(FcWindow *window)
 {
+    Window focus_id = None;
+    Window active_id;
+    Atom state_atom;
+
+    if (window == NULL) {
+        LOG("removed focus from all windows\n");
+        active_id = DefaultRootWindow(display);
+
+        focus_id = ewmh_window;
+    } else {
+        active_id = window->reference.id;
+
+        state_atom = ATOM(_NET_WM_STATE_FOCUSED);
+        add_window_states(window, &state_atom, 1);
+
+        /* if the window wants no focus itself */
+        if ((window->properties.hints.flags & InputHint) &&
+                window->properties.hints.input == 0) {
+            send_take_focus_message(window->reference.id);
+
+            LOG("focusing window %W by sending WM_TAKE_FOCUS\n",
+                    window);
+        } else {
+            focus_id = window->reference.id;
+        }
+    }
+
+    if (focus_id != None) {
+        LOG("focusing client: %w\n", focus_id);
+        XSetInputFocus(display, focus_id, RevertToParent, CurrentTime);
+    }
+
+    /* set the active window root property */
+    XChangeProperty(display, DefaultRootWindow(display),
+            ATOM(_NET_ACTIVE_WINDOW), XA_WINDOW, 32, PropModeReplace,
+            (unsigned char*) &active_id, 1);
+}
+
+/* Synchronize the local data with the X server. */
+void synchronize_with_server(void)
+{
+    /* the last root cursor that was set */
+    static Cursor root_cursor;
+
+    Cursor cursor;
     Atom atoms[2];
     FcWindow *window;
 
-    if (flags == 0) {
-        flags = synchronization_flags;
-    }
-
-    LOG_DEBUG("doing server synchronization with: %#x\n",
-            flags);
-
-    if ((flags & SYNCHRONIZE_ROOT_CURSOR)) {
-        XDefineCursor(display, DefaultRootWindow(display),
-                load_cursor(CURSOR_ROOT, NULL));
-        synchronization_flags &= ~SYNCHRONIZE_ROOT_CURSOR;
-    }
-
-    if ((flags & SYNCHRONIZE_BUTTON_BINDING)) {
-        for (FcWindow *window = Window_first;
-                window != NULL;
-                window = window->next) {
-            grab_configured_buttons(window->reference.id);
-        }
-        synchronization_flags &= ~SYNCHRONIZE_BUTTON_BINDING;
-    }
-
-    if ((flags & SYNCHRONIZE_KEY_BINDING)) {
-        grab_configured_keys();
-        synchronization_flags &= ~SYNCHRONIZE_KEY_BINDING;
+    cursor = load_cursor(CURSOR_ROOT, NULL);
+    if (cursor != root_cursor) {
+        XDefineCursor(display, DefaultRootWindow(display), cursor);
+        root_cursor = cursor;
     }
 
     /* since the strut of a monitor might have changed because a window with
@@ -146,8 +224,6 @@ void synchronize_with_server(unsigned flags)
 
     synchronize_window_stacking_order();
 
-    /* update the client list and stacking order */
-    /* TODO: only change if it actually changed */
     synchronize_client_list();
 
     /* configure all visible windows and map them */
@@ -198,7 +274,18 @@ void synchronize_with_server(unsigned flags)
 
         unmap_client(&window->reference);
     }
+
+    /* if the window list is open, let it keep the focus */
+    if (!WindowList.reference.is_mapped &&
+            Window_server_focus != Window_focus) {
+        set_input_focus(Window_focus);
+        Window_server_focus = Window_focus;
+    }
 }
+
+/**********************
+ * XReference methods *
+ **********************/
 
 /* Show the client on the X server. */
 void map_client(XReference *reference)

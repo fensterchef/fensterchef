@@ -167,7 +167,7 @@ static void merge_with_default_button_bindings(void)
         /* bake a button binding from the default button bindings struct */
         binding.is_transparent = false;
         binding.is_release = default_button_bindings[i].is_release;
-        binding.modifiers = default_button_bindings[i].modifiers;
+        binding.modifiers = Mod4Mask | default_button_bindings[i].modifiers;
         binding.button = default_button_bindings[i].button_index;
         item.type = default_button_bindings[i].type;
 
@@ -195,7 +195,7 @@ static void merge_with_default_key_bindings(void)
     /* overwrite bindings with the default button bindings */
     for (unsigned i = 0; i < SIZE(default_key_bindings); i++) {
         /* bake a key binding from the bindings array */
-        binding.modifiers = default_key_bindings[i].modifiers;
+        binding.modifiers = Mod4Mask | default_key_bindings[i].modifiers;
         binding.key_symbol = default_key_bindings[i].key_symbol;
         item.type = default_key_bindings[i].action;
         if (default_key_bindings[i].string != NULL) {
@@ -345,24 +345,22 @@ void clear_configuration(void)
 /* Reload the fensterchef configuration. */
 void reload_configuration(void)
 {
-    Parser *parser;
+    Parser *parser = NULL;
 
     const char *const configuration = get_configuration_file();
-
-    if (configuration == NULL) {
-        return;
-    }
 
     clear_configuration();
 
     /* the top of the file always starts with these default modifiers */
-    set_additional_modifiers(Mod4Mask);
     set_ignored_modifiers(LockMask | Mod2Mask);
 
-    parser = create_file_parser(configuration);
-    if (parser == NULL) {
-        LOG("could not open %s: %s\n",
-                configuration, strerror(errno));
+    if (configuration == NULL ||
+            (parser = create_file_parser(configuration),
+                parser == NULL)) {
+        if (configuration != NULL) {
+            LOG("could not open %s: %s\n",
+                    configuration, strerror(errno));
+        }
         merge_default_configuration(DEFAULT_CONFIGURATION_MERGE_ALL);
     } else if (parse_and_run_actions(parser) != OK) {
         merge_default_configuration(DEFAULT_CONFIGURATION_MERGE_ALL);

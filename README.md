@@ -13,7 +13,8 @@ Depends on: X11, Xrandr>=1.2, Xcursor and Xft
 Building requires: coreutils, gzip, pkgconf, a C99 compiler and a unix shell
 
 ```
-git clone https://github.com/fensterchef/fensterchef.git && cd fensterchef &&
+git clone https://github.com/fensterchef/fensterchef.git &&
+cd fensterchef &&
 sudo ./make install &&
 fensterchef --version
 ```

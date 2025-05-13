@@ -17,7 +17,6 @@
 #include "window_list.h"
 #include "x11/display.h"
 #include "x11/ewmh.h"
-#include "x11/management.h"
 #include "x11/move_resize.h"
 
 /* signals whether the alarm signal was received */
@@ -81,11 +80,7 @@ int next_cycle(void)
             handle_event(&event);
         }
 
-        synchronize_with_server(0);
-
-        if (old_focus_window != Window_focus) {
-            set_input_focus(Window_focus);
-        }
+        synchronize_with_server();
 
         /* show the current frame indicator if needed */
         if (old_focus_frame != Frame_focus ||

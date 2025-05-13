@@ -25,6 +25,10 @@ Window create_ewmh_window(void)
     return window;
 }
 
+/*********************
+ * Window properties *
+ *********************/
+
 /* Get a long window property. */
 long *get_long_property(Window window, Atom property,
         unsigned long expected_item_count)
@@ -136,6 +140,7 @@ char *get_window_name_property(Window window)
 
     if (text != NULL) {
         name = xstrndup(text, length);
+        XFree(text);
     }
 
     return name;
@@ -235,4 +240,40 @@ char *get_fensterchef_command_property(Window window)
         XFree(command_property);
     }
     return command;
+}
+
+/**************************
+ * Window client messages *
+ **************************/
+
+/* Send a WM_TAKE_FOCUS client message to given window. */
+void send_take_focus_message(Window window)
+{
+    XEvent event;
+
+    ZERO(&event, 1);
+    /* bake an event for running a protocol on the window */
+    event.type = ClientMessage;
+    event.xclient.window = window;
+    event.xclient.message_type = ATOM(WM_PROTOCOLS);
+    event.xclient.format = 32;
+    event.xclient.data.l[0] = ATOM(WM_TAKE_FOCUS);
+    event.xclient.data.l[1] = CurrentTime;
+    XSendEvent(display, window, false, NoEventMask, &event);
+}
+
+/* Send a WM_DELETE_WINDOW client message to given window. */
+void send_delete_window_message(Window window)
+{
+    XEvent event;
+
+    ZERO(&event, 1);
+
+    /* bake an event for running a protocol on the window */
+    event.type = ClientMessage;
+    event.xclient.window = window;
+    event.xclient.message_type = ATOM(WM_PROTOCOLS);
+    event.xclient.format = 32;
+    event.xclient.data.l[0] = ATOM(WM_DELETE_WINDOW);
+    XSendEvent(display, window, False, NoEventMask, &event);
 }

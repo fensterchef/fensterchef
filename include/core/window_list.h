@@ -16,11 +16,6 @@ extern struct window_list {
     unsigned selected;
     /* the currently scrolled amount in pixels */
     int scrolling;
-    /* if the focus should return when the window list gets unmapped, this
-     * depends if the window list selected a window itself or the process
-     * was cancelled (then this would be true)
-     */
-    bool should_revert_focus;
 } WindowList;
 
 /* Handle an incoming X event for the window list. */

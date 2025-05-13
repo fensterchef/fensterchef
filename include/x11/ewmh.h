@@ -199,4 +199,18 @@ bool get_motif_wm_hints_property(Window window,
  */
 char *get_fensterchef_command_property(Window window);
 
+/* Send a WM_TAKE_FOCUS client message to given window.
+ *
+ * The caller should have made sure that the window supports this protocol,
+ * otherwise nothing happens.
+ */
+void send_take_focus_message(Window window);
+
+/* Send a WM_DELETE_WINDOW client message to given window.
+ *
+ * The caller should have made sure that the window supports this protocol,
+ * otherwise nothing happens.
+ */
+void send_delete_window_message(Window window);
+
 #endif

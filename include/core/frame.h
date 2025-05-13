@@ -1,6 +1,16 @@
 #ifndef FRAME_H
 #define FRAME_H
 
+/* Frames are used to partition a monitor into multiple rectangular regions.
+ *
+ * When a frame has one child, it must have a second one, so either BOTH left
+ * AND right are NULL OR neither are NULL.
+ * That is why `frame->left != NULL` is always used as a test for checking if a
+ * frame has children or not.
+ *
+ * `parent` is NULL when the frame is a root frame or stashed frame.
+ */
+
 #include <stdbool.h>
 
 #include "bits/frame.h"
@@ -8,10 +18,11 @@
 #include "utility/attributes.h"
 #include "utility/types.h"
 
-/* the minimum width or height of a frame, frames are never clipped to this size
- * and can even have a size of 0, it is used when resizing frames
+/* The minimum resize width or height of a frame.  Frames are never clipped to
+ * this size and can even have a size of 0.  It is only used when resizing
+ * frames.
  */
-#define FRAME_MINIMUM_SIZE 12
+#define FRAME_RESIZE_MINIMUM_SIZE 12
 
 /* an edge of the frame */
 typedef enum {
@@ -33,15 +44,7 @@ typedef enum {
     FRAME_SPLIT_VERTICALLY,
 } frame_split_direction_t;
 
-/* Frames are used to partition a monitor into multiple rectangular regions.
- *
- * When a frame has one child, it must have a second one, so either BOTH left
- * AND right are NULL OR neither are NULL.
- * That is why `frame->left != NULL` is always used as a test for checking if a
- * frame has children or not.
- *
- * `parent` is NULL when the frame is a root frame or stashed frame.
- */
+/* the frame structure */
 struct frame {
     /* reference counter to keep the pointer alive for longer */
     unsigned reference_count;
