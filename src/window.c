@@ -549,8 +549,8 @@ void destroy_window(FcWindow *window)
     DOUBLY_UNLINK(Window_bottom, Window_top, window, below, above);
     DOUBLY_UNLINK(Window_server_bottom, Window_server_top, window,
             server_below, server_above);
-    SINGLY_UNLINK(FcWindow, Window_oldest, window, newer);
-    SINGLY_UNLINK(FcWindow, Window_first, window, next);
+    SINGLY_UNLINK(Window_oldest, window, newer);
+    SINGLY_UNLINK(Window_first, window, next);
 
     /* window is gone from the list now */
     Window_count--;
@@ -587,7 +587,7 @@ void set_window_number(FcWindow *window, unsigned number)
 {
     FcWindow *previous;
 
-    SINGLY_UNLINK(FcWindow, Window_first, window, next);
+    SINGLY_UNLINK(Window_first, window, next);
 
     previous = find_window_number(number);
     if (previous == NULL) {

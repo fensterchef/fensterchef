@@ -24,6 +24,8 @@
     Add a format to describe window modes.  For example whether they can
     move/resize or their identifying letter, what kind of border they have.
 
+#110 ...
+
 #130 Add custom window borders
     Yes, it is happening soon...
     Use the shape extension for very advanced graphical beauties
@@ -508,3 +510,7 @@
 #108 ! Fix windows being mispositioned
     Placing along the line is not working, the windows are placed incorrectly
     Solution: Replace += with =
+
+#109 ! Window stack breaking
+    The stack is not working correctly and crashes occur.
+    Solution: Fix the linked list implementation
