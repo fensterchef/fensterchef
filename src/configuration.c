@@ -152,7 +152,7 @@ static const char *default_font = "Mono";
 /* Puts the button bindings of the default configuration into the current
  * configuration.
  */
-static void merge_with_default_button_bindings(void)
+static void set_default_button_bindings(void)
 {
     struct action_list_item item;
     struct button_binding binding;
@@ -178,7 +178,7 @@ static void merge_with_default_button_bindings(void)
 /* Puts the key bindings of the default configuration into the current
  * configuration.
  */
-static void merge_with_default_key_bindings(void)
+static void set_default_key_bindings(void)
 {
     struct action_list_item item;
     struct parse_generic_data data;
@@ -210,29 +210,17 @@ static void merge_with_default_key_bindings(void)
     }
 }
 
-/* Merge parts of the default configuration into the current configuration. */
-void merge_default_configuration(unsigned flags)
+/* Set the current configuration to the default configuration. */
+void set_default_configuration(void)
 {
-    if ((flags & DEFAULT_CONFIGURATION_MERGE_SETTINGS)) {
-        memcpy(&configuration, &default_configuration, sizeof(configuration));
-    }
+    clear_configuration();
 
-    if ((flags & DEFAULT_CONFIGURATION_MERGE_CURSOR)) {
-        /* this makes it so the default cursors are loaded again on demand */
-        clear_cursor_cache();
-    }
+    COPY(&configuration, &default_configuration, 1);
 
-    if ((flags & DEFAULT_CONFIGURATION_MERGE_BUTTON_BINDINGS)) {
-        merge_with_default_button_bindings();
-    }
+    set_default_button_bindings();
+    set_default_key_bindings();
 
-    if ((flags & DEFAULT_CONFIGURATION_MERGE_KEY_BINDINGS)) {
-        merge_with_default_key_bindings();
-    }
-
-    if ((flags & DEFAULT_CONFIGURATION_MERGE_FONT)) {
-        set_font(default_font);
-    }
+    set_font(default_font);
 }
 
 /* Expand given @path.
@@ -336,6 +324,7 @@ const char *get_configuration_file(void)
 /* Clear everything that is currently loaded in the configuration. */
 void clear_configuration(void)
 {
+    set_ignored_modifiers(LockMask | Mod2Mask);
     clear_cursor_cache();
     clear_button_bindings();
     clear_key_bindings();
@@ -351,9 +340,6 @@ void reload_configuration(void)
 
     clear_configuration();
 
-    /* the top of the file always starts with these default modifiers */
-    set_ignored_modifiers(LockMask | Mod2Mask);
-
     if (configuration == NULL ||
             (parser = create_file_parser(configuration),
                 parser == NULL)) {
@@ -361,9 +347,9 @@ void reload_configuration(void)
             LOG("could not open %s: %s\n",
                     configuration, strerror(errno));
         }
-        merge_default_configuration(DEFAULT_CONFIGURATION_MERGE_ALL);
+        set_default_configuration();
     } else if (parse_and_run_actions(parser) != OK) {
-        merge_default_configuration(DEFAULT_CONFIGURATION_MERGE_ALL);
+        set_default_configuration();
     }
     destroy_parser(parser);
 }

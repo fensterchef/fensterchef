@@ -25,7 +25,7 @@ For most display managers like LigthDM, GDM, SLiM etc., it suffices to edit
 `~/.xsession`:
 ```
 mkdir -p ~/.local/share/fensterchef
-exec /usr/bin/fensterchef -dinfo 2>~/.local/share/fensterchef
+exec /usr/bin/fensterchef -dinfo 2>~/.local/share/fensterchef/$(date +%F_%T).log
 ```
 When using no display manager, use
 [your preferred way](https://linux.die.net/man/1/xinit).

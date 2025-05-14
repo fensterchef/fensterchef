@@ -985,39 +985,6 @@ void do_action(action_type_t type, const struct parse_generic_data *data)
         initiate_window_move_resize(window, _NET_WM_MOVERESIZE_AUTO, -1, -1);
         break;
 
-    /* merge all default settings */
-    case ACTION_MERGE_DEFAULT:
-        merge_default_configuration(DEFAULT_CONFIGURATION_MERGE_ALL);
-        break;
-
-    /* merge in the default bindings */
-    case ACTION_MERGE_DEFAULT_BINDINGS:
-        merge_default_configuration(
-                DEFAULT_CONFIGURATION_MERGE_BUTTON_BINDINGS |
-                DEFAULT_CONFIGURATION_MERGE_KEY_BINDINGS);
-        break;
-
-    /* merge in the default button bindings */
-    case ACTION_MERGE_DEFAULT_BUTTON_BINDINGS:
-        merge_default_configuration(
-                DEFAULT_CONFIGURATION_MERGE_BUTTON_BINDINGS);
-        break;
-
-    /* merge in the default cursor */
-    case ACTION_MERGE_DEFAULT_CURSOR:
-        merge_default_configuration(DEFAULT_CONFIGURATION_MERGE_CURSOR);
-        break;
-
-    /* merge in the default font */
-    case ACTION_MERGE_DEFAULT_FONT:
-        merge_default_configuration(DEFAULT_CONFIGURATION_MERGE_FONT);
-        break;
-
-    /* merge in the default key bindings */
-    case ACTION_MERGE_DEFAULT_KEY_BINDINGS:
-        merge_default_configuration(DEFAULT_CONFIGURATION_MERGE_KEY_BINDINGS);
-        break;
-
     /* hide the window with given number */
     case ACTION_MINIMIZE_WINDOW_I:
         window = get_window_by_number(data->u.integer);
@@ -1201,6 +1168,11 @@ void do_action(action_type_t type, const struct parse_generic_data *data)
     /* select the window with given number */
     case ACTION_SELECT_WINDOW:
         Window_selected = get_window_by_number(data->u.integer);
+        break;
+
+    /* set all default settings */
+    case ACTION_SET_DEFAULTS:
+        set_default_configuration();
         break;
 
     /* set the mode of the current window to floating */

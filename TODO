@@ -24,7 +24,7 @@
 #100 ! Fix wrong order of window numbers
     When a window number changes, it has to move in the linked list
 
-#103 ...
+#104 ...
 
 #130 Add custom window borders
     Yes, it is happening soon...
@@ -52,36 +52,12 @@
     When reloading the configuration and an error was detected the bind for
     reloading no longer works. It works on an initial load if the parser fails
 
-#37 ? Add hooks
-    When certain events occur like showing a window, the user should be able to
-    make a hook for an alternative action that should occur (instead of the
-    default of focusing this window)
-    This is implemented but only for mapping windows for the first time
-
-#39 ? Add the set action that can set a variable
-    The set action would have the syntax `set <section>.<name> = <value>` and
-    dynamically reload the part of the configuration that is relevant
-
-#43 ? Make perfect focus management
-    Make it so the focus can not be broken by focus_thief.
-    Make a proper design in your head how focus can be managed. The difficulty
-    is that override redirect windows can have focus.
-
 #45 ! Fix weird flicker of Steam window
     Steam flickers back and forth (once) when hovering over a menu item
-
-#59 ? Make it run more than startup actions using external command
-    Right now using -e, only actions can be sent. Make it so entire
-    configurations can be sent. This is helpful when setting a specific layout
 
 #63 ? Replace deletion of atom with setting of another
     When a command is sent via the FENSTERCHEF_COMMAND atom, it is currently
     deleted. Instead, set FENSTERCHEF_RETURN on the window.
-
-#25 ? Make string arguments more shell like
-    One should be able to specify in quotes: "what is here ".
-    So if a line starts with `"`, then this should be interpreted as string.
-    Also this can be escaped as well as ';' with a backslash.
 
 #7 ! Discord hides itself again on WM_CHANGE_STATE
     When starting Discord, it sometimes hides itself again
@@ -148,6 +124,30 @@
 #92 ! Moving into empty frame on another monitor
     Moving into an empty frame that is on another monitor should ALWAYS remove
     it. NO!
+
+#37 ? Add hooks
+    When certain events occur like showing a window, the user should be able to
+    make a hook for an alternative action that should occur (instead of the
+    default of focusing this window)
+    This is implemented but only for mapping windows for the first time
+
+#39 ? Add the set action that can set a variable
+    The set action would have the syntax `set <section>.<name> = <value>` and
+    dynamically reload the part of the configuration that is relevant
+
+#25 ? Make string arguments more shell like
+    One should be able to specify in quotes: "what is here ".
+    So if a line starts with `"`, then this should be interpreted as string.
+    Also this can be escaped as well as ';' with a backslash.
+
+#59 ? Make it run more than startup actions using external command
+    Right now using -e, only actions can be sent. Make it so entire
+    configurations can be sent. This is helpful when setting a specific layout
+
+#43 ? Make perfect focus management
+    Make it so the focus can not be broken by focus_thief.
+    Make a proper design in your head how focus can be managed. The difficulty
+    is that override redirect windows can have focus.
 
 [Done]
 #9 Add maintainability macros
@@ -482,3 +482,6 @@
 #97 Improve grabbing efficiency
     We always re-grab all bindings, even if just one binding is added.  Optimize
     this.
+
+#103 Remove merge actions
+    These are pretty useless

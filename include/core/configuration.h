@@ -63,15 +63,8 @@ extern struct configuration {
 /* the settings of the default configuration */
 extern const struct configuration default_configuration;
 
-#define DEFAULT_CONFIGURATION_MERGE_SETTINGS        (1 << 0)
-#define DEFAULT_CONFIGURATION_MERGE_KEY_BINDINGS    (1 << 1)
-#define DEFAULT_CONFIGURATION_MERGE_BUTTON_BINDINGS (1 << 2)
-#define DEFAULT_CONFIGURATION_MERGE_FONT            (1 << 3)
-#define DEFAULT_CONFIGURATION_MERGE_CURSOR          (1 << 4)
-#define DEFAULT_CONFIGURATION_MERGE_ALL            ((1 << 5) - 1)
-
-/* Merge parts of the default configuration into the current configuration. */
-void merge_default_configuration(unsigned flags);
+/* Set the current configuration to the default configuration. */
+void set_default_configuration(void);
 
 /* Get the configuration file path for fensterchef.
  *

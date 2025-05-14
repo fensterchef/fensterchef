@@ -215,7 +215,7 @@ bool get_motif_wm_hints_property(Window window, struct motif_wm_hints *hints)
     long *longs;
 
     longs = get_long_property(window, ATOM(_MOTIF_WM_HINTS),
-            sizeof(hints) / sizeof(hints->flags));
+            sizeof(*hints) / sizeof(hints->flags));
     if (longs == NULL) {
         return false;
     } else {

@@ -118,18 +118,6 @@
     X(ACTION_INITIATE_MOVE, "initiate move") \
     /* start resizing a window with the mouse */ \
     X(ACTION_INITIATE_RESIZE, "initiate resize") \
-    /* merge in the default settings */ \
-    X(ACTION_MERGE_DEFAULT, "merge default") \
-    /* merge in the default bindings */ \
-    X(ACTION_MERGE_DEFAULT_BINDINGS, "merge default bindings") \
-    /* merge in the defaault button bindings */ \
-    X(ACTION_MERGE_DEFAULT_BUTTON_BINDINGS, "merge default button bindings") \
-    /* merge in the default cursors */ \
-    X(ACTION_MERGE_DEFAULT_CURSOR, "merge default cursor") \
-    /* merge in the default font */ \
-    X(ACTION_MERGE_DEFAULT_FONT, "merge default font") \
-    /* merge in the default key bindings */ \
-    X(ACTION_MERGE_DEFAULT_KEY_BINDINGS, "merge default key bindings") \
     /* hide currently active window */ \
     X(ACTION_MINIMIZE_WINDOW, "minimize window") \
     /* hide the window with given number */ \
@@ -174,6 +162,8 @@
     X(ACTION_SELECT_PRESSED, "select pressed") \
     /* select the window with given number */ \
     X(ACTION_SELECT_WINDOW, "select window I") \
+    /* set the default settings */ \
+    X(ACTION_SET_DEFAULTS, "set defaults") \
     /* set the mode of the current window to floating */ \
     X(ACTION_SET_FLOATING, "set floating") \
     /* set the mode of the current window to fullscreen */ \

@@ -28,16 +28,16 @@ int main(int argc, char **argv)
     LOG("the configuration file resides in %s\n",
             get_configuration_file());
 
+    /* set the signal handlers (very crucial because if we do not handle
+     * `SIGALRM`, fensterchef quits)
+     */
+    initialize_signal_handlers();
+
     /* open connection to the X server */
     open_connection();
 
     /* try to take control of the window manager role */
     take_control();
-
-    /* set the signal handlers (very crucial because if we do not handle
-     * `SIGALRM`, fensterchef quits)
-     */
-    initialize_signal_handlers();
 
     /* initialize randr if possible and the initial monitors with their
      * root frames
