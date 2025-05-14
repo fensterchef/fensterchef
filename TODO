@@ -1,10 +1,9 @@
 [Tasks]
 #71 Make generic menu item chooser
     Abstract parts of the window list away to make more choose menus like an
-    application launcher
-
-#80 Add the dialog window mode
-    Add a window mode for dialog windows
+    application launcher.  Make a single window that can hold many lists which
+    are switchable.  This could be a file viewer, application launcher or the
+    window list.
 
 #84 Give each window its own individual settings
     Each window should have its own settings for border and gaps.  Actions have
@@ -12,10 +11,18 @@
     individual or not has to be stored within the window.
 
 #96 New auto fill void
-    When a window is opened and there is an empty frame one the monitor with the
-    current frame, open the window in that empty frame
+    When a window is opened and there is an empty frame on the monitor with the
+    current frame, open the window in that empty frame.  Make a configurable
+    option for this.
 
-#106 ...
+#106 Add action to clear association
+    Like unalias or unbind, have an action to remove an association again.
+    Also make a lock mechanism so that new associations are not directly used
+    but only added after the associations ran.
+
+#107 ? Add window mode descriptions
+    Add a format to describe window modes.  For example whether they can
+    move/resize or their identifying letter, what kind of border they have.
 
 #130 Add custom window borders
     Yes, it is happening soon...
@@ -34,6 +41,9 @@
     Make an additional repository that hosts fensterland
 
 [In Progress]
+#80 Add the dialog window mode
+    Add a window mode for dialog windows
+    WHY IS THIS NEEDED AGAIN??
 
 [Recheck]
 #1 ! Hover events not working in firefox sometimes
@@ -493,3 +503,8 @@
     is created and the server gets that event but `select()` is blocking even
     when there is something to read (map request).  It unblocks as usual when
     more events are received.
+    Solution: Use XPending() before select().
+
+#108 ! Fix windows being mispositioned
+    Placing along the line is not working, the windows are placed incorrectly
+    Solution: Replace += with =

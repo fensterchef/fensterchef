@@ -845,8 +845,8 @@ static inline void move_to_next_available(Monitor *monitor, FcWindow *window,
         *destination_y = start_y;
     } else {
         /* append the window to the line */
-        *destination_x += top->x + 20;
-        *destination_y += top->y + 20;
+        *destination_x = top->x + 20;
+        *destination_y = top->y + 20;
     }
 }
 
