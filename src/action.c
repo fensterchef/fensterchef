@@ -1360,6 +1360,16 @@ void do_action(action_type_t type, const struct parse_generic_data *data)
         break;
     }
 
+    /* remove the currently running association */
+    case ACTION_UNASSOCIATE:
+        signal_window_unassociate();
+        break;
+
+    /* remove all associations */
+    case ACTION_UNASSOCIATE_ALL:
+        clear_window_associations();
+        break;
+
     /* not a real action */
     case ACTION_SIMPLE_MAX:
     case ACTION_MAX:

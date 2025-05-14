@@ -203,6 +203,10 @@
     /* toggles the fullscreen state of the currently focused window */ \
     X(ACTION_TOGGLE_FULLSCREEN, "toggle fullscreen") \
     /* changes a non tiling window to a tiling window and vise versa */ \
-    X(ACTION_TOGGLE_TILING, "toggle tiling")
+    X(ACTION_TOGGLE_TILING, "toggle tiling") \
+    /* remove the currently running association */ \
+    X(ACTION_UNASSOCIATE, "unassociate") \
+    /* remove all associations */ \
+    X(ACTION_UNASSOCIATE_ALL, "unassociate all")
 
 #endif

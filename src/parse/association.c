@@ -36,10 +36,18 @@ void continue_parsing_association(Parser *parser,
             }
             backslash_count++;
         }
-    } while (backslash_count % 2 == 1);
+
+        if (backslash_count % 2 == 1) {
+            /* remove a backslash \ */
+            parser->string_length--;
+            MOVE(separator, separator + 1,
+                    &parser->string[parser->string_length] - separator);
+            continue;
+        }
+    } while (0);
 
     if (separator == NULL) {
-        association.instance_pattern = NULL;
+        association.instance_pattern = xstrdup("*");
     } else {
         association.instance_pattern = xstrndup(parser->string,
                 separator - parser->string);

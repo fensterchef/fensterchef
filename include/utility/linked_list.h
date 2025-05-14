@@ -7,7 +7,7 @@
  * same object.
  */
 
-#include <stddef.h> /* size_t, NULL, offsetof() */
+#include <stddef.h> /* size_t, NULL */
 
 /**********************
  * Singly linked list *
@@ -32,7 +32,7 @@
  * T*   @item is the item to remove.
  * T*   @next is the member of T that has the next element.
  *
- * Assumes that @item IS part of the list.
+ * ASSUMES that @item IS part of the list.
  *
  * void @return
  */
@@ -71,7 +71,7 @@
 #define DOUBLY_LIST(type, head, tail) \
     type *head, *tail
 
-/* Unlink an item from the doubly linked list.
+/* Unlink an item from a doubly linked list.
  *
  * T*   @head is the head of the linked list.
  * T*   @tail is the tail of the linked list.

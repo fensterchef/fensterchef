@@ -15,16 +15,19 @@
     current frame, open the window in that empty frame.  Make a configurable
     option for this.
 
-#106 Add action to clear association
-    Like unalias or unbind, have an action to remove an association again.
-    Also make a lock mechanism so that new associations are not directly used
-    but only added after the associations ran.
-
 #107 ? Add window mode descriptions
     Add a format to describe window modes.  For example whether they can
     move/resize or their identifying letter, what kind of border they have.
+    This could then also be configurable.
 
-#110 ...
+#110 Add action to clear a specific association
+    Make two actions, one `unassociate pattern S` and another `unassociate match
+    S` that both unassociate but one uses a pattern (for strcmp()) whereas the
+    other tries to match the pattern.
+    Maybe make variations ending with `all` that do not stop after the first
+    association has been removed.
+
+#111 ...
 
 #130 Add custom window borders
     Yes, it is happening soon...
@@ -514,3 +517,6 @@
 #109 ! Window stack breaking
     The stack is not working correctly and crashes occur.
     Solution: Fix the linked list implementation
+
+#106 Add action to clear association
+    Like unalias or unbind, have an action to remove an association again.

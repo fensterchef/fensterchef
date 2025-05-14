@@ -53,9 +53,8 @@ typedef struct window_properties {
     /* window name */
     utf8_t *name;
 
-    /* window instance */
+    /* window instance, class */
     utf8_t *instance;
-    /* window class */
     utf8_t *class;
 
     /* X size hints of the window */

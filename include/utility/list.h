@@ -56,8 +56,7 @@
 /* Set the items of a list.
  *
  * T*     @name is the name of the list.
- * size_t @from is the index to start setting from.  It must be at most the size
- *              of the list.
+ * size_t @from is the index to start setting from, it must be in bounds.
  * T*     @items is the items to set.
  * size_t @item_count is the number of items.
  *
