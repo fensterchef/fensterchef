@@ -141,10 +141,6 @@ static int finish_parsing_binding(Parser *parser, struct parse_binding *binding,
         return ERROR;
     }
 
-    if (sub_list.associations_length > 0) {
-        emit_parse_error(parser,
-                "can not have associations within bindings");
-    }
     clear_parse_list_data(&sub_list);
 
     if (binding->button_index != BUTTON_NONE) {

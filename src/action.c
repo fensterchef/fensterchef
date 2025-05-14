@@ -110,6 +110,17 @@ void log_action_list(const struct action_list *list)
 
         item = &list->items[i];
         switch (item->type) {
+        case ACTION_ASSOCIATION: {
+            const struct window_association *const association =
+                &data->u.association;
+            _log_formatted("%s,%s ( %A )",
+                    association->instance_pattern,
+                    association->class_pattern,
+                    &association->actions);
+            data++;
+            continue;
+        }
+
         case ACTION_BUTTON_BINDING: {
             const struct button_binding *const binding = &data->u.button;
             if (binding->is_release) {
@@ -566,8 +577,7 @@ void do_action(action_type_t type, const struct parse_generic_data *data)
         if (window == NULL) {
             break;
         }
-        /* TODO: relink in the window list */
-        window->number = data->u.integer;
+        set_window_number(window, data->u.integer);
         break;
 
     /* automatically equalize the frames when a frame is split or removed */
@@ -1312,6 +1322,11 @@ void do_action(action_type_t type, const struct parse_generic_data *data)
         set_window_mode(window,
                 window->state.mode == WINDOW_MODE_TILING ?
                 WINDOW_MODE_FLOATING : WINDOW_MODE_TILING);
+        break;
+    
+    /* add an association */
+    case ACTION_ASSOCIATION:
+        add_window_association(&data->u.association);
         break;
 
     /* set a button binding */

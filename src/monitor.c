@@ -16,7 +16,7 @@
 static bool is_randr_primary_outputs = false;
 
 /* the first monitor in the monitor linked list */
-Monitor *Monitor_first;
+SINGLY_LIST(Monitor, Monitor_first);
 
 /*********************
  * Xrandr management *
@@ -295,7 +295,8 @@ Monitor *get_monitor_from_rectangle_or_primary(int x, int y,
 Monitor *get_monitor_containing_frame(Frame *frame)
 {
     frame = get_root_frame(frame);
-    for (Monitor *monitor = Monitor_first; monitor != NULL;
+    for (Monitor *monitor = Monitor_first;
+            monitor != NULL;
             monitor = monitor->next) {
         if (monitor->frame == frame) {
             return monitor;
@@ -624,7 +625,8 @@ void merge_monitors(Monitor *monitors)
     }
 
     /* copy frames from the old monitors to the new ones with same name */
-    for (Monitor *monitor = monitors; monitor != NULL;
+    for (Monitor *monitor = monitors;
+            monitor != NULL;
             monitor = monitor->next) {
         Monitor *const other = get_monitor_by_name(monitor->name);
         if (other == NULL) {
@@ -637,7 +639,8 @@ void merge_monitors(Monitor *monitors)
 
     focus_frame_root = get_root_frame(Frame_focus);
     /* drop the frames that are no longer valid */
-    for (Monitor *monitor = Monitor_first, *next_monitor; monitor != NULL;
+    for (Monitor *monitor = Monitor_first, *next_monitor;
+            monitor != NULL;
             monitor = next_monitor) {
         next_monitor = monitor->next;
         if (monitor->frame != NULL) {
@@ -657,7 +660,8 @@ void merge_monitors(Monitor *monitors)
     Monitor_first = monitors;
 
     /* initialize the remaining monitors' frames */
-    for (Monitor *monitor = monitors; monitor != NULL;
+    for (Monitor *monitor = monitors;
+            monitor != NULL;
             monitor = monitor->next) {
         if (monitor->frame == NULL) {
             if (configuration.auto_fill_void) {

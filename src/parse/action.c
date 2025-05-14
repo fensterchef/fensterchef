@@ -287,15 +287,6 @@ void clear_parse_list(struct parse_action_list *list)
  */
 void clear_parse_list_data(struct parse_action_list *list)
 {
-    /* free the associations */
-    for (size_t i = 0; i < list->associations_length; i++) {
-        struct window_association *const association = &list->associations[i];
-        free(association->instance_pattern);
-        free(association->class_pattern);
-        clear_action_list(&association->actions);
-    }
-    free(list->associations);
-
     /* free the action parse data */
     for (action_type_t i = 0; i < ACTION_SIMPLE_MAX; i++) {
         for (size_t j = 0; j < list->actions[i].data_length; j++) {

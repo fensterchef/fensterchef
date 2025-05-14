@@ -4,7 +4,7 @@
 #include <stddef.h>
 
 #include "bits/binding.h"
-
+#include "core/association.h"
 #include "utility/types.h"
 
 /* integer type the parser should use */
@@ -12,7 +12,7 @@ typedef int_fast32_t parse_integer_t;
 #define PRIiPARSE_INTEGER PRIiFAST32
 
 /* If the integer is a percentage of something.  For example this might be 20%
- * off the width of a monitor.
+ * of the width of a monitor.
  */
 #define PARSE_DATA_FLAGS_IS_PERCENT (1 << 0)
 
@@ -20,6 +20,7 @@ typedef int_fast32_t parse_integer_t;
 typedef enum parse_data_type {
     PARSE_DATA_TYPE_INTEGER,
     PARSE_DATA_TYPE_STRING,
+    PARSE_DATA_TYPE_ASSOCIATION,
     PARSE_DATA_TYPE_BUTTON,
     PARSE_DATA_TYPE_KEY,
 } parse_data_type_t;
@@ -35,6 +36,8 @@ struct parse_generic_data {
         parse_integer_t integer;
         /* a nul-terminated string */
         utf8_t *string;
+        /* a window association */
+        struct window_association association;
         /* a button binding */
         struct button_binding button;
         /* a key binding */

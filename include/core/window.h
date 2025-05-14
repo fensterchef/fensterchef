@@ -18,6 +18,7 @@
 #include "configuration.h"
 #include "monitor.h"
 #include "utility/attributes.h"
+#include "utility/linked_list.h"
 #include "x11/ewmh.h"
 #include "x11/synchronize.h"
 
@@ -29,18 +30,6 @@
 
 /* the minimum length of the window that needs to stay visible */
 #define WINDOW_MINIMUM_VISIBLE_SIZE 8
-
-/* association between class/instance and actions */
-struct window_association {
-    /* the pattern the instance should match, may be NULL which implies its
-     * value is '*'
-     */
-    _Nullable utf8_t *instance_pattern;
-    /* the pattern the class should match */
-    utf8_t *class_pattern;
-    /* the actions to execute */
-    struct action_list actions;
-};
 
 /* the mode of the window */
 typedef enum window_mode {
@@ -184,21 +173,16 @@ struct fensterchef_window {
 extern unsigned Window_count;
 
 /* the window that was created before any other */
-extern FcWindow *Window_oldest;
+extern SINGLY_LIST(FcWindow, Window_oldest);
 
-/* the window at the bottom of the Z stack */
-extern FcWindow *Window_bottom;
+/* the window at the bottom/top of the Z stack */
+extern DOUBLY_LIST(FcWindow, Window_bottom, Window_top);
 
-/* the window at the top of the Z stack */
-extern FcWindow *Window_top;
+/* the window at the bottom/top of the Z stack on the server */
+extern DOUBLY_LIST(FcWindow, Window_server_bottom, Window_server_top);
 
 /* the first window in the number linked list */
-extern FcWindow *Window_first;
-
-/* The window at the top of the Z stack on the server.  We do not need the
- * bottom one, it is simply not needed.
- */
-extern FcWindow *Window_server_top;
+extern SINGLY_LIST(FcWindow, Window_first);
 
 /* the currently focused window */
 extern FcWindow *Window_focus;
@@ -222,25 +206,8 @@ void add_window_states(FcWindow *window, Atom *states,
 void remove_window_states(FcWindow *window, Atom *states,
         unsigned number_of_states);
 
-/* Clear all currently set window associations. */
-void clear_window_associations(void);
-
 /* Update the property within @window corresponding to given @atom. */
 bool cache_window_property(FcWindow *window, Atom atom);
-
-/* Add a new association from window instance/class to actions.
- *
- * This function takes control of all memory within @associations.
- * Do NOT free it.
- */
-void add_window_associations(struct window_association *associations,
-        unsigned number_of_associations);
-
-/* Run the actions associated to given window.
- *
- * @return true if any association existed, false otherwise.
- */
-bool run_window_association(FcWindow *window);
 
 /* Increment the reference count of the window. */
 void reference_window(FcWindow *window);
@@ -268,8 +235,14 @@ void destroy_window(FcWindow *window);
  */
 FcWindow *get_fensterchef_window(Window id);
 
-/* Get a window with given @id or NULL if no window has that id. */
-FcWindow *get_window_by_number(unsigned id);
+/* Set the number of a window.
+ *
+ * This also moves the window in the linked list so it is sorted again.
+ */
+void set_window_number(FcWindow *window, unsigned number);
+
+/* Get a window with given @id or NULL if no window has that number. */
+FcWindow *get_window_by_number(unsigned number);
 
 /* Get the frame this window is contained in.
  *

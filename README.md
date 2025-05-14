@@ -1,7 +1,7 @@
 # [Fensterchef](https://fensterchef.org) – The X11 Tiling Window Manager
 
 Fensterchef is a keyboard-centric tiling window manager for unix systems using
-X11.  It is meant to be highly configurable both through a custom configuration
+X11.  It is meant to be highly configurable both through a simple configuration
 language and the source code made by using clean code principles.
 
 ## Installation

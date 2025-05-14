@@ -35,12 +35,7 @@ int continue_parsing_actions(Parser *parser, struct parse_action_list *list);
 /* Clear all memory within @list. */
 void clear_parse_list(struct parse_action_list *list);
 
-/* Clear the data within @list that is needed for parsing and the
- * associations.
- *
- * Note that the associations are not needed for `make_real_action_list()`,
- * making it safe to call both.
- */
+/* Clear the data within @list that is needed only for parsing. */
 void clear_parse_list_data(struct parse_action_list *list);
 
 /* Make a real action list from a parser action list.

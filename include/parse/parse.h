@@ -43,8 +43,6 @@ struct parse_action_list {
     LIST(struct action_list_item, items);
     /* data for the action items being parsed */
     LIST(struct parse_generic_data, data);
-    /* list of associations */
-    LIST(struct window_association, associations);
 };
 
 /* the parser object */

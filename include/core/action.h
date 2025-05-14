@@ -20,6 +20,8 @@ typedef enum {
 
     /* The below actions are parsed in a special way. */
 
+    /* a window association */
+    ACTION_ASSOCIATION,
     /* a button binding */
     ACTION_BUTTON_BINDING,
     /* a key binding */

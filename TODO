@@ -21,13 +21,14 @@
     when there is something to read (map request).  It unblocks as usual when
     more events are received.
 
-#100 ! Fix wrong order of window numbers
-    When a window number changes, it has to move in the linked list
+#104 ! WM_HINTS constantly changes
+    WM_HINTS is constantly update, figure out if this is our fault
 
-#104 ...
+#106 ...
 
 #130 Add custom window borders
     Yes, it is happening soon...
+    Use the shape extension for very advanced graphical beauties
 
 #200 Make repository for fensterchef-menu
     Menus of all kind for any window manager
@@ -485,3 +486,9 @@
 
 #103 Remove merge actions
     These are pretty useless
+
+#100 ! Fix wrong order of window numbers
+    When a window number changes, it has to move in the linked list
+
+#105 Isolate window associations
+    Isolate window associations into their own file and make them bindable

@@ -11,9 +11,10 @@ void continue_parsing_association(Parser *parser,
     utf8_t *next, *separator;
     size_t length;
     unsigned backslash_count;
-    size_t association_index;
     struct window_association association;
     struct parse_action_list sub_list;
+    struct action_list_item item;
+    struct parse_generic_data data;
 
     /* separate the parser string into instance and class */
     next = parser->string;
@@ -45,9 +46,6 @@ void continue_parsing_association(Parser *parser,
     }
     association.class_pattern = xstrndup(next, length);
 
-    /* save this to the association string for error printing */
-    association_index = parser->start_index;
-
     ZERO(&sub_list, 1);
     if (parse_top(parser, &sub_list) != OK) {
         emit_parse_error(parser,
@@ -58,13 +56,16 @@ void continue_parsing_association(Parser *parser,
         return;
     }
 
-    if (sub_list.associations_length > 0) {
-        parser->start_index = association_index;
-        emit_parse_error(parser,
-                "can not have associations within this association");
-    }
     clear_parse_list_data(&sub_list);
 
     make_real_action_list(&association.actions, &sub_list);
-    LIST_APPEND_VALUE(list->associations, association);
+
+    item.type = ACTION_ASSOCIATION;
+    item.data_count = 1;
+    LIST_APPEND_VALUE(list->items, item);
+
+    data.flags = 0;
+    data.type = PARSE_DATA_TYPE_ASSOCIATION;
+    data.u.association = association;
+    LIST_APPEND_VALUE(list->data, data);
 }

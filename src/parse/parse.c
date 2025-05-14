@@ -1,6 +1,7 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include "core/association.h"
 #include "core/log.h"
 #include "core/window.h"
 #include "parse/action.h"
@@ -157,9 +158,6 @@ int parse_and_run_actions(Parser *parser)
         clear_parse_list(&list);
         return ERROR;
     }
-
-    add_window_associations(list.associations, list.associations_length);
-    list.associations_length = 0;
 
     /* do the startup actions */
     make_real_action_list(&actions, &list);

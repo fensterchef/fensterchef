@@ -4,6 +4,7 @@
 
 #include <X11/Xatom.h>
 
+#include "association.h"
 #include "binding.h"
 #include "event.h"
 #include "frame.h"
@@ -13,29 +14,20 @@
 #include "window.h"
 #include "x11/display.h"
 
-/* the window associations */
-struct window_association *window_associations;
-
-/* the number of elements in `window_associations` */
-unsigned number_of_window_associations;
-
 /* the number of all windows within the linked list */
 unsigned Window_count;
 
 /* the window that was created before any other */
-FcWindow *Window_oldest;
+SINGLY_LIST(FcWindow, Window_oldest);
 
-/* the window at the bottom of the Z stack */
-FcWindow *Window_bottom;
+/* the window at the bottom/top of the Z stack */
+DOUBLY_LIST(FcWindow, Window_bottom, Window_top);
 
-/* the window at the top of the Z stack */
-FcWindow *Window_top;
-
-/* the window at the top of the Z stack on the server */
-FcWindow *Window_server_top;
+/* the window at the bottom/top of the Z stack on the server */
+DOUBLY_LIST(FcWindow, Window_server_bottom, Window_server_top);
 
 /* the first window in the number linked list */
-FcWindow *Window_first;
+SINGLY_LIST(FcWindow, Window_first);
 
 /* the currently focused window */
 FcWindow *Window_focus;
@@ -282,69 +274,6 @@ static void initialize_window_properties(FcWindow *window)
     set_window_mode(window, predicted_mode);
 }
 
-/***********************
- * Window associations *
- ***********************/
-
-/* Add a new association from window instance/class to actions. */
-void add_window_associations(struct window_association *associations,
-        unsigned number_of_associations)
-{
-    /* prepend the associations */
-    REALLOCATE(window_associations,
-            number_of_associations + number_of_window_associations);
-    /* make a gap at the front */
-    MOVE(&window_associations[number_of_associations],
-            &window_associations[0],
-            number_of_window_associations);
-    /* move them into the front */
-    COPY(&window_associations[0], associations, number_of_associations);
-    number_of_window_associations += number_of_associations;
-}
-
-/* Clear all currently set window associations. */
-void clear_window_associations(void)
-{
-    for (unsigned i = 0; i < number_of_window_associations; i++) {
-        struct window_association *const association = &window_associations[i];
-        free(association->instance_pattern);
-        free(association->class_pattern);
-        clear_action_list(&association->actions);
-    }
-    free(window_associations);
-
-    window_associations = NULL;
-    number_of_window_associations = 0;
-}
-
-/* Run the actions associated to given window. */
-bool run_window_association(FcWindow *window)
-{
-    if (window->properties.instance == NULL &&
-            window->properties.class == NULL) {
-        return false;
-    }
-
-    /* if the class property is set, try to find an association */
-    for (unsigned i = 0; i < number_of_window_associations; i++) {
-        struct window_association *const association = &window_associations[i];
-        if ((association->instance_pattern == NULL ||
-                    matches_pattern(association->instance_pattern,
-                        window->properties.instance)) &&
-                matches_pattern(association->class_pattern,
-                    window->properties.class)) {
-            LOG_DEBUG("running associated actions: %A\n",
-                    &association->actions);
-
-            Window_selected = window;
-            run_action_list(&association->actions);
-            return true;
-        }
-    }
-
-    return false;
-}
-
 /***********************************
  * Window creation and destruction *
  ***********************************/
@@ -400,7 +329,7 @@ static inline FcWindow *find_number_gap(void)
 }
 
 /* Find the window after which a new window with given @number should be
- * inserted
+ * inserted.
  *
  * @return NULL when the window should be inserted before the first window.
  */
@@ -559,7 +488,7 @@ FcWindow *create_window(Window id)
     LOG("created new window %W\n",
             window);
 
-    if (run_window_association(window)) {
+    if (run_window_associations(window)) {
         /* nothing */
     /* if a window does not start in normal state, do not map it */
     } else if ((window->properties.hints.flags & StateHint) &&
@@ -584,7 +513,6 @@ FcWindow *create_window(Window id)
 void destroy_window(FcWindow *window)
 {
     Frame *frame;
-    FcWindow *previous;
 
     /* Really make sure the window is hidden.  Not sure if this case can ever
      * happen because usually a MapUnnotify event hides the window beforehand.
@@ -618,33 +546,11 @@ void destroy_window(FcWindow *window)
 
     LOG("destroying window %W\n", window);
 
-    /* remove from the z linked list */
-    unlink_window_from_z_list(window);
-
-    /* remove from the server z linked list */
-    unlink_window_from_z_server_list(window);
-
-    /* remove from the age linked list */
-    if (Window_oldest == window) {
-        Window_oldest = Window_oldest->newer;
-    } else {
-        previous = Window_oldest;
-        while (previous->newer != window) {
-            previous = previous->newer;
-        }
-        previous->newer = window->newer;
-    }
-
-    /* remove from the number linked list */
-    if (Window_first == window) {
-        Window_first = Window_first->next;
-    } else {
-        previous = Window_first;
-        while (previous->next != window) {
-            previous = previous->next;
-        }
-        previous->next = window->next;
-    }
+    DOUBLY_UNLINK(Window_bottom, Window_top, window, below, above);
+    DOUBLY_UNLINK(Window_server_bottom, Window_server_top, window,
+            server_below, server_above);
+    SINGLY_UNLINK(FcWindow, Window_oldest, window, newer);
+    SINGLY_UNLINK(FcWindow, Window_first, window, next);
 
     /* window is gone from the list now */
     Window_count--;
@@ -674,6 +580,25 @@ FcWindow *get_fensterchef_window(Window id)
         }
     }
     return NULL;
+}
+
+/* Set the number of a window. */
+void set_window_number(FcWindow *window, unsigned number)
+{
+    FcWindow *previous;
+
+    SINGLY_UNLINK(FcWindow, Window_first, window, next);
+
+    previous = find_window_number(number);
+    if (previous == NULL) {
+        window->next = Window_first;
+        Window_first = window;
+    } else {
+        window->next = previous->next;
+        previous->next = window;
+    }
+
+    window->number = number;
 }
 
 /* Get a window with given @number or NULL if no window has that id. */
@@ -1421,86 +1346,12 @@ void hide_window_abruptly(FcWindow *window)
  * Window stacking *
  *******************/
 
-/* Remove @window from the Z linked list. */
-void unlink_window_from_z_list(FcWindow *window)
-{
-    if (window->below != NULL) {
-        window->below->above = window->above;
-    } else {
-        Window_bottom = window->above;
-    }
-
-    if (window->above != NULL) {
-        window->above->below = window->below;
-    } else {
-        Window_top = window->below;
-    }
-
-    window->above = NULL;
-    window->below = NULL;
-}
-
-/* Links the window into the z linked list at a specific place. */
-void link_window_above_in_z_list(FcWindow *window, FcWindow *below)
-{
-    /* link onto the bottom of the Z linked list */
-    if (below == NULL) {
-        if (Window_bottom != NULL) {
-            Window_bottom->below = window;
-            window->above = Window_bottom;
-        } else {
-            Window_top = window;
-        }
-        Window_bottom = window;
-    /* link it above `below` */
-    } else {
-        window->below = below;
-        window->above = below->above;
-        if (below->above != NULL) {
-            below->above->below = window;
-        } else {
-            Window_top = window;
-        }
-        below->above = window;
-    }
-}
-
-/* Remove @window from the Z server linked list. */
-void unlink_window_from_z_server_list(FcWindow *window)
-{
-    if (window->server_below != NULL) {
-        window->server_below->server_above = window->server_above;
-    }
-
-    if (window->server_above != NULL) {
-        window->server_above->server_below = window->server_below;
-    } else {
-        Window_server_top = window->server_below;
-    }
-
-    window->server_above = NULL;
-    window->server_below = NULL;
-}
-
-/* Links the window into the Z server linked list at a specific place. */
-void link_window_above_in_z_server_list(FcWindow *window, FcWindow *below)
-{
-    window->server_below = below;
-    window->server_above = below->server_above;
-    if (below->server_above != NULL) {
-        below->server_above->server_below = window;
-    } else {
-        Window_server_top = window;
-    }
-    below->server_above = window;
-}
-
 /* Put the window on the best suited Z stack position. */
 void update_window_layer(FcWindow *window)
 {
     FcWindow *below = NULL;
 
-    unlink_window_from_z_list(window);
+    DOUBLY_UNLINK(Window_bottom, Window_top, window, below, above);
 
     switch (window->state.mode) {
     /* If there are desktop windows, put the window on top of all desktop
@@ -1534,14 +1385,14 @@ void update_window_layer(FcWindow *window)
         return;
     }
 
-    link_window_above_in_z_list(window, below);
+    DOUBLY_LINK_AFTER(Window_bottom, Window_top, window, below, below, above);
 
     /* put windows that are transient for this window above it */
     for (below = window->below; below != NULL; below = below->below) {
         if (below->properties.transient_for == window->reference.id) {
-            unlink_window_from_z_list(below);
-            /* note the reverse order here, it is important */
-            link_window_above_in_z_list(below, window);
+            DOUBLY_RELINK_AFTER(Window_bottom, Window_top,
+                    /* note the reverse order here, it is important */
+                    below, window, below, above);
             below = window;
         }
     }

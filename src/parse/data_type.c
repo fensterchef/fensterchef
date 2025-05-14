@@ -13,6 +13,10 @@ void duplicate_generic_data(struct parse_generic_data *data)
         data->u.string = xstrdup(data->u.string);
         break;
 
+    case PARSE_DATA_TYPE_ASSOCIATION:
+        duplicate_window_association(&data->u.association);
+        break;
+
     case PARSE_DATA_TYPE_BUTTON:
         duplicate_action_list(&data->u.button.actions);
         break;
@@ -33,6 +37,10 @@ void clear_generic_data(const struct parse_generic_data *data)
 
     case PARSE_DATA_TYPE_STRING:
         free(data->u.string);
+        break;
+
+    case PARSE_DATA_TYPE_ASSOCIATION:
+        clear_window_association(&data->u.association);
         break;
 
     case PARSE_DATA_TYPE_BUTTON:

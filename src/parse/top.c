@@ -60,10 +60,6 @@ static void continue_parsing_source(Parser *parser,
         LIST_APPEND(list->data,
                 sub_list.data,
                 sub_list.data_length);
-
-        LIST_APPEND(list->associations,
-                sub_list.associations,
-                sub_list.associations_length);
     }
 
     destroy_parser(sub_parser);

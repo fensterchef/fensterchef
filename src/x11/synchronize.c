@@ -21,8 +21,8 @@ static void synchronize_window_stacking_order(void)
         if (server_window == window) {
             server_window = server_window->server_below;
         } else {
-            unlink_window_from_z_server_list(window);
-            link_window_above_in_z_server_list(window, server_window);
+            DOUBLY_RELINK_AFTER(Window_server_bottom, Window_server_top,
+                    window, server_window, server_below, server_above);
 
             changes.stack_mode = Above;
             changes.sibling = server_window->reference.id;

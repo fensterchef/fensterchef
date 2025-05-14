@@ -12,6 +12,7 @@
 #include "bits/monitor.h"
 #include "bits/window.h"
 #include "utility/attributes.h"
+#include "utility/linked_list.h"
 #include "utility/types.h"
 
 /* A monitor is a rectangular region tied to an X screen. */
@@ -36,7 +37,7 @@ struct monitor {
 };
 
 /* the first monitor in the monitor linked list */
-extern Monitor *Monitor_first;
+extern SINGLY_LIST(Monitor, Monitor_first);
 
 /* Try to initialize randr and the internal monitor linked list. */
 void initialize_monitors(void);

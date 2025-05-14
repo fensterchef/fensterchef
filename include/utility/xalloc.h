@@ -10,6 +10,8 @@
 
 #include <stdlib.h> /* NULL, size_t, malloc(), calloc(), realloc(), free() */
 
+#include "utility/attributes.h"
+
 /* Allocate a minimum of @size bytes of memory.
  *
  * The allocated memory is uninitialized.
@@ -39,24 +41,29 @@ void *xcalloc(size_t number_of_elements, size_t size_per_element);
  *         @pointer but this is often not the case when growing.
  *         This is NULL if @size is 0.
  */
-void *xrealloc(void *pointer, size_t size);
+void *xrealloc(_Nullable void *pointer, size_t size);
 
 /* Same as `xrealloc()` but instead of using bytes as argument, use
  * @number_of_elements * @size_per_element.
  *
  * If this product overflows, the program is aborted.
  */
-void *xreallocarray(void *pointer, size_t number_of_elements,
+void *xreallocarray(_Nullable void *pointer, size_t number_of_elements,
         size_t size_per_element);
 
-/* Combination of `xmalloc()` and `memcpy()`. */
+/* Combination of `xmalloc()` and `memcpy()`.
+ *
+ * @pointer may be NULL but only if @size is 0.
+ *
+ * @return NULL when @size is 0.
+ */
 void *xmemdup(const void *pointer, size_t size);
 
 /* Duplicate the null-terminated @string pointer by creating a copy.
  *
  * @string may be NULL, then NULL is returned.
  */
-char *xstrdup(const char *string);
+char *xstrdup(_Nullable const char *string);
 
 /* Like `xstrdup()` but stop at @length when the null-terminator is not yet
  * encountered.

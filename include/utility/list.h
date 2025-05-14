@@ -14,7 +14,7 @@
 
 /* Define a list of items with capacity.
  *
- * Type @type is the type of the list.
+ * T    @type is the type of the list.
  * T*   @name is the name of the list.
  *
  * void @return expand to all variables required for the list.
@@ -23,6 +23,19 @@
     type *name; \
     size_t name##_length; \
     size_t name##_capacity
+
+/* Clear given list.
+ *
+ * T*   @name is the name of the list.
+ *
+ * void @return
+ */
+#define LIST_CLEAR(name) do { \
+    free(name); \
+    name = NULL; \
+    name##_length = 0; \
+    name##_capacity = 0; \
+} while (0)
 
 /* Grow the capacity of the list to at least the given capacity.
  *
