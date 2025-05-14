@@ -239,6 +239,9 @@ void synchronize_with_server(void)
         remove_window_states(window, atoms, 1);
 
         if (window->properties.wm_state != NormalState) {
+            LOG_DEBUG("window %W is now normal\n",
+                    window);
+
             window->properties.wm_state = NormalState;
             atoms[0] = NormalState;
             /* no icon */
@@ -263,6 +266,9 @@ void synchronize_with_server(void)
         add_window_states(window, atoms, 1);
 
         if (window->properties.wm_state != WithdrawnState) {
+            LOG_DEBUG("window %W is now withdrawn\n",
+                    window);
+
             window->properties.wm_state = WithdrawnState;
             atoms[0] = WithdrawnState;
             /* no icon */

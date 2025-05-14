@@ -10,7 +10,7 @@
 
 #include <stdlib.h> /* NULL, size_t, malloc(), calloc(), realloc(), free() */
 
-#include "utility/attributes.h"
+#include "utility/attributes.h" /* _Nullable */
 
 /* Allocate a minimum of @size bytes of memory.
  *
@@ -67,6 +67,8 @@ char *xstrdup(_Nullable const char *string);
 
 /* Like `xstrdup()` but stop at @length when the null-terminator is not yet
  * encountered.
+ *
+ * @string may be NULL but only if @length is 0.
  */
 char *xstrndup(const char *string, size_t length);
 

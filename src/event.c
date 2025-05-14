@@ -36,14 +36,31 @@ void initialize_signal_handlers(void)
     signal(SIGALRM, alarm_handler);
 }
 
+
+/* Select will block until data on the file descriptor for the X display
+ * arrives.  When a signal is received, `select()` will however also unblock and
+ * return -1.
+ *
+ * @return -1 if a signal disrupted the waiting.
+ */
+static int wait_for_file_descriptor(void)
+{
+    int file_descriptor;
+    fd_set set;
+
+    FD_ZERO(&set);
+    file_descriptor = ConnectionNumber(display);
+    FD_SET(file_descriptor, &set);
+
+    return select(file_descriptor + 1, &set, NULL, NULL, NULL);
+}
+
 /* Run the next cycle of the event loop. */
 int next_cycle(void)
 {
     FcWindow *old_focus_window;
     Frame *old_focus_frame;
     XEvent event;
-    int file_descriptor;
-    fd_set set;
 
     /* signal to stop running */
     if (!Fensterchef_is_running) {
@@ -61,16 +78,11 @@ int next_cycle(void)
         reference_frame(old_focus_frame);
     }
 
-    /* prepare `set` for `select()` */
-    file_descriptor = ConnectionNumber(display);
-    FD_ZERO(&set);
-    FD_SET(file_descriptor, &set);
-
-    /* Using select here is key: Select will block until data on the file
-     * descriptor for the X display arrives.  When a signal is received,
-     * `select()` will however also unblock and return -1.
+    /* The additional check for `XPending()` is needed because events might have
+     * already been put into the local buffer.  This means there might not be
+     * anything in the file descriptor but there still might be events.
      */
-    if (select(file_descriptor + 1, &set, NULL, NULL, NULL) > 0) {
+    if (XPending(display) || wait_for_file_descriptor() > 0) {
         /* handle all received events */
         while (XPending(display)) {
             XNextEvent(display, &event);

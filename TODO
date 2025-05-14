@@ -15,15 +15,6 @@
     When a window is opened and there is an empty frame one the monitor with the
     current frame, open the window in that empty frame
 
-#98 ! Fix command program getting stuck
-    When a command window is created, sometimes it gets stuck.  Meaning that it
-    is created and the server gets that event but `select()` is blocking even
-    when there is something to read (map request).  It unblocks as usual when
-    more events are received.
-
-#104 ! WM_HINTS constantly changes
-    WM_HINTS is constantly update, figure out if this is our fault
-
 #106 ...
 
 #130 Add custom window borders
@@ -149,6 +140,10 @@
     Make it so the focus can not be broken by focus_thief.
     Make a proper design in your head how focus can be managed. The difficulty
     is that override redirect windows can have focus.
+
+#104 ! WM_HINTS constantly changes
+    WM_HINTS is constantly update, figure out if this is our fault.
+    The reason is simple: Applications change WM_HINTS when they gain focus.
 
 [Done]
 #9 Add maintainability macros
@@ -492,3 +487,9 @@
 
 #105 Isolate window associations
     Isolate window associations into their own file and make them bindable
+
+#98 ! Fix command program getting stuck
+    When a command window is created, sometimes it gets stuck.  Meaning that it
+    is created and the server gets that event but `select()` is blocking even
+    when there is something to read (map request).  It unblocks as usual when
+    more events are received.

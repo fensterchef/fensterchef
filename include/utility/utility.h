@@ -153,7 +153,7 @@ size_t strnlen(const char *string, size_t max_length);
  */
 int strcasecmp(const char *string1, const char *string2);
 
-/* Matches a string against a pattern.
+/* Match a string against a pattern.
  *
  * Pattern metacharacters are ?, *, [ and \.
  * (And, inside character classes, ^, - and ].)
@@ -164,6 +164,6 @@ int strcasecmp(const char *string1, const char *string2);
  *
  * @return if the string matches the pattern.
  */
-bool matches_pattern(char const *pattern, char const *string);
+bool matches_pattern(const char *pattern, const char *string);
 
 #endif
