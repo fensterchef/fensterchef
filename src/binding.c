@@ -98,13 +98,25 @@ void set_button_binding(const struct button_binding *button_binding)
         binding->modifiers = modifiers;
     }
 
-    if (binding->actions.number_of_items == 0) {
+    if (binding->actions.number_of_items == 0 &&
+            binding->actions.number_of_items > 0) {
         for (FcWindow *window = Window_first;
                 window != NULL;
                 window = window->next) {
             grab_button(window->reference.id, button_binding->is_release,
                     modifiers, index);
         }
+    }
+
+    if (binding->actions.number_of_items > 0 &&
+            binding->actions.number_of_items == 0) {
+        for (FcWindow *window = Window_first;
+                window != NULL;
+                window = window->next) {
+            XUngrabButton(display, index, modifiers, window->reference.id);
+        }
+        LOG_DEBUG("ungrabbing specific button %u+%d on all windows\n",
+                modifiers, index);
     }
 
     /* clear any old binded actions */
@@ -136,27 +148,6 @@ void run_button_binding(Time event_time, bool is_release,
         }
     }
 }
-
-/* Clear a button binding. */
-void clear_button_binding(bool is_release,
-        unsigned modifiers, button_t button)
-{
-    struct internal_button_binding *binding;
-
-    binding = find_button_binding(is_release, modifiers, button);
-    if (binding != NULL) {
-        clear_action_list(&binding->actions);
-        ZERO(&binding->actions, 1);
-        for (FcWindow *window = Window_first;
-                window != NULL;
-                window = window->next) {
-            XUngrabButton(display, button, modifiers, window->reference.id);
-        }
-        LOG_DEBUG("ungrabbing specific button %u+%d on all windows\n",
-                modifiers, button);
-    }
-}
-
 
 /* Clear all configured button bindings. */
 void clear_button_bindings(void)
@@ -226,8 +217,14 @@ void set_key_binding(const struct key_binding *key_binding)
         binding->key_symbol = key_binding->key_symbol;
     }
 
-    if (binding->actions.number_of_items == 0) {
+    if (binding->actions.number_of_items == 0 &&
+            key_binding->actions.number_of_items > 0) {
         grab_key(modifiers, key_code);
+    } else if (binding->actions.number_of_items > 0 &&
+            key_binding->actions.number_of_items == 0) {
+        XUngrabKey(display, key_code, modifiers, DefaultRootWindow(display));
+        LOG_DEBUG("ungrabbing specific key %u+%d\n",
+                modifiers, key_code);
     }
 
     /* clear any old binded actions */
@@ -250,21 +247,6 @@ void run_key_binding(bool is_release, unsigned modifiers, KeyCode key_code)
         LOG("running actions: %A\n",
                 &binding->actions);
         run_action_list(&binding->actions);
-    }
-}
-
-/* Clear a key binding. */
-void clear_key_binding(bool is_release, unsigned modifiers, KeyCode key_code)
-{
-    struct internal_key_binding *binding;
-
-    binding = find_key_binding(is_release, modifiers, key_code);
-    if (binding != NULL) {
-        clear_action_list(&binding->actions);
-        ZERO(&binding->actions, 1);
-        XUngrabKey(display, key_code, modifiers, DefaultRootWindow(display));
-        LOG_DEBUG("ungrabbing specific key %u+%d\n",
-                modifiers, key_code);
     }
 }
 

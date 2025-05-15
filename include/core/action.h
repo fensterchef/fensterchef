@@ -15,27 +15,12 @@ typedef enum {
     identifier,
     DEFINE_ALL_PARSE_ACTIONS
 #undef X
-    /* the maximum value for a simple action */
-    ACTION_SIMPLE_MAX,
-
-    /* The below actions are parsed in a special way. */
-
-    /* a window association */
-    ACTION_ASSOCIATION,
-    /* a button binding */
-    ACTION_BUTTON_BINDING,
-    /* a key binding */
-    ACTION_KEY_BINDING,
-    /* unbind a button binding */
-    ACTION_CLEAR_BUTTON_BINDING,
-    /* unbind a key binding */
-    ACTION_CLEAR_KEY_BINDING,
     /* not a real action */
     ACTION_MAX,
 } action_type_t;
 
 /* forward declaration... */
-struct parse_generic_data;
+struct parse_data;
 
 /* A list of actions. */
 struct action_list {
@@ -49,7 +34,7 @@ struct action_list {
     /* the number of items in `items` */
     unsigned number_of_items;
     /* the data associated to the actions */
-    struct parse_generic_data *data;
+    struct parse_data *data;
 };
 
 /* Get the action string of given action type. */
@@ -64,10 +49,7 @@ void duplicate_action_list(struct action_list *list);
 /* Free ALL memory associated to the action list. */
 void clear_action_list(const struct action_list *list);
 
-/* Log a list of actions to stderr. */
-void log_action_list(const struct action_list *list);
-
 /* Do the given action using given @data. */
-void do_action(action_type_t type, const struct parse_generic_data *data);
+void do_action(action_type_t type, const struct parse_data *data);
 
 #endif

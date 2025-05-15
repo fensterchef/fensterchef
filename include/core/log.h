@@ -64,18 +64,19 @@ extern log_severity_t log_severity;
  *
  * The following format specifiers are supported on top of the regular
  * format specifiers (some printf format specifiers might be overwritten):
- * %P   int32_t, int32_t    X+Y
- * %S   unsigned, unsigned  WIDTHxHEIGHT
- * %R   unsigned[4]         X+Y+WIDTHxHEIGHT
- * %w   Window              ID<NUMBER or NAME>
- * %W   Window*             ID<NUMBER or NAME>
- * %m   window_state_t      WINDOW_STATE
- * %F   Frame*              (X+Y+WIDTHxHEIGHT)
- * %A   struct action_list* ACTION LIST
- * %a   Atom                ATOM
- * %V   XEvent*             EVENT
- * %E   XError*             ERROR
- * %D   Display*            DISPLAY
+ * %P   int, int                X+Y
+ * %S   unsigned, unsigned      WIDTHxHEIGHT
+ * %R   unsigned[4]             X+Y+WIDTHxHEIGHT
+ * %w   Window                  ID<NUMBER or NAME>
+ * %W   Window*                 ID<NUMBER or NAME>
+ * %m   window_state_t          WINDOW_STATE
+ * %F   Frame*                  (X+Y+WIDTHxHEIGHT)
+ * %A   struct action_list*     ACTION LIST
+ * %T   struct parse_data*      PARSE DATA
+ * %a   Atom                    ATOM
+ * %V   XEvent*                 EVENT
+ * %E   XError*                 ERROR
+ * %D   Display*                DISPLAY
  */
 void log_formatted(log_severity_t severity, const char *file, int line,
         const char *format, ...);

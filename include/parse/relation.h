@@ -1,8 +1,8 @@
-#ifndef PARSE__ASSOCIATION_H
-#define PARSE__ASSOCIATION_H
+#ifndef PARSE__RELATION_H
+#define PARSE__RELATION_H
 
 /**
- * Associations have the syntax:
+ * Relations have the syntax:
  * QUOTED_STRING TOP
  *
  * For example:
@@ -16,7 +16,7 @@
  *
  * This assumes a string has been read into the @parser.
  */
-void continue_parsing_association(Parser *parser,
+void continue_parsing_relation(Parser *parser,
         struct parse_action_list *list);
 
 #endif

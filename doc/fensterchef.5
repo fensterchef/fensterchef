@@ -147,7 +147,7 @@ or
 Actions can be run directly in the configuration file or on a button/key
 binding.
 Note that the "focused window" can also refer to the pressed window in a button
-binding or the window matched in an association.
+binding or the window matched in a relation.
 .PP
 .B assign
 .I number
@@ -275,6 +275,9 @@ binding or the window matched in an association.
 .I x y
     Move the focused window to given coordinates.
 .PP
+.B nop
+    Does nothing.  Use this to grab keys/buttons or create associations that do
+    nothing.
 .B pop stash
     Pop the last stashed frame into the current frame.
 .PP
@@ -359,14 +362,24 @@ to fullscreen and vise versa.
     Toggle the mode of a window from
 .I X
 to tiling and vise versa.
+.PP
+.B unrelate
+    Remove the relation that is currently running (use within a relation).
+.PP
+.B unrelate all
+    Remove all window relations.
+.PP
+.B unrelate match|pattern S
+    Remove a window relation by matching given string or removing the relation
+    defined with given exact pattern.
 .
-.SH ASSOCIATION
+.SH RELATION
 .I STRING ACTIONS
 
 When a line starts with a quoted string like
 .I "Navigator,firefox"
-then this is the start of an association.
-The string refers to the instance name and class name.
+then this is the start of a relation.
+The string refers to the instance name (resource name) and class name.
 You can use
 .BR xprop ( 1 )
 to click on a window and read off the
@@ -541,5 +554,9 @@ Shift+j move down
 .EX
 "st-256color" focus window
 "*" set floating, focus window
+.EE
+.SS Ignore all windows
+.EX
+"*" nop
 .EE
 .

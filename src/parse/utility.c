@@ -117,10 +117,13 @@ int read_string_no_alias(Parser *parser)
 
         while (character = get_stream_character(parser),
                 character != quote && character != EOF && character != '\n') {
-            /* escape any characters following \\ */
+            /* escape any characters following \ */
             if (character == '\\') {
                 character = get_stream_character(parser);
-                LIST_APPEND_VALUE(parser->string, '\\');
+                /* keep the \ for all but the quote used and another \ */
+                if (character != quote && character != '\\') {
+                    LIST_APPEND_VALUE(parser->string, '\\');
+                }
                 if (character == EOF || character == '\n') {
                     break;
                 }
@@ -359,6 +362,101 @@ int resolve_integer(Parser *parser,
 
     *output_integer = sign * integer;
     return error;
+}
+
+/* Modifies @parser->string and then splits it in two and stores two allocated
+ * strings in @class.
+ */
+void resolve_class_string(Parser *parser, struct parse_class *class)
+{
+    utf8_t *next, *separator;
+    size_t length;
+    unsigned backslash_count;
+
+    /* separate the parser string into instance and class */
+    next = parser->string;
+    length = parser->string_length;
+    /* handle any comma "," that is escaped by a backslash "\" */
+    do {
+        separator = memchr(next, ',', length);
+        if (separator == NULL) {
+            break;
+        }
+
+        length -= separator - next + 1;
+        next = separator + 1;
+
+        backslash_count = 0;
+        for (; separator > parser->string; separator--) {
+            if (separator[-1] != '\\') {
+                break;
+            }
+            backslash_count++;
+        }
+
+        if (backslash_count % 2 == 1) {
+            /* remove a backslash \ */
+            parser->string_length--;
+            MOVE(separator, separator + 1,
+                    &parser->string[parser->string_length] - separator);
+            continue;
+        }
+    } while (0);
+
+    if (separator == NULL) {
+        class->instance = xstrdup("*");
+    } else {
+        class->instance = xstrndup(parser->string, separator - parser->string);
+    }
+    class->class = xstrndup(next, length);
+}
+
+/* Resolve the string within parser as a data point. */
+bool resolve_data(Parser *parser, char identifier,
+        _Out struct parse_data *data)
+{
+    parse_data_type_t type = 0;
+
+    for (; type < PARSE_DATA_TYPE_MAX; type++) {
+        if (identifier == parse_data_meta_information[type].identifier) {
+            break;
+        }
+    }
+
+    if (type == PARSE_DATA_TYPE_MAX) {
+        return false;
+    }
+
+    data->type = type;
+
+    switch (type) {
+    case PARSE_DATA_TYPE_INTEGER:
+        if (resolve_integer(parser, &data->flags, &data->u.integer) != OK) {
+            data->type = PARSE_DATA_TYPE_MAX;
+        }
+        break;
+
+    case PARSE_DATA_TYPE_STRING:
+        LIST_COPY(parser->string, 0, parser->string_length + 1,
+                data->u.string);
+        break;
+
+    case PARSE_DATA_TYPE_CLASS:
+        resolve_class_string(parser, &data->u.class);
+        break;
+
+    case PARSE_DATA_TYPE_RELATION:
+    case PARSE_DATA_TYPE_BUTTON:
+    case PARSE_DATA_TYPE_KEY:
+        /* not supported as action parameter */
+        break;
+
+    case PARSE_DATA_TYPE_MAX:
+        /* nothing */
+        break;
+    }
+
+    return true;
 }
 
 /* Translate a string to some extended key symbols. */

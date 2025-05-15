@@ -4,7 +4,7 @@
 
 #include <X11/Xatom.h>
 
-#include "association.h"
+#include "relation.h"
 #include "binding.h"
 #include "event.h"
 #include "frame.h"
@@ -136,6 +136,10 @@ bool cache_window_property(FcWindow *window, Atom atom)
         free(window->properties.name);
         window->properties.name =
             get_window_name_property(window->reference.id);
+    } else if (atom == XA_WM_CLASS) {
+        XFree(window->properties.class.res_name);
+        XFree(window->properties.class.res_class);
+        XGetClassHint(display, window->reference.id, &window->properties.class);
     } else if (atom == XA_WM_NORMAL_HINTS) {
         long supplied;
 
@@ -194,8 +198,6 @@ static void initialize_window_properties(FcWindow *window)
 {
     int atom_count;
     Atom *atoms;
-    unsigned long wm_class_length;
-    unsigned long instance_length;
     Atom *states = NULL;
     Atom *types = NULL;
     window_mode_t predicted_mode = WINDOW_MODE_TILING;
@@ -205,27 +207,7 @@ static void initialize_window_properties(FcWindow *window)
 
     /* cache all properties */
     for (int i = 0; i < atom_count; i++) {
-        if (atoms[i] == XA_WM_CLASS) {
-            char *wm_class;
-            utf8_t *instance_name, *class_name;
-
-            wm_class = get_text_property(window->reference.id, XA_WM_CLASS,
-                    &wm_class_length);
-
-            instance_length = strnlen(wm_class, wm_class_length);
-            instance_name = xmalloc(instance_length + 1);
-            memcpy(instance_name, wm_class, instance_length);
-            instance_name[instance_length] = '\0';
-
-            class_name = xstrndup(
-                    &wm_class[instance_length + 1],
-                    wm_class_length - instance_length);
-
-            XFree(wm_class);
-
-            window->properties.instance = instance_name;
-            window->properties.class = class_name;
-        } else if (atoms[i] == ATOM(_NET_WM_STATE)) {
+        if (atoms[i] == ATOM(_NET_WM_STATE)) {
             states = get_atom_list_property(window->reference.id,
                     ATOM(_NET_WM_STATE));
         } else if (atoms[i] == ATOM(_NET_WM_WINDOW_TYPE)) {
@@ -488,7 +470,7 @@ FcWindow *create_window(Window id)
     LOG("created new window %W\n",
             window);
 
-    if (run_window_associations(window)) {
+    if (run_window_relations(window)) {
         /* nothing */
     /* if a window does not start in normal state, do not map it */
     } else if ((window->properties.hints.flags & StateHint) &&
@@ -558,8 +540,8 @@ void destroy_window(FcWindow *window)
     /* setting the id to None marks the window as destroyed */
     window->reference.id = None;
     free(window->properties.name);
-    free(window->properties.instance);
-    free(window->properties.class);
+    XFree(window->properties.class.res_name);
+    XFree(window->properties.class.res_class);
     free(window->properties.protocols);
     free(window->properties.states);
 

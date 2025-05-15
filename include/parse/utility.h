@@ -57,6 +57,21 @@ int resolve_integer(Parser *parser,
         _Out unsigned *flags,
         _Out parse_integer_t *integer);
 
+/* Modifies @parser->string and then splits it in two and stores two allocated
+ * strings in @class.
+ */
+void resolve_class_string(Parser *parser, _Out struct parse_class *class);
+
+/* Resolve the string within parser as a data point.
+ *
+ * @return false if @identifier is invalid.
+ *
+ * data->type is set to PARSE_DATA_TYPE_MAX if the string within parser does not
+ * match the data type.
+ */
+bool resolve_data(Parser *parser, char identifier,
+        _Out struct parse_data *data);
+
 /* Try to resolve the string within @parser as key symbol.
  *
  * @return NoSymbol if the string is not a key symbol.

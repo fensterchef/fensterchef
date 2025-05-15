@@ -71,7 +71,7 @@ static int read_and_resolve_next_action_word(Parser *parser,
         struct parse_action_list *list)
 {
     action_type_t count = 0;
-    struct parse_generic_data data;
+    struct parse_data data;
 
     /* also skip new lines if there is an open bracket */
     if (list->bracket_count > 0) {
@@ -105,34 +105,18 @@ static int read_and_resolve_next_action_word(Parser *parser,
             skip_length = space - action + 1;
         }
 
-        /* check if next is a string parameter */
-        if (action[0] == 'S') {
-            /* append the string data point */
-            data.type = PARSE_DATA_TYPE_STRING;
-            LIST_COPY(parser->string, 0, parser->string_length + 1,
-                    data.u.string);
-            LIST_APPEND_VALUE(list->actions[i].data, data);
-        } else {
-            /* check if an integer is expected and try to resolve it */
-            if (action[0] == 'I') {
-                if (resolve_integer(parser, &data.flags, &data.u.integer) ==
-                        OK) {
-                    /* append the integer data point */
-                    data.type = PARSE_DATA_TYPE_INTEGER;
-                    LIST_APPEND_VALUE(list->actions[i].data, data);
-                } else {
-                    list->actions[i].offset = -1;
-                    continue;
-                }
-            } else {
-                /* try to match the next word */
-                if (parser->string_length != (size_t) (space - action) ||
-                        memcmp(action, parser->string,
-                            parser->string_length) != 0) {
-                    list->actions[i].offset = -1;
-                    continue;
-                }
+        if (resolve_data(parser, action[0], &data)) {
+            if (data.type == PARSE_DATA_TYPE_MAX) {
+                list->actions[i].offset = -1;
+                continue;
             }
+            LIST_APPEND_VALUE(list->actions[i].data, data);
+         /* try to match the next word if no data type is required */
+        } else if (parser->string_length != (size_t) (space - action) ||
+                memcmp(action, parser->string,
+                    parser->string_length) != 0) {
+            list->actions[i].offset = -1;
+            continue;
         }
 
         /* got a valid action */
@@ -159,14 +143,17 @@ static int compare_words(const void *a, const void *b)
 /* Print a word in the right color and expansion. */
 static void print_word(const char *word)
 {
-    if (strcmp(word, "I") == 0) {
-        fprintf(stderr, COLOR(BLUE) "INTEGER");
-    } else if (strcmp(word, "S") == 0) {
-        fprintf(stderr, COLOR(BLUE) "STRING");
-    } else {
-        fprintf(stderr, COLOR(GREEN) "%s",
-                word);
+    if (word[0] != '\0' && word[1] == '\0') {
+        for (parse_data_type_t i = 0; i < PARSE_DATA_TYPE_MAX; i++) {
+            if (parse_data_meta_information[i].identifier == word[0]) {
+                fprintf(stderr, COLOR(BLUE) "%s",
+                        parse_data_meta_information[i].name);
+                return;
+            }
+        }
     }
+    fprintf(stderr, COLOR(GREEN) "%s",
+            word);
 }
 
 /* Print all possible actions to stderr. */
@@ -276,21 +263,21 @@ void clear_parse_list(struct parse_action_list *list)
 {
     free(list->items);
     for (size_t i = 0; i < list->data_length; i++) {
-        clear_generic_data(&list->data[i]);
+        clear_parse_data(&list->data[i]);
     }
     free(list->data);
     clear_parse_list_data(list);
 }
 
 /* Clear the data within @list that is needed for parsing and the
- * associations.
+ * relations.
  */
 void clear_parse_list_data(struct parse_action_list *list)
 {
     /* free the action parse data */
     for (action_type_t i = 0; i < ACTION_SIMPLE_MAX; i++) {
         for (size_t j = 0; j < list->actions[i].data_length; j++) {
-            clear_generic_data(&list->actions[i].data[j]);
+            clear_parse_data(&list->actions[i].data[j]);
         }
         free(list->actions[i].data);
     }

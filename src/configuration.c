@@ -181,7 +181,7 @@ static void set_default_button_bindings(void)
 static void set_default_key_bindings(void)
 {
     struct action_list_item item;
-    struct parse_generic_data data;
+    struct parse_data data;
     struct key_binding binding;
 
     binding.is_release = false;
@@ -328,7 +328,7 @@ void clear_configuration(void)
     clear_cursor_cache();
     clear_button_bindings();
     clear_key_bindings();
-    clear_window_associations();
+    clear_window_relations();
 }
 
 /* Reload the fensterchef configuration. */

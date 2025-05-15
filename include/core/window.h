@@ -53,9 +53,8 @@ typedef struct window_properties {
     /* window name */
     utf8_t *name;
 
-    /* window instance, class */
-    utf8_t *instance;
-    utf8_t *class;
+    /* window instance (resource name), class (resource class) */
+    XClassHint class;
 
     /* X size hints of the window */
     XSizeHints size_hints;
@@ -75,11 +74,11 @@ typedef struct window_properties {
     /* the region the window should appear at as fullscreen window */
     Extents fullscreen_monitors;
 
-    /* the window states containing atoms `_NET_WM_STATE_*` */
+    /* the window states containing atoms _NET_WM_STATE_* */
     Atom *states;
 
-    /* the current `WM_STATE` atom set on the window, either
-     * `WM_STATE_NORMAL` or `WM_STATE_WITHDRAWN`
+    /* the current WM_STATE atom set on the window, either WM_STATE_NORMAL or
+     * WM_STATE_WITHDRAWN
      */
     Atom wm_state;
 } WindowProperties;
@@ -111,7 +110,7 @@ struct fensterchef_window {
      */
     unsigned reference_count;
 
-    /* the server's view of the window */
+    /* the server's view of the window (unrelated to reference_count) */
     XReference reference;
 
     /* the X properties of this window */
@@ -190,7 +189,7 @@ extern FcWindow *Window_focus;
 extern FcWindow *Window_server_focus;
 
 /* The last pressed window.  This only gets set when a window is pressed by a
- * grabbed button or when an association runs.
+ * grabbed button or when an relation runs.
  */
 extern FcWindow *Window_pressed;
 

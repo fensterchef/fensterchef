@@ -21,7 +21,7 @@
 #define PARSE_MAX_ERROR_COUNT 30
 
 /* A list of actions with explicit count and capacity.  It also includes
- * additional parsing information and associations.
+ * additional parsing information.
  */
 struct parse_action_list {
     /* the number of open round brackets '(' */
@@ -29,7 +29,7 @@ struct parse_action_list {
     /* the current action parsing information */
     struct parse_action_information {
         /* Data for this action. */
-        LIST(struct parse_generic_data, data);
+        LIST(struct parse_data, data);
         /* The offset within the string identifiers of the actions.
          * If this is -1, then the action was disregarded.
          */
@@ -42,7 +42,7 @@ struct parse_action_list {
     /* the action items being parsed */
     LIST(struct action_list_item, items);
     /* data for the action items being parsed */
-    LIST(struct parse_generic_data, data);
+    LIST(struct parse_data, data);
 };
 
 /* the parser object */

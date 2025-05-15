@@ -2,10 +2,25 @@
 #define PARSE__DATA_TYPE_H
 
 #include <stddef.h>
+#include <inttypes.h>
 
 #include "bits/binding.h"
-#include "core/association.h"
+#include "core/relation.h"
 #include "utility/types.h"
+
+#define DEFINE_ALL_PARSE_DATA_TYPES \
+    /* an integer or integer constant */ \
+    X(INTEGER, parse_integer_t integer, 'I') \
+    /* a string of text, quoted or unquoted */ \
+    X(STRING, utf8_t *string, 'S') \
+    /* instance and class name */ \
+    X(CLASS, struct parse_class class, 'C') \
+    /* window relation */ \
+    X(RELATION, struct window_relation relation, 'A') \
+    /* button binding */ \
+    X(BUTTON, struct button_binding button, 'B') \
+    /* key binding */ \
+    X(KEY, struct key_binding key, 'K')
 
 /* integer type the parser should use */
 typedef int_fast32_t parse_integer_t;
@@ -18,37 +33,54 @@ typedef int_fast32_t parse_integer_t;
 
 /* all data types */
 typedef enum parse_data_type {
-    PARSE_DATA_TYPE_INTEGER,
-    PARSE_DATA_TYPE_STRING,
-    PARSE_DATA_TYPE_ASSOCIATION,
-    PARSE_DATA_TYPE_BUTTON,
-    PARSE_DATA_TYPE_KEY,
+#define X(identifier, type_name, short_name) \
+    PARSE_DATA_TYPE_##identifier,
+    DEFINE_ALL_PARSE_DATA_TYPES
+#undef X
+    PARSE_DATA_TYPE_MAX
 } parse_data_type_t;
 
+/* class data type */
+struct parse_class {
+    /* the instance name */
+    char *instance;
+    /* the class name */
+    char *class;
+};
+
+/* meta information about a data type */
+extern struct parse_data_meta_information {
+    /* single letter identifier */
+    char identifier;
+    /* string representation the data type */
+    const char *name;
+} parse_data_meta_information[PARSE_DATA_TYPE_MAX];
+
 /* generic action data */
-struct parse_generic_data {
+struct parse_data {
     /* an OR combination of `PARSE_DATA_FLAGS_*` */
     unsigned flags;
     parse_data_type_t type;
     /* the literal value */
     union {
-        /* integer value */
-        parse_integer_t integer;
-        /* a nul-terminated string */
-        utf8_t *string;
-        /* a window association */
-        struct window_association association;
-        /* a button binding */
-        struct button_binding button;
-        /* a key binding */
-        struct key_binding key;
+#define X(identifier, type_name, short_name) \
+        type_name;
+        DEFINE_ALL_PARSE_DATA_TYPES
+#undef X
     } u;
 };
 
+/* Search the parse data meta table for given identifier.
+ *
+ * @return the data type with given identifier or PARSE_DATA_TYPE_MAX if none
+ *         has that identifier.
+ */
+parse_data_type_t get_parse_data_type_from_identifier(char identifier);
+
 /* Duplicate a data value into itself. */
-void duplicate_generic_data(struct parse_generic_data *data);
+void duplicate_parse_data(struct parse_data *data);
 
 /* Clear the data value within @data. */
-void clear_generic_data(const struct parse_generic_data *data);
+void clear_parse_data(const struct parse_data *data);
 
 #endif

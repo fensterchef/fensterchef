@@ -7,7 +7,7 @@
 
 #include <stdbool.h> /* bool */
 #include <stdio.h> /* fprintf(), stderr */
-#include <string.h> /* memset(), memcpy(), memmove() */
+#include <string.h> /* memset() */
 #include <wchar.h> /* wchar_t */
 
 #include "utility/xalloc.h"
@@ -38,7 +38,7 @@
  * These should ONLY be used when it is guaranteed that a branch is executed
  * only very rarely.
  */
-#if defined __GNUC__ || __has_builtin(__builtin_expect)
+#if __has_builtin(__builtin_expect)
 #   define LIKELY(x) __builtin_expect(!!(x), 1)
 #   define UNLIKELY(x) __builtin_expect(!!(x), 0)
 #else
@@ -155,12 +155,12 @@ int strcasecmp(const char *string1, const char *string2);
 
 /* Match a string against a pattern.
  *
- * Pattern metacharacters are ?, *, [ and \.
- * (And, inside character classes, ^, - and ].)
+ * Pattern metacharacters are ?, *, [.  They can be escaped using \ to match
+ * them literally.  All other \. sequences are matched literally (with the \).
  *
- * An opening bracket without a matching close is matched literally.
+ * An opening bracket [ without a matching close ] is matched literally.
  *
- * @pattern is a shell-style pattern, e.g. "*.[ch]".
+ * @pattern is a shell-style glob pattern, e.g. "*.[ch]".
  *
  * @return if the string matches the pattern.
  */

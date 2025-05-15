@@ -1,8 +1,8 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "core/association.h"
 #include "core/log.h"
+#include "core/relation.h"
 #include "core/window.h"
 #include "parse/action.h"
 #include "parse/input.h"

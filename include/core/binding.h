@@ -26,9 +26,6 @@ void set_button_binding(const struct button_binding *button_binding);
 void run_button_binding(Time event_time, bool is_release,
         unsigned modifiers, button_t button);
 
-/* Clear a button binding. */
-void clear_button_binding(bool is_release, unsigned modifiers, button_t button);
-
 /* Clear all configured button bindings. */
 void clear_button_bindings(void);
 
@@ -37,9 +34,6 @@ void set_key_binding(const struct key_binding *key_binding);
 
 /* Run the specified key binding. */
 void run_key_binding(bool is_release, unsigned modifiers, KeyCode key_code);
-
-/* Clear a key binding. */
-void clear_key_binding(bool is_release, unsigned modiifiers, KeyCode key_code);
 
 /* Clear all configured key bindings. */
 void clear_key_bindings(void);

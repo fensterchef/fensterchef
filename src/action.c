@@ -19,7 +19,7 @@
 #include "x11/move_resize.h"
 
 /* the corresponding string identifier for all actions */
-static const char *action_strings[ACTION_SIMPLE_MAX] = {
+static const char *action_strings[ACTION_MAX] = {
 #define X(identifier, string) \
     [identifier] = string,
     DEFINE_ALL_PARSE_ACTIONS
@@ -37,7 +37,7 @@ void run_action_list(const struct action_list *original_list)
 {
     struct action_list list;
     struct action_list_item *item;
-    struct parse_generic_data *data;
+    struct parse_data *data;
 
     /* make a copy so we need to to worry about its origin and whether the next
      * action will invalidate the pointer or items within it
@@ -59,7 +59,7 @@ void run_action_list(const struct action_list *original_list)
 void duplicate_action_list(struct action_list *list)
 {
     struct action_list_item *item;
-    struct parse_generic_data *data;
+    struct parse_data *data;
     size_t data_count = 0;
 
     for (unsigned i = 0; i < list->number_of_items; i++) {
@@ -72,7 +72,7 @@ void duplicate_action_list(struct action_list *list)
 
     data = list->data;
     for (size_t i = 0; i < data_count; i++) {
-        duplicate_generic_data(data);
+        duplicate_parse_data(data);
         data++;
     }
 }
@@ -80,150 +80,17 @@ void duplicate_action_list(struct action_list *list)
 /* Free ALL memory associated to the action list. */
 void clear_action_list(const struct action_list *list)
 {
-    struct parse_generic_data *data;
+    struct parse_data *data;
 
     data = list->data;
     for (unsigned i = 0; i < list->number_of_items; i++) {
         for (unsigned j = 0; j < list->items[i].data_count; j++) {
-            clear_generic_data(data);
+            clear_parse_data(data);
             data++;
         }
     }
     free(list->items);
     free(list->data);
-}
-
-/* Log a list of actions to stderr. */
-void log_action_list(const struct action_list *list)
-{
-    const struct action_list_item *item;
-    const struct parse_generic_data *data, *previous_data;
-
-    data = list->data;
-    for (size_t i = 0; i < list->number_of_items; i++) {
-        const char *action, *space;
-        int length;
-
-        if (i > 0) {
-            fputs(CLEAR_COLOR ", ", stderr);
-        }
-
-        item = &list->items[i];
-        switch (item->type) {
-        case ACTION_ASSOCIATION: {
-            const struct window_association *const association =
-                &data->u.association;
-            _log_formatted("%s,%s ( %A )",
-                    association->instance_pattern,
-                    association->class_pattern,
-                    &association->actions);
-            data++;
-            continue;
-        }
-
-        case ACTION_BUTTON_BINDING: {
-            const struct button_binding *const binding = &data->u.button;
-            if (binding->is_release) {
-                fprintf(stderr, COLOR(YELLOW) "release ");
-            }
-            if (binding->is_transparent) {
-                fprintf(stderr, COLOR(YELLOW) "transparent ");
-            }
-            if (binding->modifiers != 0) {
-                fprintf(stderr, COLOR(GREEN) "%u" CLEAR_COLOR "+",
-                        binding->modifiers);
-            }
-            _log_formatted("%u ( %A )",
-                    binding->modifiers, &binding->actions);
-            data++;
-            continue;
-        }
-
-        case ACTION_KEY_BINDING: {
-            const struct key_binding *const binding = &data->u.key;
-            if (binding->is_release) {
-                fprintf(stderr, COLOR(YELLOW) "release ");
-            }
-            if (binding->modifiers != 0) {
-                fprintf(stderr, COLOR(GREEN) "%u" CLEAR_COLOR "+",
-                        binding->modifiers);
-            }
-            _log_formatted(COLOR(BLUE) "%ld" CLEAR_COLOR " ( %A )",
-                    binding->key_symbol, &binding->actions);
-            data++;
-            continue;
-        }
-
-        case ACTION_CLEAR_BUTTON_BINDING: {
-            const struct button_binding *const binding = &data->u.button;
-            fprintf(stderr, COLOR(YELLOW) "unbind ");
-            if (binding->is_release) {
-                fprintf(stderr, COLOR(YELLOW) "release ");
-            }
-            if (binding->modifiers != 0) {
-                fprintf(stderr, COLOR(BLUE) "%u" CLEAR_COLOR "+",
-                        binding->modifiers);
-            }
-            fprintf(stderr, COLOR(GREEN) "%u" CLEAR_COLOR,
-                    binding->button);
-            data++;
-            continue;
-        }
-
-        case ACTION_CLEAR_KEY_BINDING: {
-            const struct key_binding *const binding = &data->u.key;
-            fprintf(stderr, COLOR(YELLOW) "unbind ");
-            if (binding->is_release) {
-                fprintf(stderr, COLOR(YELLOW) "release ");
-            }
-            if (binding->modifiers != 0) {
-                fprintf(stderr, COLOR(BLUE) "%u" CLEAR_COLOR "+",
-                        binding->modifiers);
-            }
-            fprintf(stderr, COLOR(GREEN) "%ld" CLEAR_COLOR,
-                    binding->key_symbol);
-            data++;
-            continue;
-        }
-
-        default:
-            break;
-        }
-        action = action_strings[item->type];
-        previous_data = data;
-        while (action != NULL) {
-            space = strchr(action, ' ');
-            if (space != NULL) {
-                length = space - action;
-                space++;
-            } else {
-                length = strlen(action);
-            }
-
-            /* check if this is after the first part of the action */
-            if (action != action_strings[item->type]) {
-                fputs(" ", stderr);
-            }
-
-            if (length == 1 && action[0] == 'S') {
-                fprintf(stderr, COLOR(GREEN) "%s",
-                        data->u.string);
-                data++;
-            } else if (length == 1 && action[0] == 'I') {
-                fprintf(stderr, COLOR(GREEN) "%" PRIiPARSE_INTEGER,
-                        data->u.integer);
-                data++;
-            } else {
-                fprintf(stderr, COLOR(YELLOW) "%.*s",
-                        length, action);
-            }
-
-            action = space;
-        }
-        data = previous_data + item->data_count;
-    }
-
-    fputs(CLEAR_COLOR, stderr);
 }
 
 /* Resize the current window or current frame if it does not exist. */
@@ -511,24 +378,25 @@ static bool move_to_below_frame(Frame *relative, bool do_exchange)
 
 /* Translate the integer data if not using pixels. */
 static inline int translate_integer_data(Monitor *monitor,
-        const struct parse_generic_data *data, bool is_x_axis)
+        const struct parse_data *data, bool is_x_axis)
 {
+    int value;
+
     if ((data->flags & PARSE_DATA_FLAGS_IS_PERCENT)) {
-        unsigned size;
-
         if (is_x_axis) {
-            size = monitor->width;
+            value = monitor->width;
         } else {
-            size = monitor->height;
+            value = monitor->height;
         }
-        return size * (unsigned) data->u.integer / 100;
+        value = value * data->u.integer / 100;
+    } else {
+        value = data->u.integer;
     }
-
-    return data->u.integer;
+    return value;
 }
 
 /* Do the given action. */
-void do_action(action_type_t type, const struct parse_generic_data *data)
+void do_action(action_type_t type, const struct parse_data *data)
 {
     FcWindow *window;
     char *shell;
@@ -1066,6 +934,11 @@ void do_action(action_type_t type, const struct parse_generic_data *data)
         break;
     }
 
+    /* no operation */
+    case ACTION_NOP:
+        /* nothing */
+        break;
+
     /* the duration the notification window stays for */
     case ACTION_NOTIFICATION_DURATION:
         configuration.notification_duration = data->u.integer;
@@ -1323,10 +1196,33 @@ void do_action(action_type_t type, const struct parse_generic_data *data)
                 window->state.mode == WINDOW_MODE_TILING ?
                 WINDOW_MODE_FLOATING : WINDOW_MODE_TILING);
         break;
+
+    /* remove the currently running relation */
+    case ACTION_UNRELATE:
+        signal_window_unrelate();
+        break;
+
+    /* remove all relations */
+    case ACTION_UNRELATE_ALL:
+        clear_window_relations();
+        break;
+
+    /* remove the relation matching given string */
+    case ACTION_UNRELATE_MATCH:
+        remove_matching_window_relation(data->u.relation.instance_pattern,
+                data->u.relation.class_pattern);
+        break;
+
+    /* remove the relation with exact given pattern */
+    case ACTION_UNRELATE_PATTERN:
+        remove_exact_window_relation(data->u.relation.instance_pattern,
+                data->u.relation.class_pattern);
+        break;
     
-    /* add an association */
-    case ACTION_ASSOCIATION:
-        add_window_association(&data->u.association);
+
+    /* add an relation */
+    case ACTION_RELATION:
+        add_window_relation(&data->u.relation);
         break;
 
     /* set a button binding */
@@ -1339,38 +1235,8 @@ void do_action(action_type_t type, const struct parse_generic_data *data)
         set_key_binding(&data->u.key);
         break;
 
-    /* clear a button binding */
-    case ACTION_CLEAR_BUTTON_BINDING:
-        clear_button_binding(data->u.button.is_release,
-                data->u.button.modifiers,
-                data->u.button.button);
-        break;
 
-    /* clear a button binding */
-    case ACTION_CLEAR_KEY_BINDING: {
-        KeyCode key_code;
-
-        if (data->u.key.key_symbol != NoSymbol) {
-            key_code = XKeysymToKeycode(display, data->u.key.key_symbol);
-        } else {
-            key_code = data->u.key.key_code;
-        }
-        clear_key_binding(data->u.key.is_release,
-                data->u.key.modifiers, key_code);
-        break;
-    }
-
-    /* remove the currently running association */
-    case ACTION_UNASSOCIATE:
-        signal_window_unassociate();
-        break;
-
-    /* remove all associations */
-    case ACTION_UNASSOCIATE_ALL:
-        clear_window_associations();
-        break;
-
-    /* not a real action */
+    /* not real actions */
     case ACTION_SIMPLE_MAX:
     case ACTION_MAX:
         break;

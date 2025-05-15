@@ -4,9 +4,9 @@
 #include "core/window.h"
 #include "parse/action.h"
 #include "parse/alias.h"
-#include "parse/association.h"
 #include "parse/binding.h"
 #include "parse/input.h"
+#include "parse/relation.h"
 #include "parse/top.h"
 #include "parse/utility.h"
 
@@ -116,7 +116,7 @@ int parse_top(Parser *parser, struct parse_action_list *list)
 
     if (read_string(parser) != OK) {
         emit_parse_error(parser,
-                "expected association, binding or action");
+                "expected relation, binding or action");
         /* skip the erroneous character */
         (void) get_stream_character(parser);
         /* start from the top */
@@ -124,7 +124,7 @@ int parse_top(Parser *parser, struct parse_action_list *list)
     }
 
     if (parser->is_string_quoted) {
-        continue_parsing_association(parser, list);
+        continue_parsing_relation(parser, list);
     } else if (strcmp(parser->string, "alias") == 0) {
         continue_parsing_alias(parser);
     } else if (strcmp(parser->string, "unalias") == 0) {

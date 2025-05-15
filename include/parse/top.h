@@ -6,8 +6,8 @@
  *
  * ACTION
  * ALIAS
- * ASSOCIATION
  * BINDING
+ * RELATION
  * SOURCE
  * UNBIND
  * ( TOP... )

@@ -125,7 +125,7 @@ static bool is_window_part_of(FcWindow *window, Frame *frame)
 }
 
 /* Set the input focus to @window. This window may be `NULL`. */
-static void set_input_focus(FcWindow *window)
+static void set_input_focus(_Nullable FcWindow *window)
 {
     Window focus_id = None;
     Window active_id;

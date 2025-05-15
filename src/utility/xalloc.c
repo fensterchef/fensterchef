@@ -1,8 +1,9 @@
 #include <errno.h> /* errno */
 #include <stdarg.h> /* va_list, va_start(), va_end() */
-#include <string.h> /* strerror(), vsnprintf(), vsprintf(), memcpy() */
+#include <stdint.h> /* SIZE_MAX */
+#include <string.h> /* strerror() */
 
-#include "utility/utility.h" /* ASSERT() */
+#include "utility/utility.h" /* ASSERT(), UNLIKELY() */
 
 /* Allocate a minimum of @size bytes of memory. */
 void *xmalloc(size_t size)

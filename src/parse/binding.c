@@ -146,7 +146,7 @@ static int finish_parsing_binding(Parser *parser, struct parse_binding *binding,
     if (binding->button_index != BUTTON_NONE) {
         struct button_binding button;
         struct action_list_item item;
-        struct parse_generic_data data;
+        struct parse_data data;
 
         button.is_release = binding->is_release;
         button.is_transparent = binding->is_transparent;
@@ -165,7 +165,7 @@ static int finish_parsing_binding(Parser *parser, struct parse_binding *binding,
     } else {
         struct key_binding key;
         struct action_list_item item;
-        struct parse_generic_data data;
+        struct parse_data data;
 
         if (binding->is_transparent) {
             parser->start_index = binding->transparent_position;
@@ -258,7 +258,7 @@ void continue_parsing_unbind(Parser *parser, struct parse_action_list *list)
     if (binding.button_index != BUTTON_NONE) {
         struct button_binding button;
         struct action_list_item item;
-        struct parse_generic_data data;
+        struct parse_data data;
 
         button.is_release = binding.is_release;
         button.is_transparent = binding.is_transparent;
@@ -266,7 +266,7 @@ void continue_parsing_unbind(Parser *parser, struct parse_action_list *list)
         button.button = binding.button_index;
         ZERO(&button.actions, 0);
 
-        item.type = ACTION_CLEAR_BUTTON_BINDING;
+        item.type = ACTION_BUTTON_BINDING;
         item.data_count = 1;
         LIST_APPEND_VALUE(list->items, item);
 
@@ -277,7 +277,7 @@ void continue_parsing_unbind(Parser *parser, struct parse_action_list *list)
     } else {
         struct key_binding key;
         struct action_list_item item;
-        struct parse_generic_data data;
+        struct parse_data data;
 
         key.is_release = binding.is_release;
         key.modifiers = binding.modifiers;
@@ -285,7 +285,7 @@ void continue_parsing_unbind(Parser *parser, struct parse_action_list *list)
         key.key_code = binding.key_code;
         ZERO(&key.actions, 0);
 
-        item.type = ACTION_CLEAR_KEY_BINDING;
+        item.type = ACTION_KEY_BINDING;
         item.data_count = 1;
         LIST_APPEND_VALUE(list->items, item);
 
