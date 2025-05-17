@@ -282,20 +282,23 @@ void set_focus_frame(Frame *frame)
     Monitor *monitor;
     FcWindow *window;
 
-    /* if the frame is empty, keep the focus on the non tiling window */
-    if (frame->window != NULL || Window_focus == NULL ||
-            Window_focus->state.mode == WINDOW_MODE_TILING) {
-        monitor = get_monitor_containing_frame(frame);
+    /* if the monitor changed, check if a window is covering that monitor and
+     * focus it
+     */
+    if (monitor = get_monitor_containing_frame(frame),
+                monitor != get_monitor_containing_frame(Frame_focus)) {
         window = get_window_covering_monitor(monitor);
-        /* if there is a floating/fullscreen window on top of this frame (by
-         * covering the monitor by a certain percentage), focus that window
-         * instead
-         */
         if (window != NULL) {
             set_focus_window(window);
         } else {
             set_focus_window(frame->window);
         }
+    /* focus the inner window if it exists, there is no focus or a tiling window
+     * was previously focused
+     */
+    } else if (frame->window != NULL || Window_focus == NULL ||
+            Window_focus->state.mode == WINDOW_MODE_TILING) {
+        set_focus_window(frame->window);
     }
 
     Frame_focus = frame;

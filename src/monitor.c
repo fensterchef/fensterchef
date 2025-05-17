@@ -242,7 +242,7 @@ Monitor *get_monitor_from_rectangle(int x, int y,
         unsigned width, unsigned height)
 {
     Monitor *best_monitor = NULL;
-    uint64_t best_area = 0, area;
+    unsigned long best_area = 0, area;
     Size overlap;
 
     /* first check if the center of the rectangle is within any monitor; this
@@ -270,7 +270,7 @@ Monitor *get_monitor_from_rectangle(int x, int y,
             continue;
         }
 
-        area = (uint64_t) overlap.width * overlap.height;
+        area = (unsigned long) overlap.width * overlap.height;
         if (area > best_area) {
             best_monitor = monitor;
             best_area = area;
@@ -294,15 +294,15 @@ Monitor *get_monitor_from_rectangle_or_primary(int x, int y,
 /* The most efficient way to get the monitor containing given frame. */
 Monitor *get_monitor_containing_frame(Frame *frame)
 {
+    Monitor *monitor;
+
     frame = get_root_frame(frame);
-    for (Monitor *monitor = Monitor_first;
-            monitor != NULL;
-            monitor = monitor->next) {
+    for (monitor = Monitor_first; monitor != NULL; monitor = monitor->next) {
         if (monitor->frame == frame) {
-            return monitor;
+            break;
         }
     }
-    return NULL;
+    return monitor;
 }
 
 /* Get the monitor the window is on. */
@@ -318,12 +318,12 @@ inline Monitor *get_monitor_containing_window(FcWindow *window)
 /* Get a window covering given monitor. */
 FcWindow *get_window_covering_monitor(Monitor *monitor)
 {
-    uint64_t monitor_area;
+    unsigned long monitor_area;
     FcWindow *best_window = NULL;
-    uint64_t best_area = 0, area;
+    unsigned long best_area = 0, area;
     Size overlap;
 
-    monitor_area = (uint64_t) monitor->width * monitor->height;
+    monitor_area = (unsigned long) monitor->width * monitor->height;
     /* go through the windows from bottom to top */
     for (FcWindow *window = Window_bottom;
             window != NULL;
@@ -343,7 +343,7 @@ FcWindow *get_window_covering_monitor(Monitor *monitor)
                     &overlap)) {
             continue;
         }
-        area = (uint64_t) overlap.width * overlap.height;
+        area = (unsigned long) overlap.width * overlap.height;
         /* check if the window covers at least the configured overlap percentage
          * of the monitors area
          */
