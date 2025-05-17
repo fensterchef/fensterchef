@@ -5,7 +5,8 @@
  * Parse bindings or part of a binding.
  *
  * release? transparent? MODIFIERS+BUTTON|KEY_SYMBOL TOP
- * unbind release? transparent? MODIFIERS+BUTTON|KEY_SYMBOL
+ * unbind release? MODIFIERS+BUTTON|KEY_SYMBOL
+ * unbind GROUP_NAME
  *
  * Where MODIFIERS:
  * INTEGER [+ INTEGER]...
@@ -25,12 +26,24 @@
  * Binding within a binding:
  *     Super+Shift+r (
  *         h move window by -10 0
+ *         j move window by 0 10
+ *         k move window by 0 -10
  *         l move window by 10 0
- *         k move window by 0 10
- *         j move window by 0 -10
  *
  *         q unbind h, unbind l, unbind k, unbind j
  *     )
+ *
+ * Using a group:
+ *     group move (
+ *         h move window by -1% 0
+ *         j move window by 0 1%
+ *         k move window by 0 -1%
+ *         l move window by 1% 0
+ *
+ *         q unbind move
+ *     )
+ *
+ *     Super+Shift+r call move
  *
  * Button binding:
  *     transparent LeftButton focus window

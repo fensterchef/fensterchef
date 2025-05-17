@@ -16,7 +16,7 @@
     /* instance and class name */ \
     X(CLASS, struct parse_class class, 'C') \
     /* window relation */ \
-    X(RELATION, struct window_relation relation, 'A') \
+    X(RELATION, struct window_relation relation, 'R') \
     /* button binding */ \
     X(BUTTON, struct button_binding button, 'B') \
     /* key binding */ \

@@ -189,7 +189,7 @@ extern FcWindow *Window_focus;
 extern FcWindow *Window_server_focus;
 
 /* The last pressed window.  This only gets set when a window is pressed by a
- * grabbed button or when an relation runs.
+ * grabbed button or when a relation runs.
  */
 extern FcWindow *Window_pressed;
 

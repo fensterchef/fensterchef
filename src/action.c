@@ -12,6 +12,7 @@
 #include "monitor.h"
 #include "notification.h"
 #include "parse/data_type.h"
+#include "parse/group.h"
 #include "parse/parse.h"
 #include "window.h"
 #include "window_list.h"
@@ -46,7 +47,7 @@ void run_action_list(const struct action_list *original_list)
     duplicate_action_list(&list);
 
     data = list.data;
-    for (unsigned i = 0; i < list.number_of_items; i++) {
+    for (size_t i = 0; i < list.number_of_items; i++) {
         item = &list.items[i];
         do_action(item->type, data);
         data += item->data_count;
@@ -62,7 +63,7 @@ void duplicate_action_list(struct action_list *list)
     struct parse_data *data;
     size_t data_count = 0;
 
-    for (unsigned i = 0; i < list->number_of_items; i++) {
+    for (size_t i = 0; i < list->number_of_items; i++) {
         item = &list->items[i];
         data_count += item->data_count;
     }
@@ -83,7 +84,7 @@ void clear_action_list(const struct action_list *list)
     struct parse_data *data;
 
     data = list->data;
-    for (unsigned i = 0; i < list->number_of_items; i++) {
+    for (size_t i = 0; i < list->number_of_items; i++) {
         for (unsigned j = 0; j < list->items[i].data_count; j++) {
             clear_parse_data(data);
             data++;
@@ -497,6 +498,20 @@ void do_action(action_type_t type, const struct parse_data *data)
     case ACTION_BORDER_SIZE:
         configuration.border_size = data->u.integer;
         break;
+
+    /* call a group by name */
+    case ACTION_CALL: {
+        struct parse_group *group;
+
+        group = find_group(data->u.string);
+        if (group == NULL) {
+            LOG_ERROR("group %s does not exist\n",
+                    data->u.string);
+        } else {
+            run_action_list(&group->actions);
+        }
+        break;
+    }
 
     /* center a window to the current monitor */
     case ACTION_CENTER_WINDOW: {
@@ -1220,7 +1235,7 @@ void do_action(action_type_t type, const struct parse_data *data)
         break;
     
 
-    /* add an relation */
+    /* add a relation */
     case ACTION_RELATION:
         add_window_relation(&data->u.relation);
         break;
@@ -1234,6 +1249,20 @@ void do_action(action_type_t type, const struct parse_data *data)
     case ACTION_KEY_BINDING:
         set_key_binding(&data->u.key);
         break;
+
+    /* undo a group */
+    case ACTION_UNGROUP: {
+        struct parse_group *group;
+
+        group = find_group(data->u.string);
+        if (group == NULL) {
+            LOG_ERROR("group %s cannot be unbound as it does not exist\n",
+                    data->u.string);
+        } else {
+            undo_group(group);
+        }
+        break;
+    }
 
 
     /* not real actions */

@@ -1,0 +1,188 @@
+#include <stdlib.h>
+
+#include "core/binding.h"
+#include "core/log.h"
+#include "parse/action.h"
+#include "parse/group.h"
+#include "parse/top.h"
+#include "parse/utility.h"
+
+/* Do not put this macro in brackets! */
+#define PARSE_MAX_FILL_RATE 4/5
+
+/* map of all set groups */
+struct parse_group group_table[PARSE_MAX_GROUPS];
+
+/* the number of elements in the group table */
+int group_table_count;
+
+/* Get the index where the group with given name is supposed to be. */
+static int get_group_index(const char *name)
+{
+    /* TODO: determine better constants */
+    const int c1 = 880, c2 = 8998, c3 = 999482, c4 = 1848481, c5 = 848488;
+    int hash = 0;
+    int probe = 0;
+    int index;
+
+    switch (strlen(name)) {
+    case 0:
+        return -1;
+
+    default:
+        hash ^= name[4] * c5;
+        /* fall through */
+    case 4:
+        hash ^= name[3] * c4;
+        /* fall through */
+    case 3:
+        hash ^= name[2] * c3;
+        /* fall through */
+    case 2:
+        hash ^= name[1] * c2;
+        /* fall through */
+    case 1:
+        hash = name[0] * c1;
+        break;
+    }
+
+    do {
+        index = hash + (probe * probe + probe) / 2;
+        index %= PARSE_MAX_GROUPS;
+        probe++;
+    } while (group_table[index].name != NULL &&
+            strcmp(group_table[index].name, name) != 0);
+
+    return index;
+}
+
+/* Find the group by given name. */
+struct parse_group *find_group(const char *name)
+{
+    int index;
+
+    index = get_group_index(name);
+    if (group_table[index].name == NULL) {
+        return NULL;
+    } else {
+        return &group_table[index];
+    }
+}
+
+/* Run counter actions that undo anything that the group did. */
+void undo_group(const struct parse_group *group)
+{
+    const struct action_list *actions;
+    const struct parse_data *data;
+    struct button_binding button;
+    struct key_binding key;
+
+    actions = &group->actions;
+    data = actions->data;
+    /* find all binding actions and make an unbind action to counter it */
+    for (size_t i = 0; i < actions->number_of_items; i++) {
+        if (actions->items[i].type == ACTION_BUTTON_BINDING &&
+                data->u.button.actions.number_of_items > 0) {
+            button = data->u.button;
+            ZERO(&button.actions, 1);
+            set_button_binding(&button);
+        } else if (actions->items[i].type == ACTION_KEY_BINDING &&
+                data->u.key.actions.number_of_items > 0) {
+            key = data->u.key;
+            ZERO(&key.actions, 1);
+            set_key_binding(&key);
+        } else if (actions->items[i].type == ACTION_RELATION) {
+            remove_exact_window_relation(data->u.relation.instance_pattern,
+                    data->u.relation.class_pattern);
+        }
+        data += actions->items[i].data_count;
+    }
+}
+
+/* Parse all after a `group` keyword. */
+void continue_parsing_group(Parser *parser)
+{
+    struct parse_action_list sub_list;
+    int index;
+    struct parse_group group;
+
+    if (read_string(parser) != OK) {
+        emit_parse_error(parser, "expected name after group keyword\n");
+        return;
+    }
+
+    group.name = xstrdup(parser->string);
+
+    ZERO(&sub_list, 1);
+    if (parse_top(parser, &sub_list) != OK) {
+        free(group.name);
+        clear_parse_list(&sub_list);
+        return;
+    }
+
+    index = get_group_index(parser->string);
+
+    if (group_table[index].name == NULL &&
+            group_table_count + 1 > PARSE_MAX_GROUPS * PARSE_MAX_FILL_RATE) {
+        clear_parse_list(&sub_list);
+        free(group.name);
+        emit_parse_error(parser, "there is no more space for groups");
+        return;
+    }
+
+    clear_parse_list_data(&sub_list);
+
+    make_real_action_list(&group.actions, &sub_list);
+
+    if (group_table[index].name != NULL) {
+        LOG("overwriting group %s\n",
+                group.name);
+        free(group_table[index].name);
+        clear_action_list(&group_table[index].actions);
+    } else {
+        LOG("creating group %s\n",
+                group.name);
+        group_table_count++;
+    }
+
+    group_table[index] = group;
+}
+
+/* Parse all after a `ungroup` keyword. */
+void continue_parsing_ungroup(Parser *parser, struct parse_action_list *list)
+{
+    struct action_list_item item;
+    struct parse_data data;
+
+    if (read_string(parser) != OK) {
+        emit_parse_error(parser,
+                "expected group name after 'ungroup'");
+        return;
+    }
+
+    item.type = ACTION_UNGROUP;
+    item.data_count = 1;
+    LIST_APPEND_VALUE(list->items, item);
+
+    data.flags = 0;
+    data.type = PARSE_DATA_TYPE_STRING;
+    data.u.string = xstrdup(parser->string);
+    LIST_APPEND_VALUE(list->data, data);
+}
+
+/* Clear all groups the parser set. */
+void clear_all_groups(void)
+{
+    for (int i = 0; i < PARSE_MAX_GROUPS; i++) {
+        if (group_table_count == 0) {
+            break;
+        }
+
+        if (group_table[i].name != NULL) {
+            free(group_table[i].name);
+            clear_action_list(&group_table[i].actions);
+            group_table[i].name = NULL;
+            group_table_count--;
+        }
+    }
+}

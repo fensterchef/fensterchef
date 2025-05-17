@@ -7,7 +7,9 @@
 #include "fensterchef.h"
 #include "font.h"
 #include "log.h"
+#include "parse/alias.h"
 #include "parse/data_type.h"
+#include "parse/group.h"
 #include "parse/parse.h"
 #include "parse/input.h"
 #include "window.h"
@@ -217,6 +219,7 @@ void set_default_configuration(void)
 
     COPY(&configuration, &default_configuration, 1);
 
+    set_ignored_modifiers(LockMask | Mod2Mask);
     set_default_button_bindings();
     set_default_key_bindings();
 
@@ -324,7 +327,6 @@ const char *get_configuration_file(void)
 /* Clear everything that is currently loaded in the configuration. */
 void clear_configuration(void)
 {
-    set_ignored_modifiers(LockMask | Mod2Mask);
     clear_cursor_cache();
     clear_button_bindings();
     clear_key_bindings();
@@ -337,6 +339,9 @@ void reload_configuration(void)
     Parser *parser = NULL;
 
     const char *const configuration = get_configuration_file();
+
+    clear_all_aliases();
+    clear_all_groups();
 
     clear_configuration();
 

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 CC="${CC-cc}"
-CFLAGS='-std=c99 -Iinclude -Iinclude/core -Wall -Wextra -O3 -DNO_ANSII_COLORS'
+CFLAGS='-std=c99 -Iinclude -Iinclude/core -Wall -Wextra -O3 -DNO_ANSI_COLORS'
 LDLIBS="$LDLIBS"
 PACKAGES='x11 xrandr xcursor xft fontconfig'
 PREFIX="${PREFIX-/usr}"

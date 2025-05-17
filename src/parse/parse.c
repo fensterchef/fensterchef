@@ -28,6 +28,8 @@ void emit_parse_error(Parser *parser, const char *format, ...)
         file = "<string>";
     }
 
+    LOG_ERROR("\n");
+
     upper = parser->upper_parser;
     if (upper != NULL) {
         unsigned line, column;
@@ -50,17 +52,19 @@ void emit_parse_error(Parser *parser, const char *format, ...)
         fprintf(stderr, ":\n");
     }
 
-    LOG_ERROR("%s:%d:%d: ",
+    fprintf(stderr, BOLD_COLOR "%s:%d:%d:" CLEAR_COLOR " " COLOR(RED),
             file, line + 1, column + 1);
 
     va_start(list, format);
     vfprintf(stderr, format, list);
     va_end(list);
-    fprintf(stderr, "\n%.*s\n", (int) length, string_line);
+
+    fprintf(stderr, CLEAR_COLOR "\n %4u | %.*s\n",
+            line + 1, (int) length, string_line);
     for (unsigned i = 0; i < column; i++) {
         fputc(' ', stderr);
     }
-    fputs("^\n", stderr);
+    fputs("        ^\n", stderr);
 }
 
 /* Initialize a parse object to parse file at given path. */

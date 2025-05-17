@@ -37,6 +37,8 @@
     X(ACTION_BORDER_COLOR, "border color I") \
     /* the border size of all windows */ \
     X(ACTION_BORDER_SIZE, "border size I") \
+    /* call an action group by name */ \
+    X(ACTION_CALL, "call S") \
     /* center the window to the monitor it is on */ \
     X(ACTION_CENTER_WINDOW, "center window") \
     /* center a window to given monitor (glob pattern) */ \
@@ -222,10 +224,12 @@
      */ \
     X(ACTION_SIMPLE_MAX, "nop") \
     /* a window relation */ \
-    X(ACTION_RELATION, "relate A") \
+    X(ACTION_RELATION, "relate R") \
     /* a button binding */ \
     X(ACTION_BUTTON_BINDING, "bind B") \
     /* a key binding */ \
-    X(ACTION_KEY_BINDING, "bind K")
+    X(ACTION_KEY_BINDING, "bind K") \
+    /* undo a group */ \
+    X(ACTION_UNGROUP, "ungroup S")
 
 #endif

@@ -1,3 +1,9 @@
+TODO file for fensterchef
+? - Maybe
+X - Trash
+M - Maintenance
+! - Bug
+
 [Tasks]
 #71 Make generic menu item chooser
     Abstract parts of the window list away to make more choose menus like an
@@ -20,12 +26,18 @@
     move/resize or their identifying letter, what kind of border they have.
     This could then also be configurable.
 
-#111 Add group command to the parser
-    Group can be used to make groups of actions.  It also has a unique feature
-    that the parser manages which is `unbind group`.  This unbinds all keys the
-    group defines (in the shallow layer).
+#112 M Make memory pool for action lists
+    There should be a pool for action lists so the memory is managed more
+    properly.  This should get its own file.
 
-#112 ...
+#113 ! Fix transient for windows
+    Transient for windows behave weirdly.  Figure out the issue and fix it.
+
+#114 ! Multiple window fullscreens
+    When two fullscreen windows are open on two screens, the currently not
+    focused fullscreen window is not focusable through left/right motions.
+
+#115 ...
 
 #130 Add custom window borders
     Yes, it is happening soon...
@@ -528,3 +540,8 @@
     other tries to match the pattern.
     Maybe make variations ending with `all` that do not stop after the first
     relation has been removed.
+
+#111 Add group command to the parser
+    Group can be used to make groups of actions.  It also has a unique feature
+    that the parser manages which is `unbind group`.  This unbinds all keys the
+    group defines (in the shallow layer).

@@ -44,7 +44,7 @@ void signal_window_unrelate(void)
     remove_window_relation(running_relation);
 }
 
-/* Duplicate an relation deeply into itself. */
+/* Duplicate a relation deeply into itself. */
 void duplicate_window_relation(struct window_relation *relation)
 {
     relation->instance_pattern = xstrdup(relation->instance_pattern);

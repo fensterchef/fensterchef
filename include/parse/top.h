@@ -7,6 +7,7 @@
  * ACTION
  * ALIAS
  * BINDING
+ * GROUP
  * RELATION
  * SOURCE
  * UNBIND

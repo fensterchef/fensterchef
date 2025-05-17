@@ -72,10 +72,4 @@ void resolve_class_string(Parser *parser, _Out struct parse_class *class);
 bool resolve_data(Parser *parser, char identifier,
         _Out struct parse_data *data);
 
-/* Try to resolve the string within @parser as key symbol.
- *
- * @return NoSymbol if the string is not a key symbol.
- */
-KeySym resolve_key_symbol(Parser *parser);
-
 #endif

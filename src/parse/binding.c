@@ -23,7 +23,7 @@
 /* parse information about a binding */
 struct parse_binding {
     /* if there were were any modifiers */
-    bool has_anything;
+    bool has_modifiers;
     /* the position of the transparent keyword if any */
     size_t transparent_position;
     /* if `release` was specified */
@@ -56,7 +56,7 @@ static int continue_parsing_modifiers(Parser *parser,
             return ERROR;
         }
         binding->is_release = true;
-        binding->has_anything = true;
+        binding->has_modifiers = true;
     }
 
     if (strcmp(parser->string, "transparent") == 0) {
@@ -68,7 +68,7 @@ static int continue_parsing_modifiers(Parser *parser,
         }
         binding->transparent_position = parser->index;
         binding->is_transparent = true;
-        binding->has_anything = true;
+        binding->has_modifiers = true;
     }
 
     /* read any modifiers */
@@ -91,7 +91,7 @@ static int continue_parsing_modifiers(Parser *parser,
             skip_all_statements(parser);
             return ERROR;
         }
-        binding->has_anything = true;
+        binding->has_modifiers = true;
     }
 
     return OK;
@@ -120,7 +120,7 @@ static int continue_parsing_button_or_key_symbol(Parser *parser,
                 }
             }
         } else {
-            binding->key_symbol = resolve_key_symbol(parser);
+            binding->key_symbol = XStringToKeysym(parser->string);
             if (binding->key_symbol == NoSymbol) {
                 return ERROR;
             }
@@ -202,7 +202,7 @@ void continue_parsing_binding(Parser *parser, struct parse_action_list *list)
     }
 
     if (continue_parsing_button_or_key_symbol(parser, &binding) != OK) {
-        if (binding.has_anything) {
+        if (binding.has_modifiers) {
             emit_parse_error(parser,
                     "invalid button, key symbol or key code");
             /* we can still continue parsing here */
@@ -223,6 +223,8 @@ void continue_parsing_binding(Parser *parser, struct parse_action_list *list)
 void continue_parsing_unbind(Parser *parser, struct parse_action_list *list)
 {
     struct parse_binding binding;
+    struct action_list_item item;
+    struct parse_data data;
 
     if (read_string(parser) != OK) {
         emit_parse_error(parser,
@@ -243,22 +245,14 @@ void continue_parsing_unbind(Parser *parser, struct parse_action_list *list)
     }
 
     if (continue_parsing_button_or_key_symbol(parser, &binding) != OK) {
-        if (binding.has_anything) {
+        if (binding.has_modifiers) {
             emit_parse_error(parser,
                     "invalid button, key symbol or key code");
-            /* we can still continue parsing here */
         } else {
-            emit_parse_error(parser,
-                    "need button or key to unbind");
-            skip_statement(parser);
-            return;
+            emit_parse_error(parser, "invalid identifier");
         }
-    }
-
-    if (binding.button_index != BUTTON_NONE) {
+    } else if (binding.button_index != BUTTON_NONE) {
         struct button_binding button;
-        struct action_list_item item;
-        struct parse_data data;
 
         button.is_release = binding.is_release;
         button.is_transparent = binding.is_transparent;
@@ -276,8 +270,6 @@ void continue_parsing_unbind(Parser *parser, struct parse_action_list *list)
         LIST_APPEND_VALUE(list->data, data);
     } else {
         struct key_binding key;
-        struct action_list_item item;
-        struct parse_data data;
 
         key.is_release = binding.is_release;
         key.modifiers = binding.modifiers;

@@ -70,6 +70,12 @@ void continue_parsing_alias(Parser *parser)
         return;
     }
 
+    if (parser->is_string_quoted) {
+        emit_parse_error(parser, "alias name can not be quoted");
+        skip_statement(parser);
+        return;
+    }
+
     skip_blanks(parser);
     if (peek_stream_character(parser) != '=') {
         parser->start_index = parser->index;
@@ -102,15 +108,15 @@ void continue_parsing_alias(Parser *parser)
     alias.value = xstrdup(parser->string);
 
     if (alias_table[index].name != NULL) {
-        LOG_DEBUG("overwriting alias %s = %s\n",
+        LOG("overwriting alias %s = %s\n",
                 alias.name, alias_table[index].value);
+        free(alias_table[index].name);
+        free(alias_table[index].value);
     } else {
-        LOG_DEBUG("creating alias %s = %s\n",
+        LOG("creating alias %s = %s\n",
                 alias.name, alias.value);
+        alias_table_count++;
     }
-
-    free(alias_table[index].name);
-    free(alias_table[index].value);
 
     alias_table[index] = alias;
 }
@@ -123,10 +129,12 @@ void continue_parsing_unalias(Parser *parser)
         skip_statement(parser);
     } else {
         const int index = get_alias_index(parser->string);
-        free(alias_table[index].name);
-        free(alias_table[index].value);
-        alias_table[index].name = NULL;
-        alias_table[index].value = NULL;
+        if (alias_table[index].name != NULL) {
+            free(alias_table[index].name);
+            free(alias_table[index].value);
+            alias_table[index].name = NULL;
+            alias_table_count--;
+        }
     }
 }
 
@@ -135,4 +143,21 @@ const char *resolve_alias(const char *string)
 {
     const int index = get_alias_index(string);
     return alias_table[index].value;
+}
+
+/* Clear all aliases the parser set. */
+void clear_all_aliases(void)
+{
+    for (int i = 0; i < PARSE_MAX_ALIASES; i++) {
+        if (alias_table_count == 0) {
+            break;
+        }
+
+        if (alias_table[i].name != NULL) {
+            free(alias_table[i].name);
+            free(alias_table[i].value);
+            alias_table[i].name = NULL;
+            alias_table_count--;
+        }
+    }
 }

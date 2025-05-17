@@ -7,6 +7,8 @@
  * The user can invoke any actions in any order at any time.
  */
 
+#include <stddef.h>
+
 #include "bits/actions.h"
 
 /* action codes */
@@ -32,7 +34,7 @@ struct action_list {
         unsigned data_count;
     } *items;
     /* the number of items in `items` */
-    unsigned number_of_items;
+    size_t number_of_items;
     /* the data associated to the actions */
     struct parse_data *data;
 };

@@ -46,19 +46,27 @@ void skip_space(Parser *parser)
 void skip_statement(Parser *parser)
 {
     int character;
+    int brackets = 0;
 
-    while (character = get_stream_character(parser),
-            character != ',' && character != '\n' && character != EOF) {
-        /* skip over quotes */
+    while (character = peek_stream_character(parser),
+            (brackets > 0 && character != EOF) ||
+            (character != ',' && character != '\n' && character != EOF)) {
+        /* skip over strings */
         if (character == '\"' || character == '\'') {
-            const int quote = character;
-            while (parser->start_index = parser->index,
-                    character = get_stream_character(parser),
-                    character != quote && character != EOF &&
-                    character != '\n') {
-                /* nothing */
-            }
+            read_string_no_alias(parser);
+        } else if (character == '(') {
+            (void) get_stream_character(parser);
+            brackets++;
+        } else if (character == ')') {
+            (void) get_stream_character(parser);
+            brackets--;
+        } else {
+            (void) get_stream_character(parser);
         }
+    }
+
+    if (character == ',' || character == '\n') {
+        (void) get_stream_character(parser);
     }
 }
 
@@ -294,6 +302,10 @@ int resolve_integer(Parser *parser,
     int error = ERROR;
     parse_integer_t sign = 1, integer = 0;
 
+    if (parser->is_string_quoted) {
+        return ERROR;
+    }
+
     word = parser->string;
     *flags = 0;
     if ((word[0] == '-' && isdigit(word[1])) || isdigit(word[0])) {
@@ -457,35 +469,4 @@ bool resolve_data(Parser *parser, char identifier,
     }
 
     return true;
-}
-
-/* Translate a string to some extended key symbols. */
-KeySym resolve_key_symbol(Parser *parser)
-{
-    struct {
-        const char *name;
-        KeySym key_symbol;
-    } symbol_table[] = {
-        /* since integers are interpreted as keycodes, these are needed to still
-         * use the digit keys
-         */
-        { "zero", XK_0 },
-        { "one", XK_1 },
-        { "two", XK_2 },
-        { "three", XK_3 },
-        { "four", XK_4 },
-        { "five", XK_5 },
-        { "six", XK_6 },
-        { "seven", XK_7 },
-        { "eight", XK_8 },
-        { "nine", XK_9 },
-    };
-
-    for (unsigned i = 0; i < SIZE(symbol_table); i++) {
-        if (strcmp(parser->string, symbol_table[i].name) == 0) {
-            return symbol_table[i].key_symbol;
-        }
-    }
-
-    return XStringToKeysym(parser->string);
 }

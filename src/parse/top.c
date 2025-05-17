@@ -5,6 +5,7 @@
 #include "parse/action.h"
 #include "parse/alias.h"
 #include "parse/binding.h"
+#include "parse/group.h"
 #include "parse/input.h"
 #include "parse/relation.h"
 #include "parse/top.h"
@@ -123,16 +124,20 @@ int parse_top(Parser *parser, struct parse_action_list *list)
         return parse_top(parser, list);
     }
 
-    if (parser->is_string_quoted) {
-        continue_parsing_relation(parser, list);
-    } else if (strcmp(parser->string, "alias") == 0) {
+    if (strcmp(parser->string, "alias") == 0) {
         continue_parsing_alias(parser);
-    } else if (strcmp(parser->string, "unalias") == 0) {
-        continue_parsing_unalias(parser);
+    } else if (strcmp(parser->string, "group") == 0) {
+        continue_parsing_group(parser);
+    } else if (strcmp(parser->string, "relate") == 0) {
+        continue_parsing_relation(parser, list);
     } else if (strcmp(parser->string, "source") == 0) {
         continue_parsing_source(parser, list);
+    } else if (strcmp(parser->string, "unalias") == 0) {
+        continue_parsing_unalias(parser);
     } else if (strcmp(parser->string, "unbind") == 0) {
         continue_parsing_unbind(parser, list);
+    } else if (strcmp(parser->string, "ungroup") == 0) {
+        continue_parsing_ungroup(parser, list);
     } else {
         if (continue_parsing_actions(parser, list) != OK) {
             continue_parsing_binding(parser, list);

@@ -19,7 +19,7 @@ typedef enum {
 /* the severity of the logging */
 extern log_severity_t log_severity;
 
-#ifndef NO_ANSII_COLORS
+#ifndef NO_ANSI_COLORS
 
 /* ansi colors for colored output */
 #define ANSI_BLACK 0
@@ -33,6 +33,8 @@ extern log_severity_t log_severity;
 
 /* clear the current visual attributes */
 #define CLEAR_COLOR "\x1b[0m"
+/* make the text bold */
+#define BOLD_COLOR "\x1b[1m"
 /* set the foreground color */
 #define COLOR(color) "\x1b[3" STRINGIFY(ANSI_##color) "m"
 

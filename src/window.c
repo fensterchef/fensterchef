@@ -139,6 +139,8 @@ bool cache_window_property(FcWindow *window, Atom atom)
     } else if (atom == XA_WM_CLASS) {
         XFree(window->properties.class.res_name);
         XFree(window->properties.class.res_class);
+        window->properties.class.res_name = NULL;
+        window->properties.class.res_class = NULL;
         XGetClassHint(display, window->reference.id, &window->properties.class);
     } else if (atom == XA_WM_NORMAL_HINTS) {
         long supplied;

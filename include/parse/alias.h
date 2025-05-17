@@ -15,7 +15,8 @@
 
 #include "parse/parse.h"
 
-#define PARSE_MAX_ALIASES 2048
+/* must be a power of two */
+#define PARSE_MAX_ALIASES 1024
 
 /* Parse all after the `alias` keyword. */
 void continue_parsing_alias(Parser *parser);
@@ -29,5 +30,8 @@ void continue_parsing_unalias(Parser *parser);
  *              with the value of the alias.
  */
 const char *resolve_alias(const char *string);
+
+/* Clear all aliases the parser set. */
+void clear_all_aliases(void);
 
 #endif

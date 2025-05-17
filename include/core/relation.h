@@ -27,7 +27,7 @@ struct window_relation {
  */
 void signal_window_unrelate(void);
 
-/* Duplicate an relation deeply into itself. */
+/* Duplicate a relation deeply into itself. */
 void duplicate_window_relation(struct window_relation *relation);
 
 /* Add a new relation from window instance/class to actions.

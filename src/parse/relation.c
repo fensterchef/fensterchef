@@ -14,6 +14,12 @@ void continue_parsing_relation(Parser *parser,
     struct parse_class class;
     struct parse_data data;
 
+    if (read_string(parser) != OK) {
+        emit_parse_error(parser,
+                "expected instance,class pattern to relate to\n");
+        return;
+    }
+
     resolve_class_string(parser, &class);
 
     ZERO(&sub_list, 1);
