@@ -30,9 +30,6 @@ M - Maintenance
     There should be a pool for action lists so the memory is managed more
     properly.  This should get its own file.
 
-#113 ! Fix transient for windows
-    Transient for windows behave weirdly.  Figure out the issue and fix it.
-
 #114 ! Multiple window fullscreens
     When two fullscreen windows are open on two screens, the currently not
     focused fullscreen window is not focusable through left/right motions.
@@ -545,3 +542,6 @@ M - Maintenance
     Group can be used to make groups of actions.  It also has a unique feature
     that the parser manages which is `unbind group`.  This unbinds all keys the
     group defines (in the shallow layer).
+
+#113 ! Fix transient for windows
+    Transient for windows behave weirdly.  Figure out the issue and fix it.

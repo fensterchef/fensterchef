@@ -344,6 +344,9 @@ void unlink_window_from_z_server_list(FcWindow *window);
 void link_window_above_in_z_server_list(FcWindow *window,
         _Nonnull FcWindow *below);
 
+/* Put all windows above @window that are transient for it. */
+void raise_windows_transient_for(FcWindow *window);
+
 /* Put the window on the best suited Z stack position. */
 void update_window_layer(FcWindow *window);
 

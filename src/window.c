@@ -1330,6 +1330,20 @@ void hide_window_abruptly(FcWindow *window)
  * Window stacking *
  *******************/
 
+/* Put all windows above @window that are transient for it. */
+void raise_windows_transient_for(FcWindow *window)
+{
+    FcWindow *other, *next_below;
+
+    for (other = window->below; other != NULL; other = next_below) {
+        next_below = other->below;
+        if (other->properties.transient_for == window->reference.id) {
+            DOUBLY_RELINK_AFTER(Window_bottom, Window_top,
+                    other, window, below, above);
+        }
+    }
+}
+
 /* Put the window on the best suited Z stack position. */
 void update_window_layer(FcWindow *window)
 {
@@ -1371,15 +1385,7 @@ void update_window_layer(FcWindow *window)
 
     DOUBLY_LINK_AFTER(Window_bottom, Window_top, window, below, below, above);
 
-    /* put windows that are transient for this window above it */
-    for (below = window->below; below != NULL; below = below->below) {
-        if (below->properties.transient_for == window->reference.id) {
-            DOUBLY_RELINK_AFTER(Window_bottom, Window_top,
-                    /* note the reverse order here, it is important */
-                    below, window, below, above);
-            below = window;
-        }
-    }
+    raise_windows_transient_for(window);
 }
 
 /*******************
