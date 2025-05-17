@@ -39,7 +39,7 @@ M - Maintenance
     Program options are only related to main and it makes a lot of sense to put
     it into main.
 
-#116 ...
+#117 ...
 
 #130 Add custom window borders
     Yes, it is happening soon...
@@ -554,3 +554,6 @@ M - Maintenance
 #114 ! Multiple window fullscreens
     When two fullscreen windows are open on two screens, the currently not
     focused fullscreen window is not focusable through left/right motions.
+
+#116 ! Inkscape is not sized correctly
+    When opening inkscape the start window size is too small

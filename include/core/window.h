@@ -122,8 +122,8 @@ struct fensterchef_window {
     /* current window position and size */
     int x;
     int y;
-    unsigned int width;
-    unsigned int height;
+    unsigned width;
+    unsigned height;
 
     /* if the window should have no border as floating window; to check if a
      * window *actually* has no border, use `is_window_borderless()`
@@ -286,8 +286,8 @@ void get_maximum_window_size(const FcWindow *window, Size *size);
  * Note that this function clips the parameters using `get_minimum_size()` and
  * `get_maximum_size()`.
  */
-void set_window_size(FcWindow *window, int x, int y, unsigned int width,
-        unsigned int height);
+void set_window_size(FcWindow *window, int x, int y, unsigned width,
+        unsigned height);
 
 /* Reset the position and size of given window according to its window mode. */
 void reset_window_size(FcWindow *window);

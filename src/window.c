@@ -147,6 +147,9 @@ bool cache_window_property(FcWindow *window, Atom atom)
 
         XGetWMNormalHints(display, window->reference.id,
                 &window->properties.size_hints, &supplied);
+        /* clip the window to new potential size hints */
+        set_window_size(window, window->x, window->y, window->width,
+                window->height);
     } else if (atom == XA_WM_HINTS) {
         XWMHints *wm_hints;
 
@@ -743,8 +746,8 @@ void get_maximum_window_size(const FcWindow *window, Size *size)
 }
 
 /* Set the position and size of a window. */
-void set_window_size(FcWindow *window, int x, int y, unsigned int width,
-        unsigned int height)
+void set_window_size(FcWindow *window, int x, int y, unsigned width,
+        unsigned height)
 {
     Size minimum, maximum;
 
@@ -855,10 +858,7 @@ static void configure_floating_size(FcWindow *window)
             monitor = get_monitor_containing_frame(Frame_focus);
         }
 
-        if (window->floating.width > 0) {
-            width = window->floating.width;
-            height = window->floating.height;
-        } else if ((window->properties.size_hints.flags & PSize)) {
+        if ((window->properties.size_hints.flags & PSize)) {
             width = window->properties.size_hints.width;
             height = window->properties.size_hints.height;
         } else {
