@@ -14,9 +14,6 @@
 #include "parse/input.h"
 #include "window.h"
 
-/* the currently loaded configuration settings */
-struct configuration configuration;
-
 /* the settings of the default configuration */
 const struct configuration default_configuration = {
     .resize_tolerance = 8,
@@ -45,6 +42,9 @@ const struct configuration default_configuration = {
     .gaps_inner = { 0, 0, 0, 0 },
     .gaps_outer = { 0, 0, 0, 0 },
 };
+
+/* the currently loaded configuration settings */
+struct configuration configuration = default_configuration;
 
 /* default mouse bindings */
 static const struct default_button_binding {

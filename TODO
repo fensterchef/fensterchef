@@ -46,10 +46,6 @@ M - Maintenance
     [keycode] seems like a logical syntax as it means "key at index" which
     essentially is the key code.  This should replace the old way.
 
-#119 ! Window number 0 being used when querying existing windows
-    The first queried window gets index 0.  Make it so it gets the configured
-    first number.
-
 #120 ...
 
 #130 Add custom window borders
@@ -568,3 +564,7 @@ M - Maintenance
 
 #116 ! Inkscape is not sized correctly
     When opening inkscape the start window size is too small
+
+#119 ! Window number 0 being used when querying existing windows
+    The first queried window gets index 0.  Make it so it gets the configured
+    first number.
