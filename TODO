@@ -39,7 +39,18 @@ M - Maintenance
     Program options are only related to main and it makes a lot of sense to put
     it into main.
 
-#117 ...
+#117 Write test code
+    Write test code for... everything
+
+#118 Add [keycode] syntax to parser
+    [keycode] seems like a logical syntax as it means "key at index" which
+    essentially is the key code.  This should replace the old way.
+
+#119 ! Window number 0 being used when querying existing windows
+    The first queried window gets index 0.  Make it so it gets the configured
+    first number.
+
+#120 ...
 
 #130 Add custom window borders
     Yes, it is happening soon...

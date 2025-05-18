@@ -17,7 +17,6 @@ static int resolve_action_word(Parser *parser, struct parse_action_list *list)
 {
     action_type_t count = 0;
 
-    /* TODO: can this be reduced to log(N) exploiting the sorted property? */
     for (action_type_t i = 0; i < ACTION_SIMPLE_MAX; i++) {
         const char *action, *space;
         unsigned skip_length;

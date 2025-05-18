@@ -19,7 +19,6 @@ int group_table_count;
 /* Get the index where the group with given name is supposed to be. */
 static int get_group_index(const char *name)
 {
-    /* TODO: determine better constants */
     const int c1 = 880, c2 = 8998, c3 = 999482, c4 = 1848481, c5 = 848488;
     int hash = 0;
     int probe = 0;
@@ -99,6 +98,23 @@ void undo_group(const struct parse_group *group)
     }
 }
 
+/* Clear all groups the parser set. */
+void clear_all_groups(void)
+{
+    for (int i = 0; i < PARSE_MAX_GROUPS; i++) {
+        if (group_table_count == 0) {
+            break;
+        }
+
+        if (group_table[i].name != NULL) {
+            free(group_table[i].name);
+            clear_action_list(&group_table[i].actions);
+            group_table[i].name = NULL;
+            group_table_count--;
+        }
+    }
+}
+
 /* Parse all after a `group` keyword. */
 void continue_parsing_group(Parser *parser)
 {
@@ -168,21 +184,4 @@ void continue_parsing_ungroup(Parser *parser, struct parse_action_list *list)
     data.type = PARSE_DATA_TYPE_STRING;
     data.u.string = xstrdup(parser->string);
     LIST_APPEND_VALUE(list->data, data);
-}
-
-/* Clear all groups the parser set. */
-void clear_all_groups(void)
-{
-    for (int i = 0; i < PARSE_MAX_GROUPS; i++) {
-        if (group_table_count == 0) {
-            break;
-        }
-
-        if (group_table[i].name != NULL) {
-            free(group_table[i].name);
-            clear_action_list(&group_table[i].actions);
-            group_table[i].name = NULL;
-            group_table_count--;
-        }
-    }
 }

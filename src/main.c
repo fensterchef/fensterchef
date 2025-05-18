@@ -47,9 +47,6 @@ int main(int argc, char **argv)
     /* set the X properties on the root window */
     initialize_root_properties();
 
-    /* manage the windows that are already there */
-    query_existing_windows();
-
     /* configure the monitor frames before running the startup actions */
     reconfigure_monitor_frames();
 
@@ -60,6 +57,9 @@ int main(int argc, char **argv)
         LOG("startup interrupted by user configuration\n");
         quit_fensterchef(EXIT_FAILURE);
     }
+
+    /* manage the windows that are already there */
+    query_existing_windows();
 
     /* do an inital synchronization */
     synchronize_with_server();

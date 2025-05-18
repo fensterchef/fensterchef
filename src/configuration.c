@@ -148,9 +148,6 @@ static const struct default_key_binding {
     { ControlMask | ShiftMask, XK_e, .action = ACTION_QUIT }
 };
 
-/* default settings that can not be directly set in the settings below */
-static const char *default_font = "Mono";
-
 /* Puts the button bindings of the default configuration into the current
  * configuration.
  */
@@ -219,17 +216,17 @@ void set_default_configuration(void)
 
     COPY(&configuration, &default_configuration, 1);
 
-    set_ignored_modifiers(LockMask | Mod2Mask);
+    set_ignored_modifiers(DEFAULT_IGNORE_MODIFIERS);
     set_default_button_bindings();
     set_default_key_bindings();
 
-    set_font(default_font);
+    set_font(DEFAULT_FONT);
 }
 
 /* Expand given @path.
  *
  * @path becomes invalid after this call, use the return value for the new
- * value.
+ *       value.
  */
 static char *expand_path(char *path)
 {
@@ -268,8 +265,7 @@ const char *get_configuration_file(void)
     const char *colon, *next;
     size_t length;
 
-    if (Fensterchef_configuration != NULL &&
-            is_readable(Fensterchef_configuration)) {
+    if (Fensterchef_configuration != NULL) {
         return Fensterchef_configuration;
     }
 

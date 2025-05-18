@@ -127,8 +127,7 @@ static void handle_option(option_t option, char *value)
     }
 }
 
-/* Parse the given program arguments and load their data into `program_options`.
- */
+/* Parse the given program arguments. */
 void parse_program_arguments(int argc, char **argv)
 {
     char *argument, *value;

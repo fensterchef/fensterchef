@@ -211,7 +211,6 @@ static int render_window_list(void)
 
     /* set the list position and size so it is in the top right of the monitor
      * containing the focus frame
-     * TODO: make this configurable
      */
     configure_client(&WindowList.reference,
             monitor->x + monitor->width - width -

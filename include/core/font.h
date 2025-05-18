@@ -5,6 +5,9 @@
 
 #include "utility/types.h"
 
+/* the default font */
+#define DEFAULT_FONT "monospace"
+
 /* the maximum number of glyphs */
 #define MAX_GLYPH_COUNT 1024
 

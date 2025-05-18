@@ -50,7 +50,14 @@
  */
 
 #include "core/binding.h"
+#include "parse/action.h"
 #include "parse/parse.h"
+
+/* Try to resolve the string within parser to a modifier constant.
+ *
+ * @return ERROR when the string is not a modifier constant.
+ */
+int resolve_modifier(Parser *parser, _Out unsigned *modifier);
 
 /* Parse a full binding definition.
  *

@@ -21,7 +21,6 @@ int alias_table_count;
 /* Get the index where the alias with given name is supposed to be. */
 static int get_alias_index(const char *name)
 {
-    /* TODO: determine better constants */
     const int c1 = 880, c2 = 8998, c3 = 999482, c4 = 1848481, c5 = 848488;
     int hash = 0;
     int probe = 0;
@@ -142,7 +141,11 @@ void continue_parsing_unalias(Parser *parser)
 const char *resolve_alias(const char *string)
 {
     const int index = get_alias_index(string);
-    return alias_table[index].value;
+    if (alias_table[index].name == NULL) {
+        return NULL;
+    } else {
+        return alias_table[index].value;
+    }
 }
 
 /* Clear all aliases the parser set. */

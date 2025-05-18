@@ -6,6 +6,7 @@
 
 #include "bits/binding.h"
 #include "core/relation.h"
+#include "parse/parse.h"
 #include "utility/types.h"
 
 #define DEFINE_ALL_PARSE_DATA_TYPES \
@@ -82,5 +83,15 @@ void duplicate_parse_data(struct parse_data *data);
 
 /* Clear the data value within @data. */
 void clear_parse_data(const struct parse_data *data);
+
+/* Resolve the string within parser as a data point.
+ *
+ * @return false if @identifier is invalid.
+ *
+ * data->type is set to PARSE_DATA_TYPE_MAX if the string within parser does not
+ * match the data type.
+ */
+bool resolve_data(Parser *parser, char identifier,
+        _Out struct parse_data *data);
 
 #endif

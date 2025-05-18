@@ -1,6 +1,8 @@
 #include "core/log.h"
 #include "parse/action.h"
 #include "parse/data_type.h"
+#include "parse/integer.h"
+#include "parse/utility.h"
 
 /* meta information about a data type */
 struct parse_data_meta_information parse_data_meta_information[] = {
@@ -92,4 +94,53 @@ void clear_parse_data(const struct parse_data *data)
         /* nothing */
         break;
     }
+}
+
+/* Resolve the string within parser as a data point. */
+bool resolve_data(Parser *parser, char identifier,
+        _Out struct parse_data *data)
+{
+    parse_data_type_t type = 0;
+
+    for (; type < PARSE_DATA_TYPE_MAX; type++) {
+        if (identifier == parse_data_meta_information[type].identifier) {
+            break;
+        }
+    }
+
+    if (type == PARSE_DATA_TYPE_MAX) {
+        return false;
+    }
+
+    data->type = type;
+
+    switch (type) {
+    case PARSE_DATA_TYPE_INTEGER:
+        if (continue_parsing_integer_expression(parser, &data->flags,
+                    &data->u.integer) != OK) {
+            data->type = PARSE_DATA_TYPE_MAX;
+        }
+        break;
+
+    case PARSE_DATA_TYPE_STRING:
+        LIST_COPY(parser->string, 0, parser->string_length + 1,
+                data->u.string);
+        break;
+
+    case PARSE_DATA_TYPE_CLASS:
+        resolve_class_string(parser, &data->u.class);
+        break;
+
+    case PARSE_DATA_TYPE_RELATION:
+    case PARSE_DATA_TYPE_BUTTON:
+    case PARSE_DATA_TYPE_KEY:
+        /* not supported as action parameter */
+        break;
+
+    case PARSE_DATA_TYPE_MAX:
+        /* nothing */
+        break;
+    }
+
+    return true;
 }

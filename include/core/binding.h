@@ -13,8 +13,8 @@
 #include "action.h"
 #include "bits/binding.h"
 
-/* Set the modifiers to add to the ones passed into the set binding function. */
-void set_additional_modifiers(unsigned modifiers);
+/* the default modifiers to ignore */
+#define DEFAULT_IGNORE_MODIFIERS (Mod2Mask | LockMask)
 
 /* Set the modifiers to ignore. */
 void set_ignored_modifiers(unsigned modifiers);

@@ -288,7 +288,7 @@ static void handle_configure_request(XConfigureRequestEvent *event)
          * otherwise they get in a bugged state.  This could have various
          * reasons.  All this because we are a *tiling* window manager.
          */
-        memset(&notify_event, 0, sizeof(notify_event));
+        ZERO(&notify_event, 1);
         notify_event.type = ConfigureNotify;
         notify_event.xconfigure.event = window->reference.id;
         notify_event.xconfigure.window = window->reference.id;

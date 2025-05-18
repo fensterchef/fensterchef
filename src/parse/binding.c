@@ -11,10 +11,13 @@
  *                                              finish_parsing_binding
  */
 
+#include <ctype.h>
+
 #include "parse/action.h"
 #include "parse/data_type.h"
 #include "parse/binding.h"
 #include "parse/input.h"
+#include "parse/integer.h"
 #include "parse/parse.h"
 #include "parse/top.h"
 #include "parse/utility.h"
@@ -39,6 +42,139 @@ struct parse_binding {
     /* the key code */
     KeyCode key_code;
 };
+
+/* Try to resolve the string within parser to a modifier constant. */
+int resolve_modifier(Parser *parser, unsigned *modifier)
+{
+    /* string to modifier translation */
+    static const struct {
+        const char *string;
+        unsigned modifier;
+    } string_to_modifier[] = {
+        { "None", 0 },
+        { "Shift", ShiftMask },
+        { "Lock", LockMask },
+        { "Control", ControlMask },
+        { "Mod1", Mod1Mask },
+        { "Mod2", Mod2Mask },
+        { "Mod3", Mod3Mask },
+        { "Mod4", Mod4Mask },
+        { "Mod5", Mod5Mask },
+    };
+
+    unsigned index;
+
+    if (parser->string_length < 4) {
+        return ERROR;
+    }
+
+    /* the fourth character is unique among all constants */
+    switch (parser->string[3]) {
+    case 'e': index = 0; break;
+    case 'f': index = 1; break;
+    case 'k': index = 2; break;
+    case 't': index = 3; break;
+    case '1': index = 4; break;
+    case '2': index = 5; break;
+    case '3': index = 6; break;
+    case '4': index = 7; break;
+    case '5': index = 8; break;
+    default:
+        return ERROR;
+    }
+
+    if (strcmp(string_to_modifier[index].string, parser->string) == 0) {
+        *modifier = string_to_modifier[index].modifier;
+        return OK;
+    } else {
+        return ERROR;
+    }
+}
+
+/* Translate the string within @parser to a button index.
+ *
+ * @return BUTTON_NONE when the string is not a button constant.
+ */
+static int resolve_button(Parser *parser)
+{
+    /* conversion from string to button index */
+    static const struct button_string {
+        /* the string representation of the button */
+        const char *name;
+        /* the button index */
+        button_t button_index;
+    } button_strings[] = {
+        /* buttons can also be Button<integer> to directly address the index */
+        { "LButton", BUTTON_LEFT },
+        { "LeftButton", BUTTON_LEFT },
+
+        { "MButton", BUTTON_MIDDLE },
+        { "MiddleButton", BUTTON_MIDDLE },
+
+        { "RButton", BUTTON_RIGHT },
+        { "RightButton", BUTTON_RIGHT },
+
+        { "ScrollUp", BUTTON_WHEEL_UP },
+        { "WheelUp", BUTTON_WHEEL_UP },
+
+        { "ScrollDown", BUTTON_WHEEL_DOWN },
+        { "WheelDown", BUTTON_WHEEL_DOWN },
+
+        { "ScrollLeft", BUTTON_WHEEL_LEFT },
+        { "WheelLeft", BUTTON_WHEEL_LEFT },
+
+        { "ScrollRight", BUTTON_WHEEL_RIGHT },
+        { "WheelRight", BUTTON_WHEEL_RIGHT },
+    };
+
+    int index = 0;
+    const char *string;
+
+    string = parser->string;
+    /* parse strings starting with "X" */
+    if (string[0] == 'X') {
+        int x_index = 0;
+
+        string++;
+        while (isdigit(string[0])) {
+            x_index *= 10;
+            x_index += string[0] - '0';
+            if (x_index >= BUTTON_MAX - BUTTON_X1) {
+                emit_parse_error(parser, "X button value is too high");
+                x_index = 1 - BUTTON_X1;
+                break;
+            }
+            string++;
+        }
+
+        index = BUTTON_X1 + x_index - 1;
+    /* parse strings starting with "Button" */
+    } else if (strncmp(string, "Button", strlen("Button")) == 0) {
+        string += strlen("Button");
+        while (isdigit(string[0])) {
+            index *= 10;
+            index += string[0] - '0';
+            if (index > UINT8_MAX) {
+                index = BUTTON_NONE;
+                emit_parse_error(parser, "button value is too high");
+                break;
+            }
+            string++;
+        }
+    } else {
+        for (unsigned i = 0; i < SIZE(button_strings); i++) {
+            if (strcmp(string, button_strings[i].name) == 0) {
+                return button_strings[i].button_index;
+            }
+        }
+    }
+
+    if (string[0] != '\0') {
+        index = BUTTON_NONE;
+    }
+
+    return index;
+}
 
 /* Parse binding modifiers. */
 static int continue_parsing_modifiers(Parser *parser,

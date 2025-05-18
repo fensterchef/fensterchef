@@ -5,7 +5,7 @@
 #include "x11/synchronize.h"
 
 /* the modifiers to ignore */
-static unsigned modifiers_ignore = LockMask | Mod2Mask;
+static unsigned modifiers_ignore = DEFAULT_IGNORE_MODIFIERS;
 
 /* The mouse bindings.  The key to this map are button indexes. */
 static struct internal_button_binding {

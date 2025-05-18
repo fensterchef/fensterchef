@@ -7,6 +7,7 @@
  */
 
 #include "core/action.h"
+#include "parse/action.h"
 #include "parse/parse.h"
 
 /* must be a power of two */
@@ -31,13 +32,13 @@ struct parse_group *find_group(const char *name);
  */
 void undo_group(const struct parse_group *group);
 
+/* Clear all groups the parser set. */
+void clear_all_groups(void);
+
 /* Parse all after a `group` keyword. */
 void continue_parsing_group(Parser *parser);
 
 /* Parse all after a `ungroup` keyword. */
 void continue_parsing_ungroup(Parser *parser, struct parse_action_list *list);
-
-/* Clear all groups the parser set. */
-void clear_all_groups(void);
 
 #endif
