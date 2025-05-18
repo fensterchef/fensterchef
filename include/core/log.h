@@ -41,6 +41,7 @@ extern log_severity_t log_severity;
 #else
 
 #define CLEAR_COLOR ""
+#define BOLD_COLOR ""
 #define COLOR(color) ""
 
 #endif
