@@ -12,6 +12,7 @@
 #include "monitor.h"
 #include "parse/parse.h"
 #include "window.h"
+#include "window_list.h"
 #include "x11/display.h"
 
 /* the number of all windows within the linked list */
@@ -350,6 +351,7 @@ FcWindow *create_window(Window id)
     XSetWindowAttributes set_attributes;
     FcWindow *window;
     FcWindow *previous;
+    XWindowChanges changes;
 
     if (XGetWindowAttributes(display, id, &attributes) == 0) {
         /* the window got invalid because it was abruptly destroyed */
@@ -453,7 +455,12 @@ FcWindow *create_window(Window id)
         Window_server_top->server_above = window;
         Window_server_top = window;
 
-        /* TODO: do we need to make sure the window is REALLY at the top? */
+        /* if the window list is open, put it below it */
+        if (WindowList.reference.is_mapped) {
+            changes.stack_mode = Below;
+            changes.sibling = WindowList.reference.id;
+            XConfigureWindow(display, id, CWStackMode | CWSibling, &changes);
+        }
 
         /* put the window into the age linked list */
         previous = Window_oldest;

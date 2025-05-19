@@ -53,10 +53,6 @@ M - Maintenance
     The hash function constants need to be improved to be unique for common
     english words
 
-#122 ! Window list is obscured
-    When a new window is raised, it goes above the window list.  Also make the
-    window list centered.
-
 #123 Add documentation about terminal emulator
     Add documentation about configuring a terminal emulator or application
     launcher.  Add default bindings for pulseaudio control in the configuration
@@ -587,3 +583,7 @@ M - Maintenance
 
 #124 ! Make exchange not remove void
     When exchanging with a void, make the void not disappear
+
+#122 ! Window list is obscured
+    When a new window is raised, it goes above the window list.  Also make the
+    window list centered.

@@ -209,12 +209,12 @@ static int render_window_list(void)
     /* change border color of the window list window */
     change_client_attributes(&WindowList.reference, configuration.foreground);
 
-    /* set the list position and size so it is in the top right of the monitor
-     * containing the focus frame
+    /* set the list position and size so it is in the top center of the
+     * focused monitor
      */
     configure_client(&WindowList.reference,
-            monitor->x + monitor->width - width -
-                configuration.border_size * 2, monitor->y,
+            monitor->x + (monitor->width - width) / 2 -
+                configuration.border_size, monitor->y,
             width, height, configuration.border_size);
 
     selected_y += configuration.text_padding / 2;
