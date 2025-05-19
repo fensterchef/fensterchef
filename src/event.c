@@ -143,6 +143,9 @@ int next_cycle(void)
 /* Run the main event loop that handles all X events. */
 void run_event_loop(void)
 {
+    /* before entering the loop, flush all the initialization calls */
+    XFlush(display);
+
     while (next_cycle() == OK) {
         /* nothing */
     }
@@ -152,6 +155,7 @@ void run_event_loop(void)
 /* Key press events are sent when a grabbed key is pressed. */
 static void handle_key_press(XKeyPressedEvent *event)
 {
+    /* hide the system notification window */
     if (system_notification != NULL) {
         alarm(0);
         unmap_client(&system_notification->reference);

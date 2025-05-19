@@ -35,10 +35,6 @@ M - Maintenance
     There should be a pool for action lists so the memory is managed more
     properly.  This should get its own file.
 
-#115 M Merge program_options into main
-    Program options are only related to main and it makes a lot of sense to put
-    it into main.
-
 #117 Write test code
     Write test code for... everything
 
@@ -60,7 +56,10 @@ M - Maintenance
 
 #125 ...
 
-#130 Add custom window borders
+#130 Add bar
+    I just want to try this and see how it goes to learn about bars.
+
+#150 Add custom window borders
     Yes, it is happening soon...
     Use the shape extension for very advanced graphical beauties
 
@@ -587,3 +586,7 @@ M - Maintenance
 #122 ! Window list is obscured
     When a new window is raised, it goes above the window list.  Also make the
     window list centered.
+
+#115 M Merge program_options into main
+    Program options are only related to main and it makes a lot of sense to put
+    it into main.

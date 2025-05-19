@@ -47,15 +47,15 @@
     X(ACTION_CLOSE_WINDOW, "close window") \
     /* closes the window with given number */ \
     X(ACTION_CLOSE_WINDOW_I, "close window I") \
-    /* set the default cursor for horizontal sizing */ \
+    /* set the cursor for horizontal sizing */ \
     X(ACTION_CURSOR_HORIZONTAL, "cursor horizontal S") \
-    /* set the default cursor for movement */ \
+    /* set the cursor for movement */ \
     X(ACTION_CURSOR_MOVING, "cursor moving S") \
-    /* set the default root cursor */ \
+    /* set the root cursor */ \
     X(ACTION_CURSOR_ROOT, "cursor root S") \
-    /* set the default cursor for sizing a corner */ \
+    /* set the cursor for sizing a corner */ \
     X(ACTION_CURSOR_SIZING, "cursor sizing S") \
-    /* set the default cursor for vertical sizing */ \
+    /* set the cursor for vertical sizing */ \
     X(ACTION_CURSOR_VERTICAL, "cursor vertical S") \
     /* write all fensterchef information to a file */ \
     X(ACTION_DUMP_LAYOUT, "dump layout S") \

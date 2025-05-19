@@ -1183,19 +1183,19 @@ static void log_parse_data(const struct parse_data *data)
         break;
 
     case PARSE_DATA_TYPE_STRING:
-        _log_formatted("%s",
+        log_formatted("%s",
                 data->u.string);
         break;
 
     case PARSE_DATA_TYPE_CLASS:
-        _log_formatted("%s,%s",
+        log_formatted("%s,%s",
                 data->u.class.instance, data->u.class.class);
         break;
 
     case PARSE_DATA_TYPE_RELATION: {
         const struct window_relation *const relation =
             &data->u.relation;
-        _log_formatted("%s,%s ( %A )",
+        log_formatted("%s,%s ( %A )",
                 relation->instance_pattern,
                 relation->class_pattern,
                 &relation->actions);
@@ -1214,7 +1214,7 @@ static void log_parse_data(const struct parse_data *data)
             fprintf(stderr, COLOR(GREEN) "%u" CLEAR_COLOR "+",
                     binding->modifiers);
         }
-        _log_formatted("%u ( %A )",
+        log_formatted("%u ( %A )",
                 binding->modifiers, &binding->actions);
         break;
     }
@@ -1228,7 +1228,7 @@ static void log_parse_data(const struct parse_data *data)
             fprintf(stderr, COLOR(GREEN) "%u" CLEAR_COLOR "+",
                     binding->modifiers);
         }
-        _log_formatted(COLOR(BLUE) "%ld" CLEAR_COLOR " ( %A )",
+        log_formatted(COLOR(BLUE) "%ld" CLEAR_COLOR " ( %A )",
                 binding->key_symbol, &binding->actions);
         break;
     }
@@ -1461,8 +1461,36 @@ void _log_va_formatted(const char *format, va_list list)
 }
 
 /* Print a formatted string to standard error output. */
-void log_formatted(log_severity_t severity, const char *file, int line,
+#ifdef DEBUG
+void _log_formatted(log_severity_t severity, const char *file, int line,
         const char *format, ...)
+{
+    va_list list;
+    char buffer[64];
+    time_t current_time;
+    struct tm *tm;
+
+    /* omit logging if not severe enough */
+    if (log_severity > severity) {
+        return;
+    }
+
+    /* print the time and file with line number at the front */
+    current_time = time(NULL);
+    tm = localtime(&current_time);
+    strftime(buffer, sizeof(buffer),
+            severity == LOG_SEVERITY_ERROR ? COLOR(RED) "{%F %T} " :
+                COLOR(GREEN) "[%F %T] ", tm);
+    fprintf(stderr, "%s" COLOR(YELLOW) "(%s:%d) " CLEAR_COLOR,
+            buffer, file, line);
+
+    /* parse the format string */
+    va_start(list, format);
+    _log_va_formatted(format, list);
+    va_end(list);
+}
+#else
+void _log_formatted(log_severity_t severity, const char *format, ...)
 {
     va_list list;
     char buffer[64];
@@ -1480,17 +1508,17 @@ void log_formatted(log_severity_t severity, const char *file, int line,
     strftime(buffer, sizeof(buffer),
             severity == LOG_SEVERITY_ERROR ? COLOR(RED) "{%F %T}" :
                 COLOR(GREEN) "[%F %T]", tm);
-    fprintf(stderr, "%s" COLOR(YELLOW) "(%s:%d) " CLEAR_COLOR,
-            buffer, file, line);
+    fputs(buffer, stderr);
 
     /* parse the format string */
     va_start(list, format);
     _log_va_formatted(format, list);
     va_end(list);
 }
+#endif
 
 /* Same as above but write no prolog. */
-void _log_formatted(const char *format, ...)
+void log_formatted(const char *format, ...)
 {
     va_list list;
 

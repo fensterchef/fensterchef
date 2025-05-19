@@ -52,14 +52,6 @@ extern log_severity_t log_severity;
 # define LOG_DEBUG(...)
 #endif
 
-/* wrappers around `log_formatted` for different severities */
-#define LOG_VERBOSE(...) \
-    log_formatted(LOG_SEVERITY_ALL, __FILE__, __LINE__, __VA_ARGS__)
-#define LOG(...) \
-    log_formatted(LOG_SEVERITY_INFO, __FILE__, __LINE__, __VA_ARGS__)
-#define LOG_ERROR(...) \
-    log_formatted(LOG_SEVERITY_ERROR, __FILE__, __LINE__, __VA_ARGS__)
-
 /* printf format specifiers that can be used */
 #define PRINTF_FORMAT_SPECIFIERS "diuoxfegcsp"
 
@@ -81,10 +73,30 @@ extern log_severity_t log_severity;
  * %E   XError*                 ERROR
  * %D   Display*                DISPLAY
  */
-void log_formatted(log_severity_t severity, const char *file, int line,
+#ifdef DEBUG
+void _log_formatted(log_severity_t severity, const char *file, int line,
         const char *format, ...);
 
+/* wrappers around `log_formatted` for different severities */
+#define LOG_VERBOSE(...) \
+    _log_formatted(LOG_SEVERITY_ALL, __FILE__, __LINE__, __VA_ARGS__)
+#define LOG(...) \
+    _log_formatted(LOG_SEVERITY_INFO, __FILE__, __LINE__, __VA_ARGS__)
+#define LOG_ERROR(...) \
+    _log_formatted(LOG_SEVERITY_ERROR, __FILE__, __LINE__, __VA_ARGS__)
+#else
+void _log_formatted(log_severity_t severity, const char *format, ...);
+
+/* wrappers around `log_formatted` for different severities */
+#define LOG_VERBOSE(...) \
+    _log_formatted(LOG_SEVERITY_ALL, __VA_ARGS__)
+#define LOG(...) \
+    _log_formatted(LOG_SEVERITY_INFO, __VA_ARGS__)
+#define LOG_ERROR(...) \
+    _log_formatted(LOG_SEVERITY_ERROR, __VA_ARGS__)
+#endif
+
 /* Same as above but write no prolog. */
-void _log_formatted(const char *format, ...);
+void log_formatted(const char *format, ...);
 
 #endif

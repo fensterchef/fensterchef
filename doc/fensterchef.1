@@ -17,7 +17,8 @@ fensterchef - tiling done the right way
 .B --version
     Print the version.
 .PP
-.B -d
+.BR -d ,
+.B --verbosity
 .IR all | info | error | nothing
 .BR ( default:
 .IB info )
@@ -34,7 +35,7 @@ as configuration file.
 .PP
 .BR -e ,
 .B --command
-.I COMMAND
+.I ARGUMENTS...
     Run a command within fensterchef.
 .
 .SH DESCRIPTION
@@ -83,7 +84,7 @@ When splitting a frame (and having
 configure set to true) frames are popped from the stash.
 .SS Window list
 The window list can be opened with
-.BR Super + W
+.BR Mod4 + W
 by default and is
 .I the
 way to show hidden windows.
@@ -120,7 +121,7 @@ the window is a visible fullscreen window
 .PP
 Only windows that can receive focus are shown in the window list.
 .
-.SH BINDINGS
+.SH DEFAULT BINDING
 .PP
 Use the the modifier key (default is
 .B Mod4
