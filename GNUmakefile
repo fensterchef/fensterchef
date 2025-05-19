@@ -54,15 +54,15 @@ sandbox: build
 	$(SANDBOX) &
 	# wait for x server to start
 	sleep 1
-	DISPLAY=$(SANDBOX_DISPLAY) ./build/fensterchef --verbose
+	DISPLAY=$(SANDBOX_DISPLAY) ./build/fensterchef --verbose --config config
 	pkill Xephyr
 
 gdb-sandbox: build
 	$(SANDBOX) &
 	# wait for x server to start
 	sleep 1
-	DISPLAY=$(SANDBOX_DISPLAY) gdb -ex run --args ./build/fensterchef --verbose
+	DISPLAY=$(SANDBOX_DISPLAY) gdb -ex run --args ./build/fensterchef --verbose --config config
 	pkill Xephyr
 
 clean:
-	find build/ -not -name build -a -not -name GNUmakefile -delete
+	rm -rf build/
