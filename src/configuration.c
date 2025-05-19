@@ -32,14 +32,14 @@ const struct configuration default_configuration = {
 
     .text_padding = 6,
 
-    .border_size = 3,
+    .border_size = 2,
     .border_color = 0xff49494d,
     .border_color_active = 0xff939388,
     .border_color_focus = 0xff7fd0f1,
     .foreground = 0xff7fd0f1,
     .background = 0xff49494d,
 
-    .gaps_inner = { 2, 2, 2, 2 },
+    .gaps_inner = { 4, 4, 4, 4 },
     .gaps_outer = { 0, 0, 0, 0 },
 };
 
