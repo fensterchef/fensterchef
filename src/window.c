@@ -1176,6 +1176,11 @@ void set_window_mode(FcWindow *window, window_mode_t mode)
             /* make sure no shortcut is taken in `get_window_frame()` */
             window->state.mode = WINDOW_MODE_TILING;
             Frame *const frame = get_window_frame(window);
+            if (frame == NULL) {
+                /* code is broken */
+                LOG_DEBUG("this code path should not have been reached\n");
+                return;
+            }
             window->state.mode = mode;
 
             frame->window = NULL;
@@ -1239,6 +1244,11 @@ void hide_window(FcWindow *window)
         Frame *pop;
 
         frame = get_window_frame(window);
+        if (frame == NULL) {
+            /* code is broken */
+            LOG_DEBUG("this code path should not have been reached\n");
+            break;
+        }
 
         pop = pop_stashed_frame();
 

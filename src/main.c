@@ -133,6 +133,12 @@ static void handle_program_option(program_option_t option, char *value)
         size_t length;
         char *command;
 
+        if (value == NULL) {
+            /* should not happen */
+            LOG_DEBUG("this code path should not have been reached\n");
+            exit(EXIT_FAILURE);
+        }
+
         length = strlen(value);
         command = xmemdup(value, length + 1);
         /* combine all arguments space separated */
