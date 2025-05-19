@@ -99,7 +99,7 @@ void set_button_binding(const struct button_binding *button_binding)
     }
 
     if (binding->actions.number_of_items == 0 &&
-            binding->actions.number_of_items > 0) {
+            button_binding->actions.number_of_items > 0) {
         for (FcWindow *window = Window_first;
                 window != NULL;
                 window = window->next) {
@@ -109,7 +109,7 @@ void set_button_binding(const struct button_binding *button_binding)
     }
 
     if (binding->actions.number_of_items > 0 &&
-            binding->actions.number_of_items == 0) {
+            button_binding->actions.number_of_items == 0) {
         for (FcWindow *window = Window_first;
                 window != NULL;
                 window = window->next) {
