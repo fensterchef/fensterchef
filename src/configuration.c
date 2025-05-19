@@ -28,18 +28,18 @@ const struct configuration default_configuration = {
     .auto_remove = false,
     .auto_remove_void = false,
 
-    .notification_duration = 2,
+    .notification_duration = 3,
 
     .text_padding = 6,
 
-    .border_size = 1,
+    .border_size = 3,
     .border_color = 0xff49494d,
     .border_color_active = 0xff939388,
     .border_color_focus = 0xff7fd0f1,
     .foreground = 0xff7fd0f1,
     .background = 0xff49494d,
 
-    .gaps_inner = { 0, 0, 0, 0 },
+    .gaps_inner = { 2, 2, 2, 2 },
     .gaps_outer = { 0, 0, 0, 0 },
 };
 
@@ -214,7 +214,7 @@ void set_default_configuration(void)
 {
     clear_configuration();
 
-    COPY(&configuration, &default_configuration, 1);
+    configuration = default_configuration;
 
     set_ignored_modifiers(DEFAULT_IGNORE_MODIFIERS);
     set_default_button_bindings();

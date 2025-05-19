@@ -46,7 +46,23 @@ M - Maintenance
     [keycode] seems like a logical syntax as it means "key at index" which
     essentially is the key code.  This should replace the old way.
 
-#120 ...
+#120 ! CS2 is difficult to open while another window is open
+    When CS2 is hidden and then shown, it hides itself again.  Investigate it.
+
+#121 Make better hash functions for alias and group
+    The hash function constants need to be improved to be unique for common
+    english words
+
+#122 ! Window list is obscured
+    When a new window is raised, it goes above the window list.  Also make the
+    window list centered.
+
+#123 Add documentation about terminal emulator
+    Add documentation about configuring a terminal emulator or application
+    launcher.  Add default bindings for pulseaudio control in the configuration
+    file that will be supplied.
+
+#125 ...
 
 #130 Add custom window borders
     Yes, it is happening soon...
@@ -67,20 +83,8 @@ M - Maintenance
 [In Progress]
 
 [Recheck]
-#1 ! Hover events not working in firefox sometimes
-    This is fixed by resizing the window, try to find out why it happens in the
-    first place and when it happens. Seems to be fixed
-
-#13 ! Unable to reload configuration after an error
-    When reloading the configuration and an error was detected the bind for
-    reloading no longer works. It works on an initial load if the parser fails
-
 #45 ! Fix weird flicker of Steam window
     Steam flickers back and forth (once) when hovering over a menu item
-
-#63 ? Replace deletion of atom with setting of another
-    When a command is sent via the FENSTERCHEF_COMMAND atom, it is currently
-    deleted. Instead, set FENSTERCHEF_RETURN on the window.
 
 #7 ! Discord hides itself again on WM_CHANGE_STATE
     When starting Discord, it sometimes hides itself again
@@ -181,6 +185,18 @@ M - Maintenance
 #104 X WM_HINTS constantly changes
     WM_HINTS is constantly update, figure out if this is our fault.
     The reason is simple: Applications change WM_HINTS when they gain focus.
+
+#13 X Unable to reload configuration after an error
+    When reloading the configuration and an error was detected the bind for
+    reloading no longer works. It works on an initial load if the parser fails
+
+#1 X Hover events not working in firefox sometimes
+    This is fixed by resizing the window, try to find out why it happens in the
+    first place and when it happens. Seems to be fixed
+
+#63 ? Replace deletion of atom with setting of another
+    When a command is sent via the FENSTERCHEF_COMMAND atom, it is currently
+    deleted. Instead, set FENSTERCHEF_RETURN on the window.
 
 [Done]
 #9 Add maintainability macros
@@ -568,3 +584,6 @@ M - Maintenance
 #119 ! Window number 0 being used when querying existing windows
     The first queried window gets index 0.  Make it so it gets the configured
     first number.
+
+#124 ! Make exchange not remove void
+    When exchanging with a void, make the void not disappear

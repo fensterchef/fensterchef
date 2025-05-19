@@ -1,7 +1,7 @@
 #!/bin/sh
 
 CC="${CC-cc}"
-CFLAGS='-std=c99 -Iinclude -Iinclude/core -Wall -Wextra -O3 -DNO_ANSI_COLORS'
+CFLAGS='-std=c99 -Iinclude -Iinclude/core -Wall -Wextra -Wpedantic -O3 -DNO_ANSI_COLORS'
 LDLIBS="$LDLIBS"
 PACKAGES='x11 xrandr xcursor xft fontconfig'
 PREFIX="${PREFIX-/usr}"
@@ -9,7 +9,7 @@ SOURCES=src/utility/*.c\ src/*.c\ src/x11/*.c\ src/parse/*.c
 
 usage() {
     echo "Usage: $0 TARGET..."
-    echo 'Targets: fensterchef install uninstall clean'
+    echo 'Targets: fensterchef install uninstall'
     echo 'Variables: CC PREFIX'
     exit $1
 }
@@ -29,7 +29,7 @@ install() {
     _command mkdir -p "$PREFIX/share/licenses"
     _command cp LICENSE.txt "$PREFIX/share/licenses"
     _command mkdir -p "$PREFIX/bin"
-    _command cp fensterchef "$PREFIX/bin"
+    _command mv fensterchef "$PREFIX/bin"
     _command mkdir -p "$PREFIX/share/man/man1"
     _command gzip --best -c doc/fensterchef.1 >"$PREFIX/share/man/man1/fensterchef.1.gz"
     _command mkdir -p "$PREFIX/share/man/man5"
@@ -46,10 +46,6 @@ uninstall() {
     done
 }
 
-clean() {
-    [ -f fensterchef ] && _command rm fensterchef
-}
-
 [ $# -eq 0 ] && usage 0
 
 while [ $# -ne 0 ] ; do
@@ -58,7 +54,6 @@ while [ $# -ne 0 ] ; do
     fensterchef) fensterchef ;;
     install) install ;;
     uninstall) uninstall ;;
-    clean) clean ;;
     *)
         echo "what is \"$1\"?"
         usage 1

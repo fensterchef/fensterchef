@@ -694,6 +694,8 @@ bool move_frame_down(Frame *frame)
  */
 void exchange_frames(Frame *from, Frame *to)
 {
+    Frame saved_frame;
+
     /* swap the focus if one frame has it */
     if (Frame_focus == from) {
         Frame_focus = to;
@@ -701,27 +703,9 @@ void exchange_frames(Frame *from, Frame *to)
         Frame_focus = from;
     }
 
-    /* if moving into a void, either remove it or replace it and when
-     * replacing it, remove a potential new void that could appear
-     */
-    if (is_frame_void(to)) {
-        /* this makes `from` a void */
-        replace_frame(to, from);
-        /* remove the void created if moving into a root frame (different
-         * monitor)
-         */
-        if (from->parent != NULL) {
-            remove_frame(from);
-            destroy_frame(from);
-        }
-    /* swap the two frames `from` and `to` */
-    } else {
-        Frame saved_frame;
-
-        saved_frame = *from;
-        replace_frame(from, to);
-        replace_frame(to, &saved_frame);
-    }
+    saved_frame = *from;
+    replace_frame(from, to);
+    replace_frame(to, &saved_frame);
 }
 
 /***************************
