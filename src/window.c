@@ -224,20 +224,18 @@ static void initialize_window_properties(FcWindow *window)
         }
     }
 
-    /* these are three direct checks */
-    if (is_atom_included(states, ATOM(_NET_WM_STATE_FULLSCREEN)) ||
+    if (is_atom_included(types, ATOM(_NET_WM_WINDOW_TYPE_DESKTOP))) {
+        predicted_mode = WINDOW_MODE_DESKTOP;
+    } else if (is_atom_included(types, ATOM(_NET_WM_WINDOW_TYPE_DOCK)) ||
+            !is_strut_empty(&window->properties.strut)) {
+        predicted_mode = WINDOW_MODE_DOCK;
+    } else if (is_atom_included(states, ATOM(_NET_WM_STATE_FULLSCREEN)) ||
             is_atom_included(states, ATOM(_NET_WM_STATE_MAXIMIZED_HORZ)) ||
             is_atom_included(states, ATOM(_NET_WM_STATE_MAXIMIZED_VERT))) {
         predicted_mode = WINDOW_MODE_FULLSCREEN;
-    } else if (is_atom_included(types, ATOM(_NET_WM_WINDOW_TYPE_DOCK))) {
-        predicted_mode = WINDOW_MODE_DOCK;
-    } else if (is_atom_included(types, ATOM(_NET_WM_WINDOW_TYPE_DESKTOP))) {
-        predicted_mode = WINDOW_MODE_DESKTOP;
-    /* if this window has strut, it must be a dock window */
-    } else if (!is_strut_empty(&window->properties.strut)) {
-        predicted_mode = WINDOW_MODE_DOCK;
-    /* transient windows are floating windows */
-    } else if (window->properties.transient_for != 0) {
+    } else if (is_atom_included(types, ATOM(_NET_WM_WINDOW_TYPE_DIALOG)) ||
+            is_atom_included(types, ATOM(_NET_WM_WINDOW_TYPE_SPLASH)) ||
+            window->properties.transient_for != 0) {
         predicted_mode = WINDOW_MODE_FLOATING;
     /* floating windows have an equal minimum and maximum size */
     } else if ((window->properties.size_hints.flags & (PMinSize | PMaxSize)) ==
@@ -246,10 +244,6 @@ static void initialize_window_properties(FcWindow *window)
                 window->properties.size_hints.max_width ||
                 window->properties.size_hints.min_height ==
                     window->properties.size_hints.max_height)) {
-        predicted_mode = WINDOW_MODE_FLOATING;
-    /* floating windows have a window type that is not the normal window type */
-    } else if (types != NULL &&
-            !is_atom_included(types, ATOM(_NET_WM_WINDOW_TYPE_NORMAL))) {
         predicted_mode = WINDOW_MODE_FLOATING;
     }
 

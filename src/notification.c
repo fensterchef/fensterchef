@@ -125,11 +125,8 @@ static int render_notification(Notification *notification,
             x, y, text.width, text.height,
             notification->reference.border_width);
 
-    /* put the window at the top */
-    XRaiseWindow(display, notification->reference.id);
-
     /* show the window */
-    map_client(&notification->reference);
+    map_client_raised(&notification->reference);
 
     /* draw background and text */
     XftDrawRect(notification->xft_draw, &background_color,
@@ -139,7 +136,7 @@ static int render_notification(Notification *notification,
 
     clear_text(&text);
 
-    LOG_DEBUG("showed notification: %s at %R with offset: %P\n",
+    LOG_DEBUG("showed notification: %s at %R with offset %P\n",
             message,
             notification->reference.x, notification->reference.y,
             notification->reference.width, notification->reference.height,
@@ -170,16 +167,8 @@ void set_system_notification(const utf8_t *message, int x, int y)
 
     /* change border color and size of the notification window */
     change_client_attributes(&system_notification->reference,
-            configuration.border_color);
+            configuration.foreground);
     system_notification->background = configuration.background;
-
-    /* set the window size, position and set it above */
-    configure_client(&system_notification->reference,
-            system_notification->reference.x,
-            system_notification->reference.y,
-            system_notification->reference.width,
-            system_notification->reference.height,
-            configuration.border_size);
 
     if (render_notification(system_notification, message, x, y) == ERROR) {
         return;

@@ -16,19 +16,15 @@ Building requires: coreutils, gzip, pkgconf, a C99 compiler and a unix shell
 git clone https://github.com/fensterchef/fensterchef.git &&
 cd fensterchef &&
 sudo ./make install &&
-fensterchef --version
+man fensterchef
 ```
 
-### Setup
+### AUR helper
 
-For most display managers like LigthDM, GDM, SLiM etc., it suffices to edit
-`~/.xsession`:
 ```
-mkdir -p ~/.local/share/fensterchef
-exec /usr/bin/fensterchef -dinfo 2>~/.local/share/fensterchef/$(date +%F_%T).log
+pacaur -S fensterchef &&
+man fensterchef
 ```
-When using no display manager, use
-[your preferred way](https://linux.die.net/man/1/xinit).
 
 ## Contact
 

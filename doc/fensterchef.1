@@ -1,4 +1,4 @@
-.TH FENSTERCHEF 1 "2025-05-11" "Fensterchef" "Fensterchef manual"
+.TH FENSTERCHEF 1 "2025-05-19" "Fensterchef" "Fensterchef manual"
 .SH NAME
 fensterchef - tiling done the right way
 .
@@ -59,6 +59,21 @@ might be some initial confusing about the tiling.
 
 We took the best out of window managers we like to give a new and unique way to
 manage windows.
+.
+.SH SETUP
+Setting up fensterchef depends on whether you are using a display manager or
+not.
+
+If this is the case, configure your display manager to set the window manager or
+edit
+.I ~/.xsessionrc
+and add:
+.EE
+exec fensterchef
+.EX
+
+Without a display manager it is the same but you must instead edit
+.IR ~/.xinitrc .
 .
 .SH TERMINOLOGY
 .SS Monitor
