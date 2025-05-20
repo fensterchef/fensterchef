@@ -519,6 +519,7 @@ static void log_atom(Atom atom)
     fputs(COLOR(CYAN), stderr);
     atom_string = atom_to_string(atom);
     if (atom_string == NULL) {
+#ifdef DEBUG
         char *name;
 
         name = XGetAtomName(display, atom);
@@ -529,6 +530,7 @@ static void log_atom(Atom atom)
             fputs(name, stderr);
             XFree(name);
         }
+#endif
         fputs(COLOR(RED) "<not known>", stderr);
     } else {
         fprintf(stderr, "%s",

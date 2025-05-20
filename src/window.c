@@ -213,12 +213,36 @@ static void initialize_window_properties(FcWindow *window)
 
     /* cache all properties */
     for (int i = 0; i < atom_count; i++) {
+        LOG_DEBUG("window has: %a\n",
+                atoms[i]);
         if (atoms[i] == ATOM(_NET_WM_STATE)) {
             states = get_atom_list_property(window->reference.id,
                     ATOM(_NET_WM_STATE));
+#ifdef DEBUG
+            LOG_DEBUG("_NET_WM_STATE: ");
+            for (Atom *atom = states; atom[0] != None; atom++) {
+                log_formatted("%a",
+                        atom[0]);
+                if (atom[1] != None) {
+                    log_formatted(", ");
+                }
+            }
+            log_formatted("\n");
+#endif
         } else if (atoms[i] == ATOM(_NET_WM_WINDOW_TYPE)) {
             types = get_atom_list_property(window->reference.id,
                     ATOM(_NET_WM_WINDOW_TYPE));
+#ifdef DEBUG
+            LOG_DEBUG("_NET_WM_WINDOW_TYPE: ");
+            for (Atom *atom = types; atom[0] != None; atom++) {
+                log_formatted("%a",
+                        atom[0]);
+                if (atom[1] != None) {
+                    log_formatted(", ");
+                }
+            }
+            log_formatted("\n");
+#endif
         } else {
             cache_window_property(window, atoms[i]);
         }
@@ -229,9 +253,7 @@ static void initialize_window_properties(FcWindow *window)
     } else if (is_atom_included(types, ATOM(_NET_WM_WINDOW_TYPE_DOCK)) ||
             !is_strut_empty(&window->properties.strut)) {
         predicted_mode = WINDOW_MODE_DOCK;
-    } else if (is_atom_included(states, ATOM(_NET_WM_STATE_FULLSCREEN)) ||
-            is_atom_included(states, ATOM(_NET_WM_STATE_MAXIMIZED_HORZ)) ||
-            is_atom_included(states, ATOM(_NET_WM_STATE_MAXIMIZED_VERT))) {
+    } else if (is_atom_included(states, ATOM(_NET_WM_STATE_FULLSCREEN))) {
         predicted_mode = WINDOW_MODE_FULLSCREEN;
     } else if (is_atom_included(types, ATOM(_NET_WM_WINDOW_TYPE_DIALOG)) ||
             is_atom_included(types, ATOM(_NET_WM_WINDOW_TYPE_SPLASH)) ||
@@ -687,10 +709,7 @@ int get_window_gravity(FcWindow *window)
     return StaticGravity;
 }
 
-/* Attempt to close a window. If it is the first time, use a friendly method by
- * sending a close request to the window. Call this function again within
- * `REQUEST_CLOSE_MAX_DURATION` to forcefully kill it.
- */
+/* Attempt to close a window. */
 void close_window(FcWindow *window)
 {
     time_t current_time;
@@ -698,20 +717,19 @@ void close_window(FcWindow *window)
     current_time = time(NULL);
 
     /* if either WM_DELETE_WINDOW is not supported or a close was requested
-     * twice in a row, forcefully kill the window's client
+     * twice in a row, forcefully destroy the window
      */
     if (!supports_window_protocol(window, ATOM(WM_DELETE_WINDOW)) ||
             (window->state.was_close_requested && current_time <=
                 window->state.user_request_close_time +
                     REQUEST_CLOSE_MAX_DURATION)) {
-        XKillClient(display, window->reference.id);
-        return;
+        XDestroyWindow(display, window->reference.id);
+    } else {
+        send_delete_window_message(window->reference.id);
+
+        window->state.was_close_requested = true;
+        window->state.user_request_close_time = current_time;
     }
-
-    send_delete_window_message(window->reference.id);
-
-    window->state.was_close_requested = true;
-    window->state.user_request_close_time = current_time;
 }
 
 /****************************

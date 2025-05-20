@@ -379,32 +379,35 @@ static void handle_client_message(XClientMessageEvent *event)
     /* a window wants to be iconified or put into normal state (shown) */
     /* TODO: make this configurable */
     } else if (event->message_type == ATOM(WM_CHANGE_STATE)) {
-        switch (event->data.l[0]) {
-        /* hide the window */
-        case IconicState:
-        case WithdrawnState:
-            hide_window(window);
-            break;
+        /* TODO: how can this be improved so it stops messing with windows? */
+        if (0) {
+            switch (event->data.l[0]) {
+            /* hide the window */
+            case IconicState:
+            case WithdrawnState:
+                hide_window(window);
+                break;
 
-        /* make the window normal again (show it) */
-        case NormalState:
-            show_window(window);
-            break;
+            /* make the window normal again (show it) */
+            case NormalState:
+                show_window(window);
+                break;
+            }
         }
     /* a window wants to change a window state */
     /* TODO: make the removing of states configurable */
     } else if (event->message_type == ATOM(_NET_WM_STATE)) {
-        const Atom atom = event->data.l[1];
-        if (atom == ATOM(_NET_WM_STATE_ABOVE)) {
+        const Atom atom1 = event->data.l[1];
+        const Atom atom2 = event->data.l[2];
+        (void) atom2; /* TODO: what do windows use atom2 for? */
+        if (atom1 == ATOM(_NET_WM_STATE_ABOVE)) {
             switch (event->data.l[0]) {
             /* only react to adding */
             case _NET_WM_STATE_ADD:
                 update_window_layer(window);
                 break;
             }
-        } else if (atom == ATOM(_NET_WM_STATE_FULLSCREEN) ||
-                atom == ATOM(_NET_WM_STATE_MAXIMIZED_HORZ) ||
-                atom == ATOM(_NET_WM_STATE_MAXIMIZED_VERT)) {
+        } else if (atom1 == ATOM(_NET_WM_STATE_FULLSCREEN)) {
             switch (event->data.l[0]) {
             /* put the window out of fullscreen */
             case _NET_WM_STATE_REMOVE:

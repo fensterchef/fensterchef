@@ -269,9 +269,11 @@ bool is_window_borderless(FcWindow *window);
 /* time in seconds to wait for a second close */
 #define REQUEST_CLOSE_MAX_DURATION 2
 
-/* Attempt to close a window. If it is the first time, use a friendly method by
- * sending a close request to the window. Call this function again within
- * `REQUEST_CLOSE_MAX_DURATION` to forcefully kill it.
+/* Attempt to close a window.
+ *
+ * If it is the first time, use a friendly method by sending a close request to
+ * the window.  Call this function again within `REQUEST_CLOSE_MAX_DURATION` to
+ * forcefully kill it.
  */
 void close_window(FcWindow *window);
 
