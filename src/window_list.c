@@ -26,7 +26,7 @@ static int initialize_window_list(void)
         WindowList.reference.border = configuration.border_color;
         attributes.border_pixel = WindowList.reference.border;
         attributes.backing_pixel = configuration.background;
-        attributes.event_mask = KeyPressMask | ExposureMask;
+        attributes.event_mask = KeyPressMask | FocusChangeMask | ExposureMask;
         /* indicate to not manage the window */
         attributes.override_redirect = True;
         WindowList.reference.id = XCreateWindow(display,
@@ -385,6 +385,25 @@ void handle_window_list_event(XEvent *event)
         render_window_list();
         break;
 
+    /* regain focus if it was taken away */
+    case FocusOut: {
+        XFocusOutEvent *focus;
+
+        focus = (XFocusOutEvent*) event;
+        if (focus->window != WindowList.reference.id) {
+            break;
+        }
+
+        /* the mode must be NotifyNormal and not grab */
+        if (focus->mode != NotifyNormal || focus->detail != NotifyNonlinear) {
+            break;
+        }
+
+        XSetInputFocus(display, WindowList.reference.id,
+                RevertToParent, CurrentTime);
+        break;
+    }
+
     /* re-render after a few chosen events */
     case KeyRelease:
     case ButtonPress:
@@ -392,7 +411,6 @@ void handle_window_list_event(XEvent *event)
     case Expose:
     case MapNotify:
     case UnmapNotify:
-    case DestroyNotify:
         render_window_list();
         break;
     }

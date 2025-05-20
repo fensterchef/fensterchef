@@ -54,7 +54,11 @@ M - Maintenance
     launcher.  Add default bindings for pulseaudio control in the configuration
     file that will be supplied.
 
-#125 ...
+#126 ! Window loses focus after reloading configuration
+    When reloading the configuration, the currently focused window loses its
+    focus.
+
+#127 ...
 
 #130 Add bar
     I just want to try this and see how it goes to learn about bars.
@@ -590,3 +594,6 @@ M - Maintenance
 #115 M Merge program_options into main
     Program options are only related to main and it makes a lot of sense to put
     it into main.
+
+#125 ! Window list loses focus
+    When opening Steam, the window list loses focus.
