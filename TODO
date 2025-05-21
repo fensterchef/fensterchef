@@ -42,21 +42,10 @@ M - Maintenance
     [keycode] seems like a logical syntax as it means "key at index" which
     essentially is the key code.  This should replace the old way.
 
-#120 ! CS2 is difficult to open while another window is open
-    When CS2 is hidden and then shown, it hides itself again.  Investigate it.
-
-#121 Make better hash functions for alias and group
-    The hash function constants need to be improved to be unique for common
-    english words
-
 #123 Add documentation about terminal emulator
     Add documentation about configuring a terminal emulator or application
     launcher.  Add default bindings for pulseaudio control in the configuration
     file that will be supplied.
-
-#126 ! Window loses focus after reloading configuration
-    When reloading the configuration, the currently focused window loses its
-    focus.
 
 #127 ...
 
@@ -93,6 +82,14 @@ M - Maintenance
     WHY IS THIS NEEDED AGAIN??
     There was some issue with dialog windows in some application but I do not
     remember...
+
+#126 ! Window loses focus after reloading configuration
+    When reloading the configuration, the currently focused window loses its
+    focus.  This stopped happening...
+
+#120 ! CS2 is difficult to open while another window is open
+    When CS2 is hidden and then shown, it hides itself again.  Investigate it.
+    Simply ignoring WM_CHANGE_STATE for now...
 
 [Trash]
 #10 X Add frame indication for empty frames
@@ -597,3 +594,7 @@ M - Maintenance
 
 #125 ! Window list loses focus
     When opening Steam, the window list loses focus.
+
+#121 Make better hash functions for alias and group
+    The hash function constants need to be improved to be unique for common
+    english words

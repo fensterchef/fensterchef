@@ -21,31 +21,12 @@ int alias_table_count;
 /* Get the index where the alias with given name is supposed to be. */
 static int get_alias_index(const char *name)
 {
-    const int c1 = 880, c2 = 8998, c3 = 999482, c4 = 1848481, c5 = 848488;
-    int hash = 0;
-    int probe = 0;
-    int index;
+    unsigned hash = 1731;
+    unsigned probe = 0;
+    unsigned index;
 
-    switch (strlen(name)) {
-    case 0:
-        return -1;
-
-    default:
-        hash ^= name[4] * c5;
-        /* fall through */
-    case 4:
-        hash ^= name[3] * c4;
-        /* fall through */
-    case 3:
-        hash ^= name[2] * c3;
-        /* fall through */
-    case 2:
-        hash ^= name[1] * c2;
-        /* fall through */
-    case 1:
-        hash = name[0] * c1;
-        break;
-    }
+    for (char *i = name; i[0] != '\0'; i++) {
+        hash = hash * 407 + (unsigned char) i[0];
 
     do {
         index = hash + (probe * probe + probe) / 2;
@@ -151,7 +132,7 @@ const char *resolve_alias(const char *string)
 /* Clear all aliases the parser set. */
 void clear_all_aliases(void)
 {
-    for (int i = 0; i < PARSE_MAX_ALIASES; i++) {
+    for (unsigned i = 0; i < PARSE_MAX_ALIASES; i++) {
         if (alias_table_count == 0) {
             break;
         }

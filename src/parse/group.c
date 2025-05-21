@@ -14,35 +14,17 @@
 struct parse_group group_table[PARSE_MAX_GROUPS];
 
 /* the number of elements in the group table */
-int group_table_count;
+unsigned group_table_count;
 
 /* Get the index where the group with given name is supposed to be. */
-static int get_group_index(const char *name)
+static unsigned get_group_index(const char *name)
 {
-    const int c1 = 880, c2 = 8998, c3 = 999482, c4 = 1848481, c5 = 848488;
-    int hash = 0;
-    int probe = 0;
-    int index;
+    unsigned hash = 1731;
+    unsigned probe = 0;
+    unsigned index;
 
-    switch (strlen(name)) {
-    case 0:
-        return -1;
-
-    default:
-        hash ^= name[4] * c5;
-        /* fall through */
-    case 4:
-        hash ^= name[3] * c4;
-        /* fall through */
-    case 3:
-        hash ^= name[2] * c3;
-        /* fall through */
-    case 2:
-        hash ^= name[1] * c2;
-        /* fall through */
-    case 1:
-        hash = name[0] * c1;
-        break;
+    for (char *i = name; i[0] != '\0'; i++) {
+        hash = hash * 407 + (unsigned char) i[0];
     }
 
     do {
@@ -58,7 +40,7 @@ static int get_group_index(const char *name)
 /* Find the group by given name. */
 struct parse_group *find_group(const char *name)
 {
-    int index;
+    unsigned index;
 
     index = get_group_index(name);
     if (group_table[index].name == NULL) {
@@ -101,7 +83,7 @@ void undo_group(const struct parse_group *group)
 /* Clear all groups the parser set. */
 void clear_all_groups(void)
 {
-    for (int i = 0; i < PARSE_MAX_GROUPS; i++) {
+    for (unsigned i = 0; i < PARSE_MAX_GROUPS; i++) {
         if (group_table_count == 0) {
             break;
         }
@@ -119,7 +101,7 @@ void clear_all_groups(void)
 void continue_parsing_group(Parser *parser)
 {
     struct parse_action_list sub_list;
-    int index;
+    unsigned index;
     struct parse_group group;
 
     if (read_string(parser) != OK) {

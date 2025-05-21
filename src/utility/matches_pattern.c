@@ -7,6 +7,14 @@ bool matches_pattern(const char *pattern, const char *string)
     unsigned char pattern_character, string_character;
     const char *pattern_backtrack = NULL, *string_backtrack = NULL;
 
+    if (pattern == NULL) {
+        pattern = "";
+    }
+
+    if (string == NULL) {
+        string = "";
+    }
+
     /* move through both pattern and string until one end is reached or there is
      * a guaranteed mismatch
      */
