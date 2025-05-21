@@ -100,8 +100,6 @@ int parse_top(Parser *parser, struct parse_action_list *list)
         if (bracket_count == list->bracket_count) {
             emit_parse_error(parser, "missing closing bracket ')'");
         }
-
-        return OK;
     } else if (character == ')') {
         /* skip over closing ')' */
         (void) get_stream_character(parser);
@@ -113,18 +111,19 @@ int parse_top(Parser *parser, struct parse_action_list *list)
         }
 
         return ERROR;
-    }
+    } else if (character == '[') {
+        /* skip over opening '[' */
+        (void) get_stream_character(parser);
 
-    if (read_string(parser) != OK) {
+        continue_parsing_key_code_binding(parser, list);
+    } else if (read_string(parser) != OK) {
         emit_parse_error(parser,
                 "expected relation, binding or action");
         /* skip the erroneous character */
         (void) get_stream_character(parser);
         /* start from the top */
         return parse_top(parser, list);
-    }
-
-    if (strcmp(parser->string, "alias") == 0) {
+    } else if (strcmp(parser->string, "alias") == 0) {
         continue_parsing_alias(parser);
     } else if (strcmp(parser->string, "group") == 0) {
         continue_parsing_group(parser);

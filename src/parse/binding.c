@@ -6,7 +6,7 @@
  *    continue_parsing_modifiers   -----------------
  *                                          |        -------
  *                                          |           |
- *                          continue_pasing_button_or_key_symbol
+ *                          continue_parsing_button_or_key_symbol
  *                                                      |
  *                                              finish_parsing_binding
  */
@@ -182,8 +182,6 @@ static int continue_parsing_modifiers(Parser *parser,
 {
     int character;
 
-    ZERO(binding, 1);
-
     if (strcmp(parser->string, "release") == 0) {
         if (read_string(parser) != OK) {
             emit_parse_error(parser,
@@ -220,7 +218,13 @@ static int continue_parsing_modifiers(Parser *parser,
         if (resolve_integer(parser, &flags, &integer) != OK) {
             emit_parse_error(parser, "invalid integer value");
         }
+
         binding->modifiers |= integer;
+
+        if (skip_blanks(parser), peek_stream_character(parser) == '[') {
+            break;
+        }
+
         if (read_string(parser) != OK) {
             emit_parse_error(parser,
                     "expected modifier, button or key symbol after '+'");
@@ -234,51 +238,32 @@ static int continue_parsing_modifiers(Parser *parser,
 }
 
 
-/* Parse the following button or key symbol. */
-static int continue_parsing_button_or_key_symbol(Parser *parser,
+/* Try to resolve the string within @parser as button index or key symbol.
+ *
+ * @return ERROR if it is neither.
+ */
+static int resolve_button_or_key_symbol(Parser *parser,
         struct parse_binding *binding)
 {
-    unsigned flags;
-    parse_integer_t integer;
-
     binding->button_index = resolve_button(parser);
     if (binding->button_index == BUTTON_NONE) {
-        if (resolve_integer(parser, &flags, &integer) == OK) {
-            int min_key_code, max_key_code;
-
-            /* for testing code, the display is NULL */
-            if (UNLIKELY(display != NULL)) {
-                XDisplayKeycodes(display, &min_key_code, &max_key_code);
-                binding->key_code = integer;
-                if (binding->key_code < min_key_code ||
-                        binding->key_code > max_key_code) {
-                    emit_parse_error(parser, "key code is out of range");
-                }
-            }
-        } else {
-            binding->key_symbol = XStringToKeysym(parser->string);
-            if (binding->key_symbol == NoSymbol) {
-                return ERROR;
-            }
+        binding->key_symbol = XStringToKeysym(parser->string);
+        if (binding->key_symbol == NoSymbol) {
+            return ERROR;
         }
     }
     return OK;
 }
 
-/* Parse the next binding definition in @parser. */
-static int finish_parsing_binding(Parser *parser, struct parse_binding *binding,
-        struct parse_action_list *list)
+/* Append a binding to the action list.
+ *
+ * @sub_list is the actions to use for the binding.
+ *           If it is NULL, the actions are empty.
+ */
+static void append_binding(Parser *parser, struct parse_action_list *list,
+        struct parse_binding *binding,
+        _Nullable struct parse_action_list *sub_list)
 {
-    struct parse_action_list sub_list;
-
-    ZERO(&sub_list, 1);
-    if (parse_top(parser, &sub_list) != OK) {
-        clear_parse_list(&sub_list);
-        return ERROR;
-    }
-
-    clear_parse_list_data(&sub_list);
-
     if (binding->button_index != BUTTON_NONE) {
         struct button_binding button;
         struct action_list_item item;
@@ -288,7 +273,11 @@ static int finish_parsing_binding(Parser *parser, struct parse_binding *binding,
         button.is_transparent = binding->is_transparent;
         button.modifiers = binding->modifiers;
         button.button = binding->button_index;
-        make_real_action_list(&button.actions, &sub_list);
+        if (sub_list == NULL) {
+            ZERO(&button.actions, 0);
+        } else {
+            make_real_action_list(&button.actions, sub_list);
+        }
 
         item.type = ACTION_BUTTON_BINDING;
         item.data_count = 1;
@@ -313,7 +302,11 @@ static int finish_parsing_binding(Parser *parser, struct parse_binding *binding,
         key.modifiers = binding->modifiers;
         key.key_symbol = binding->key_symbol;
         key.key_code = binding->key_code;
-        make_real_action_list(&key.actions, &sub_list);
+        if (sub_list == NULL) {
+            ZERO(&key.actions, 0);
+        } else {
+            make_real_action_list(&key.actions, sub_list);
+        }
 
         item.type = ACTION_KEY_BINDING;
         item.data_count = 1;
@@ -324,6 +317,58 @@ static int finish_parsing_binding(Parser *parser, struct parse_binding *binding,
         data.u.key = key;
         LIST_APPEND_VALUE(list->data, data);
     }
+}
+
+/* Parse the next binding definition in @parser. */
+static void finish_parsing_binding(Parser *parser,
+        struct parse_binding *binding,
+        struct parse_action_list *list)
+{
+    struct parse_action_list sub_list;
+
+    ZERO(&sub_list, 1);
+    if (parse_top(parser, &sub_list) != OK) {
+        emit_parse_error(parser, "expected actions after binding");
+        clear_parse_list(&sub_list);
+    } else {
+        clear_parse_list_data(&sub_list);
+
+        append_binding(parser, list, binding, &sub_list);
+    }
+}
+
+/* Read a key code value. */
+static int read_key_code(Parser *parser, struct parse_binding *binding)
+{
+    unsigned flags;
+    parse_integer_t integer;
+    int min_key_code, max_key_code;
+
+    if (read_string(parser) != OK ||
+            resolve_integer(parser, &flags, &integer) != OK) {
+        emit_parse_error(parser, "expected key code after '['");
+        return ERROR;
+    }
+
+    binding->key_code = integer;
+#ifdef DEBUG
+    if (display != NULL) {
+#endif
+        XDisplayKeycodes(display, &min_key_code, &max_key_code);
+        if (binding->key_code < min_key_code ||
+                binding->key_code > max_key_code) {
+            emit_parse_error(parser, "key code is out of range");
+        }
+#ifdef DEBUG
+    }
+#endif
+
+    if (skip_blanks(parser), peek_stream_character(parser) != ']') {
+        emit_parse_error(parser, "expected closing ']' after key code");
+    } else {
+        /* skip over ']' */
+        (void) get_stream_character(parser);
+    }
 
     return OK;
 }
@@ -333,11 +378,20 @@ void continue_parsing_binding(Parser *parser, struct parse_action_list *list)
 {
     struct parse_binding binding;
 
+    ZERO(&binding, 1);
+
     if (continue_parsing_modifiers(parser, &binding) != OK) {
         return;
     }
 
-    if (continue_parsing_button_or_key_symbol(parser, &binding) != OK) {
+    if (skip_blanks(parser), peek_stream_character(parser) == '[') {
+        /* skip over '[' */
+        (void) get_stream_character(parser);
+
+        if (read_key_code(parser, &binding) != OK) {
+            return;
+        }
+    } else if (resolve_button_or_key_symbol(parser, &binding) != OK) {
         if (binding.has_modifiers) {
             emit_parse_error(parser,
                     "invalid button, key symbol or key code");
@@ -352,6 +406,18 @@ void continue_parsing_binding(Parser *parser, struct parse_action_list *list)
     finish_parsing_binding(parser, &binding, list);
 }
 
+/* Parse a full key code binding definition. */
+void continue_parsing_key_code_binding(Parser *parser,
+        struct parse_action_list *list)
+{
+    struct parse_binding binding;
+
+    ZERO(&binding, 1);
+
+    read_key_code(parser, &binding);
+    finish_parsing_binding(parser, &binding, list);
+}
+
 /* Parse a full unbind statement.
  *
  * Expects that an `unbind` has already been read.
@@ -359,67 +425,41 @@ void continue_parsing_binding(Parser *parser, struct parse_action_list *list)
 void continue_parsing_unbind(Parser *parser, struct parse_action_list *list)
 {
     struct parse_binding binding;
-    struct action_list_item item;
-    struct parse_data data;
 
-    if (read_string(parser) != OK) {
+    ZERO(&binding, 1);
+
+    if (skip_blanks(parser), peek_stream_character(parser) == '[') {
+        /* skip over '[' */
+        (void) get_stream_character(parser);
+
+        if (read_key_code(parser, &binding) != OK) {
+            return;
+        }
+    } else if (read_string(parser) != OK) {
         emit_parse_error(parser,
                 "expected button, "
                 "modifiers + key symbol or key code to unbind");
         skip_statement(parser);
         return;
-    }
-
-    if (continue_parsing_modifiers(parser, &binding) != OK) {
+    } else if (continue_parsing_modifiers(parser, &binding) != OK) {
         return;
-    }
-
-    if (binding.is_transparent) {
-        parser->index = binding.transparent_position;
-        emit_parse_error(parser,
-                "'transparent' can not be specified in unbind");
-    }
-
-    if (continue_parsing_button_or_key_symbol(parser, &binding) != OK) {
-        if (binding.has_modifiers) {
-            emit_parse_error(parser,
-                    "invalid button, key symbol or key code");
-        } else {
-            emit_parse_error(parser, "invalid identifier");
-        }
-    } else if (binding.button_index != BUTTON_NONE) {
-        struct button_binding button;
-
-        button.is_release = binding.is_release;
-        button.is_transparent = binding.is_transparent;
-        button.modifiers = binding.modifiers;
-        button.button = binding.button_index;
-        ZERO(&button.actions, 0);
-
-        item.type = ACTION_BUTTON_BINDING;
-        item.data_count = 1;
-        LIST_APPEND_VALUE(list->items, item);
-
-        data.flags = 0;
-        data.type = PARSE_DATA_TYPE_BUTTON;
-        data.u.button = button;
-        LIST_APPEND_VALUE(list->data, data);
     } else {
-        struct key_binding key;
+        if (binding.is_transparent) {
+            parser->index = binding.transparent_position;
+            emit_parse_error(parser,
+                    "'transparent' can not be specified in unbind");
+        }
 
-        key.is_release = binding.is_release;
-        key.modifiers = binding.modifiers;
-        key.key_symbol = binding.key_symbol;
-        key.key_code = binding.key_code;
-        ZERO(&key.actions, 0);
-
-        item.type = ACTION_KEY_BINDING;
-        item.data_count = 1;
-        LIST_APPEND_VALUE(list->items, item);
-
-        data.flags = 0;
-        data.type = PARSE_DATA_TYPE_KEY;
-        data.u.key = key;
-        LIST_APPEND_VALUE(list->data, data);
+        if (resolve_button_or_key_symbol(parser, &binding) != OK) {
+            if (binding.has_modifiers) {
+                emit_parse_error(parser,
+                        "invalid button, key symbol or key code");
+            } else {
+                emit_parse_error(parser, "invalid identifier");
+            }
+            return;
+        }
     }
+
+    append_binding(parser, list, &binding, NULL);
 }

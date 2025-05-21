@@ -23,7 +23,7 @@ static unsigned get_group_index(const char *name)
     unsigned probe = 0;
     unsigned index;
 
-    for (char *i = name; i[0] != '\0'; i++) {
+    for (const char *i = name; i[0] != '\0'; i++) {
         hash = hash * 407 + (unsigned char) i[0];
     }
 

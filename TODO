@@ -38,10 +38,6 @@ M - Maintenance
 #117 Write test code
     Write test code for... everything
 
-#118 Add [keycode] syntax to parser
-    [keycode] seems like a logical syntax as it means "key at index" which
-    essentially is the key code.  This should replace the old way.
-
 #123 Add documentation about terminal emulator
     Add documentation about configuring a terminal emulator or application
     launcher.  Add default bindings for pulseaudio control in the configuration
@@ -598,3 +594,7 @@ M - Maintenance
 #121 Make better hash functions for alias and group
     The hash function constants need to be improved to be unique for common
     english words
+
+#118 Add [keycode] syntax to parser
+    [keycode] seems like a logical syntax as it means "key at index" which
+    essentially is the key code.  This should replace the old way.

@@ -4,12 +4,16 @@
 /**
  * Parse bindings or part of a binding.
  *
- * release? transparent? MODIFIERS+BUTTON|KEY_SYMBOL TOP
- * unbind release? MODIFIERS+BUTTON|KEY_SYMBOL
+ * release? transparent? WHAT_BINDING TOP
+ * unbind release? WHAT_BINDING
  * unbind GROUP_NAME
  *
+ * Where WHAT_BINDING:
+ * MODIFIERS+BUTTON|KEY_SYMBOL
+ * MODIFIERS+[KEY_CODE]
+ *
  * Where MODIFIERS:
- * INTEGER [+ INTEGER]...
+ * [INTEGER [+ INTEGER]...]
  *
  * For example:
  *     Super+Shift+l move right
@@ -66,6 +70,15 @@ int resolve_modifier(Parser *parser, _Out unsigned *modifier);
  * @list will be appended with the bind action.
  */
 void continue_parsing_binding(Parser *parser, struct parse_action_list *list);
+
+/* Parse a full key code binding definition.
+ *
+ * Expects that a '[' has been just consumed.
+ *
+ * @list will be appended with the bind action.
+ */
+void continue_parsing_key_code_binding(Parser *parser,
+        struct parse_action_list *list);
 
 /* Parse a full unbind statement.
  *

@@ -1207,13 +1207,13 @@ static void log_parse_data(const struct parse_data *data)
     case PARSE_DATA_TYPE_BUTTON: {
         const struct button_binding *const binding = &data->u.button;
         if (binding->is_release) {
-            fprintf(stderr, COLOR(YELLOW) "release ");
+            fprintf(stderr, COLOR(YELLOW) "release" CLEAR_COLOR " ");
         }
         if (binding->is_transparent) {
-            fprintf(stderr, COLOR(YELLOW) "transparent ");
+            fprintf(stderr, COLOR(YELLOW) "transparent" CLEAR_COLOR " ");
         }
         if (binding->modifiers != 0) {
-            fprintf(stderr, COLOR(GREEN) "%u" CLEAR_COLOR "+",
+            log_formatted("%u+",
                     binding->modifiers);
         }
         log_formatted("%u ( %A )",
@@ -1224,14 +1224,23 @@ static void log_parse_data(const struct parse_data *data)
     case PARSE_DATA_TYPE_KEY: {
         const struct key_binding *const binding = &data->u.key;
         if (binding->is_release) {
-            fprintf(stderr, COLOR(YELLOW) "release ");
+            fprintf(stderr, COLOR(YELLOW) "release" CLEAR_COLOR " ");
         }
         if (binding->modifiers != 0) {
             fprintf(stderr, COLOR(GREEN) "%u" CLEAR_COLOR "+",
                     binding->modifiers);
         }
-        log_formatted(COLOR(BLUE) "%ld" CLEAR_COLOR " ( %A )",
-                binding->key_symbol, &binding->actions);
+
+        if (binding->key_symbol == NoSymbol) {
+            log_formatted("[%d]",
+                    (int) binding->key_code);
+        } else {
+            fprintf(stderr, COLOR(CYAN) "%s" CLEAR_COLOR,
+                    XKeysymToString(binding->key_symbol));
+        }
+
+        log_formatted(" ( %A )",
+                &binding->actions);
         break;
     }
 
@@ -1278,7 +1287,7 @@ static void log_action_list(const struct action_list *list)
                 log_parse_data(data);
                 data++;
             } else {
-                fprintf(stderr, COLOR(YELLOW) "%.*s",
+                fprintf(stderr, COLOR(YELLOW) "%.*s" CLEAR_COLOR,
                         length, action);
             }
 
