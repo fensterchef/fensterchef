@@ -2,11 +2,13 @@
 #define PARSE__RELATION_H
 
 /**
- * Relations have the syntax:
- * QUOTED_STRING TOP
+ * Parse a relation.
+ *
+ * relate STRING TOP
+ * unrelate [STRING]
  *
  * For example:
- *     "Firefox" set floating, focus window
+ *     relate Firefox set floating, focus window, unrelate
  */
 
 #include "parse/action.h"
@@ -17,6 +19,10 @@
  * This assumes a string has been read into the @parser.
  */
 void continue_parsing_relation(Parser *parser,
+        struct parse_action_list *list);
+
+/* Parse all after an `unrelate` keyword. */
+void continue_parsing_unrelate(Parser *parser,
         struct parse_action_list *list);
 
 #endif

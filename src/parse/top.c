@@ -129,6 +129,8 @@ int parse_top(Parser *parser, struct parse_action_list *list)
         continue_parsing_group(parser);
     } else if (strcmp(parser->string, "relate") == 0) {
         continue_parsing_relation(parser, list);
+    } else if (strcmp(parser->string, "unrelate") == 0) {
+        continue_parsing_unrelate(parser, list);
     } else if (strcmp(parser->string, "source") == 0) {
         continue_parsing_source(parser, list);
     } else if (strcmp(parser->string, "unalias") == 0) {

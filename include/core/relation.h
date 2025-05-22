@@ -30,25 +30,21 @@ void signal_window_unrelate(void);
 /* Duplicate a relation deeply into itself. */
 void duplicate_window_relation(struct window_relation *relation);
 
-/* Add a new relation from window instance/class to actions.
+/* Set a widnow relation from instance/class name to actions.
  *
- * All memory from the relation is duplicated.
+ * All memory from the given relation is duplicated.
  */
-void add_window_relation(const struct window_relation *relation);
+void set_window_relation(const struct window_relation *relation);
 
 /* Remove the relation matching @instance and @class. */
 void remove_matching_window_relation(const utf8_t *instance,
         const utf8_t *class);
 
-/* Remove the relation with pattern @instance_pattern and @class_pattern. */
-void remove_exact_window_relation(const utf8_t *instance_pattern,
-        const utf8_t *class_pattern);
-
 /* Clear the memory occupied by the window relation. */
 void clear_window_relation(const struct window_relation *relation);
 
-/* Clear all currently set window relations. */
-void clear_window_relations(void);
+/* Unset all currently set window relations. */
+void unset_window_relations(void);
 
 /* Run the actions related to given window.
  *

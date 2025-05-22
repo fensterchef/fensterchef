@@ -38,11 +38,6 @@ void duplicate_parse_data(struct parse_data *data)
         data->u.string = xstrdup(data->u.string);
         break;
 
-    case PARSE_DATA_TYPE_CLASS:
-        data->u.class.instance = xstrdup(data->u.class.instance);
-        data->u.class.class = xstrdup(data->u.class.class);
-        break;
-
     case PARSE_DATA_TYPE_RELATION:
         duplicate_window_relation(&data->u.relation);
         break;
@@ -71,11 +66,6 @@ void clear_parse_data(const struct parse_data *data)
 
     case PARSE_DATA_TYPE_STRING:
         free(data->u.string);
-        break;
-
-    case PARSE_DATA_TYPE_CLASS:
-        free(data->u.class.instance);
-        free(data->u.class.class);
         break;
 
     case PARSE_DATA_TYPE_RELATION:
@@ -125,10 +115,6 @@ bool resolve_data(Parser *parser, char identifier,
     case PARSE_DATA_TYPE_STRING:
         LIST_COPY(parser->string, 0, parser->string_length + 1,
                 data->u.string);
-        break;
-
-    case PARSE_DATA_TYPE_CLASS:
-        resolve_class_string(parser, &data->u.class);
         break;
 
     case PARSE_DATA_TYPE_RELATION:

@@ -39,6 +39,7 @@ bool matches_pattern(const char *pattern, const char *string)
                 return true;
             }
 
+            string--;
             pattern_backtrack = pattern;
             string_backtrack = string;
             break;

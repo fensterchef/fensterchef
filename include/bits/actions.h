@@ -8,7 +8,6 @@
  * - The action string consists of words separated by a single space
  * - I is an integer
  * - S is a string
- * - C is a comma separated string with either a single or two strings
  */
 #define DEFINE_ALL_PARSE_ACTIONS \
     /* no operation */ \
@@ -209,14 +208,6 @@
     X(ACTION_TOGGLE_FULLSCREEN, "toggle fullscreen") \
     /* changes a non tiling window to a tiling window and vise versa */ \
     X(ACTION_TOGGLE_TILING, "toggle tiling") \
-    /* remove the currently running relation */ \
-    X(ACTION_UNRELATE, "unrelate") \
-    /* remove all relations */ \
-    X(ACTION_UNRELATE_ALL, "unrelate all") \
-    /* remove the relation matching given string */ \
-    X(ACTION_UNRELATE_MATCH, "unrelate match C") \
-    /* remove the relation with exact given pattern */ \
-    X(ACTION_UNRELATE_PATTERN, "unrelate pattern C") \
 \
     /* Separator action.  The parser has special handling for the below actions.
      * The problem is that big backtracking would be required as all actions
@@ -225,6 +216,8 @@
     X(ACTION_SIMPLE_MAX, "nop") \
     /* a window relation */ \
     X(ACTION_RELATION, "relate R") \
+    /* remove the currently running relation */ \
+    X(ACTION_UNRELATE, "unrelate") \
     /* a button binding */ \
     X(ACTION_BUTTON_BINDING, "bind B") \
     /* a key binding */ \

@@ -324,9 +324,9 @@ const char *get_configuration_file(void)
 void clear_configuration(void)
 {
     clear_cursor_cache();
-    clear_button_bindings();
-    clear_key_bindings();
-    clear_window_relations();
+    unset_button_bindings();
+    unset_key_bindings();
+    unset_window_relations();
 }
 
 /* Reload the fensterchef configuration. */

@@ -14,8 +14,6 @@
     X(INTEGER, parse_integer_t integer, 'I') \
     /* a string of text, quoted or unquoted */ \
     X(STRING, utf8_t *string, 'S') \
-    /* instance and class name */ \
-    X(CLASS, struct parse_class class, 'C') \
     /* window relation */ \
     X(RELATION, struct window_relation relation, 'R') \
     /* button binding */ \

@@ -94,12 +94,16 @@ Monitor *get_above_monitor(Monitor *monitor);
 /* Get the monitor on the right of @monitor.
  *
  * @return NULL if there is no monitor at the right.
+ *
+ * Note that this is not an inverse of `get_left_monitor()`.
  */
 Monitor *get_right_monitor(Monitor *monitor);
 
 /* Get the monitor below of @monitor.
  *
  * @return NULL if there is no monitor below.
+ *
+ * Note that this is not an inverse of `get_above_monitor()`.
  */
 Monitor *get_below_monitor(Monitor *monitor);
 

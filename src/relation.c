@@ -41,7 +41,9 @@ static void remove_window_relation(size_t index)
 /* Signal to the currently running relation that it should remove itself. */
 void signal_window_unrelate(void)
 {
-    remove_window_relation(running_relation);
+    if (running_relation < window_relations_length) {
+        remove_window_relation(running_relation);
+    }
 }
 
 /* Duplicate a relation deeply into itself. */
@@ -52,17 +54,39 @@ void duplicate_window_relation(struct window_relation *relation)
     duplicate_action_list(&relation->actions);
 }
 
-/* Add a new relation from window instance/class to actions. */
-void add_window_relation(const struct window_relation *relation)
+/* Set a relation from window instance/class name to actions. */
+void set_window_relation(const struct window_relation *relation)
 {
-    struct window_relation new_relation;
+    size_t i = 0;
 
-    LOG_DEBUG("adding window relation %s,%s\n",
-            relation->instance_pattern, relation->class_pattern);
+    for (; i < window_relations_length; i++) {
+        struct window_relation *const existing_relation = &window_relations[i];
+        if (strcmp(existing_relation->instance_pattern,
+                    relation->instance_pattern) == 0 &&
+                strcmp(existing_relation->class_pattern,
+                    relation->class_pattern) == 0) {
+            break;
+        }
+    }
 
-    new_relation = *relation;
-    duplicate_window_relation(&new_relation);
-    LIST_APPEND_VALUE(window_relations, new_relation);
+    if (i == window_relations_length) {
+        if (relation->actions.number_of_items > 0) {
+            struct window_relation new_relation;
+
+            LOG_DEBUG("adding window relation %s,%s\n",
+                    relation->instance_pattern, relation->class_pattern);
+
+            new_relation = *relation;
+            duplicate_window_relation(&new_relation);
+            LIST_APPEND_VALUE(window_relations, new_relation);
+        }
+    } else if (relation->actions.number_of_items == 0) {
+        remove_window_relation(i);
+    } else {
+        clear_window_relation(&window_relations[i]);
+        window_relations[i] = *relation;
+        duplicate_window_relation(&window_relations[i]);
+    }
 }
 
 /* Remove the relation matching @instance and @class. */
@@ -80,21 +104,6 @@ void remove_matching_window_relation(const utf8_t *instance,
     }
 }
 
-/* Remove the relation with pattern @instance_pattern and @class_pattern. */
-void remove_exact_window_relation(const utf8_t *instance_pattern,
-        const utf8_t *class_pattern)
-{
-    struct window_relation *relation;
-
-    for (size_t i = 0; i < window_relations_length; i++) {
-        relation = &window_relations[i];
-        if (strcmp(relation->instance_pattern, instance_pattern) == 0 &&
-                strcmp(relation->class_pattern, class_pattern) == 0) {
-            remove_window_relation(i);
-        }
-    }
-}
-
 /* Clear the memory occupied by the window relation. */
 void clear_window_relation(const struct window_relation *relation)
 {
@@ -103,8 +112,8 @@ void clear_window_relation(const struct window_relation *relation)
     clear_action_list(&relation->actions);
 }
 
-/* Clear all currently set window relations. */
-void clear_window_relations(void)
+/* Unset all currently set window relations. */
+void unset_window_relations(void)
 {
     LOG_DEBUG("clearing all window relations\n");
 

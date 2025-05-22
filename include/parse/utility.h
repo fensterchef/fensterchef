@@ -41,9 +41,4 @@ int read_string(Parser *parser);
 /* Read a string/word but do not resolve as an alias. */
 int read_string_no_alias(Parser *parser);
 
-/* Modifies @parser->string and then splits it in two and stores two allocated
- * strings in @class.
- */
-void resolve_class_string(Parser *parser, _Out struct parse_class *class);
-
 #endif

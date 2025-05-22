@@ -1189,11 +1189,6 @@ static void log_parse_data(const struct parse_data *data)
                 data->u.string);
         break;
 
-    case PARSE_DATA_TYPE_CLASS:
-        log_formatted("%s,%s",
-                data->u.class.instance, data->u.class.class);
-        break;
-
     case PARSE_DATA_TYPE_RELATION: {
         const struct window_relation *const relation =
             &data->u.relation;

@@ -7,7 +7,7 @@
  * WORD [WORD|VALUE]...
  *
  * For example:
- * move window by -10 0
+ *     move window by -10 0
  */
 
 #include "parse/parse.h"

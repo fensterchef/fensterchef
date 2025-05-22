@@ -149,8 +149,8 @@ void run_button_binding(Time event_time, bool is_release,
     }
 }
 
-/* Clear all configured button bindings. */
-void clear_button_bindings(void)
+/* Unset all configured button bindings. */
+void unset_button_bindings(void)
 {
     struct internal_button_binding *binding;
 
@@ -250,8 +250,8 @@ void run_key_binding(bool is_release, unsigned modifiers, KeyCode key_code)
     }
 }
 
-/* Clear all configured key bindings. */
-void clear_key_bindings(void)
+/* Unset all configured key bindings. */
+void unset_key_bindings(void)
 {
     struct internal_key_binding *binding;
 

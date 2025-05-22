@@ -111,7 +111,7 @@ int read_string_no_alias(Parser *parser)
 {
     int character;
 
-    skip_space(parser);
+    skip_blanks(parser);
 
     parser->start_index = parser->index;
     parser->string_length = 0;
@@ -182,51 +182,4 @@ int read_string(Parser *parser)
         }
     }
     return OK;
-}
-
-/* Modifies @parser->string and then splits it in two and stores two allocated
- * strings in @class.
- */
-void resolve_class_string(Parser *parser, struct parse_class *class)
-{
-    utf8_t *next, *separator;
-    size_t length;
-    unsigned backslash_count;
-
-    /* separate the parser string into instance and class */
-    next = parser->string;
-    length = parser->string_length;
-    /* handle any comma "," that is escaped by a backslash "\" */
-    do {
-        separator = memchr(next, ',', length);
-        if (separator == NULL) {
-            break;
-        }
-
-        length -= separator - next + 1;
-        next = separator + 1;
-
-        backslash_count = 0;
-        for (; separator > parser->string; separator--) {
-            if (separator[-1] != '\\') {
-                break;
-            }
-            backslash_count++;
-        }
-
-        if (backslash_count % 2 == 1) {
-            /* remove a backslash \ */
-            parser->string_length--;
-            MOVE(separator, separator + 1,
-                    &parser->string[parser->string_length] - separator);
-            continue;
-        }
-    } while (0);
-
-    if (separator == NULL) {
-        class->instance = xstrdup("*");
-    } else {
-        class->instance = xstrndup(parser->string, separator - parser->string);
-    }
-    class->class = xstrndup(next, length);
 }

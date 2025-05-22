@@ -1216,28 +1216,11 @@ void do_action(action_type_t type, const struct parse_data *data)
     case ACTION_UNRELATE:
         signal_window_unrelate();
         break;
-
-    /* remove all relations */
-    case ACTION_UNRELATE_ALL:
-        clear_window_relations();
-        break;
-
-    /* remove the relation matching given string */
-    case ACTION_UNRELATE_MATCH:
-        remove_matching_window_relation(data->u.relation.instance_pattern,
-                data->u.relation.class_pattern);
-        break;
-
-    /* remove the relation with exact given pattern */
-    case ACTION_UNRELATE_PATTERN:
-        remove_exact_window_relation(data->u.relation.instance_pattern,
-                data->u.relation.class_pattern);
-        break;
     
 
     /* add a relation */
     case ACTION_RELATION:
-        add_window_relation(&data->u.relation);
+        set_window_relation(&data->u.relation);
         break;
 
     /* set a button binding */

@@ -57,6 +57,7 @@ void undo_group(const struct parse_group *group)
     const struct parse_data *data;
     struct button_binding button;
     struct key_binding key;
+    struct window_relation relation;
 
     actions = &group->actions;
     data = actions->data;
@@ -73,8 +74,9 @@ void undo_group(const struct parse_group *group)
             ZERO(&key.actions, 1);
             set_key_binding(&key);
         } else if (actions->items[i].type == ACTION_RELATION) {
-            remove_exact_window_relation(data->u.relation.instance_pattern,
-                    data->u.relation.class_pattern);
+            relation = data->u.relation;
+            ZERO(&relation.actions, 1);
+            set_window_relation(&relation);
         }
         data += actions->items[i].data_count;
     }
