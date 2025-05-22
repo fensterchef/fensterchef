@@ -66,3 +66,25 @@ gdb-sandbox: build
 
 clean:
 	rm -rf build/
+
+## Tests ##
+
+OBJECTS_WITHOUT_MAIN := $(filter-out build/main.o,$(OBJECTS))
+TESTS := $(shell find tests -name '*.c' -and -not -name 'test.c')
+TEST_OBJECTS := $(patsubst tests/%.c,tests/%.o,$(TESTS)) tests/test.o
+TEST_EXECUTABLES := $(patsubst tests/%.c,tests/%,$(TESTS))
+TEST_FLAGS := -Itests $(DEBUG_FLAGS)
+
+# Compile or compile and run tests
+.PHONY: tests run-tests
+
+tests: $(TEST_OBJECTS) $(TEST_EXECUTABLES)
+
+run-tests: tests
+	for f in $(TEST_EXECUTABLES) ; do ./$$f ; done
+
+tests/%.o: tests/%.c
+	$(CC) $(TEST_FLAGS) -c $< -o $@
+
+tests/%: $(OBJECTS_WITHOUT_MAIN) tests/test.o tests/%.o
+	$(CC) $(TEST_FLAGS) $^ -o $@ $(C_LIBRARIES)

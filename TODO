@@ -35,9 +35,6 @@ M - Maintenance
     There should be a pool for action lists so the memory is managed more
     properly.  This should get its own file.
 
-#117 Write test code
-    Write test code for... everything
-
 #123 Add documentation about terminal emulator
     Add documentation about configuring a terminal emulator or application
     launcher.  Add default bindings for pulseaudio control in the configuration
@@ -65,6 +62,8 @@ M - Maintenance
     Make an additional repository that hosts fensterland
 
 [In Progress]
+#117 Write test code
+    Write test code for... everything
 
 [Recheck]
 #45 ! Fix weird flicker of Steam window
