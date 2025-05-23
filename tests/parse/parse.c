@@ -16,7 +16,7 @@ static struct test {
     { "auto split cool", false },
     { "equalize", true },
     { "focus down", true },
-    { "focus", false },
+    { "focus", true },
     { "focus leaf", true },
     { "focus left", true },
     { "show list", true },

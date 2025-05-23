@@ -78,12 +78,16 @@
     X(ACTION_FOCUS_CHILD_I, "focus child I") \
     /* focus the frame below */ \
     X(ACTION_FOCUS_DOWN, "focus down") \
-    /* focus a frame with given number or the window within the frame */ \
-    X(ACTION_FOCUS, "focus I") \
+    /* focus the window within the current frame */ \
+    X(ACTION_FOCUS, "focus") \
+    /* focus a frame with given number */ \
+    X(ACTION_FOCUS_I, "focus I") \
     /* move the focus to the leaf frame */ \
     X(ACTION_FOCUS_LEAF, "focus leaf") \
     /* move the focus to the left frame */ \
     X(ACTION_FOCUS_LEFT, "focus left") \
+    /* focus given monitor by name */ \
+    X(ACTION_FOCUS_MONITOR, "focus monitor S") \
     /* move the focus to the parent frame */ \
     X(ACTION_FOCUS_PARENT, "focus parent") \
     /* move the focus to the ith parent frame */ \

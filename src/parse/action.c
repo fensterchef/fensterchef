@@ -219,22 +219,34 @@ static void parse_next_action_part(Parser *parser,
     character = peek_stream_character(parser);
     if (character == EOF || character == '\n' || character == ',' ||
             character == ')') {
-        const char *const action = get_action_string(list->first_action);
-        if (action[list->actions[list->first_action].offset] != '\0') {
+        action_type_t type;
+
+        for (type = list->first_action; type < list->last_action; type++) {
+            if (list->actions[type].offset == -1) {
+                continue;
+            }
+
+            const char *const action = get_action_string(type);
+            if (action[list->actions[type].offset] == '\0') {
+                break;
+            }
+        }
+
+        if (type == list->last_action) {
             parser->start_index = parser->index;
             emit_parse_error(parser, "incomplete action");
             print_action_possibilities(list);
         } else {
             LIST_APPEND(list->items, NULL, 1);
-            list->items[list->items_length - 1].type = list->first_action;
+            list->items[list->items_length - 1].type = type;
             list->items[list->items_length - 1].data_count =
-                list->actions[list->first_action].data_length;
+                list->actions[type].data_length;
             LIST_APPEND(list->data,
-                list->actions[list->first_action].data,
-                list->actions[list->first_action].data_length);
+                list->actions[type].data,
+                list->actions[type].data_length);
 
             /* reset the count so the memory is not freed */
-            list->actions[list->first_action].data_length = 0;
+            list->actions[type].data_length = 0;
         }
     } else {
         if (read_and_resolve_next_action_word(parser, list) == ERROR) {

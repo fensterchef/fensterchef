@@ -81,7 +81,7 @@ TEST_FLAGS := -Itests $(DEBUG_FLAGS)
 tests: $(TEST_OBJECTS) $(TEST_EXECUTABLES)
 
 run-tests: tests
-	for f in $(TEST_EXECUTABLES) ; do ./$$f ; done
+	for f in $(TEST_EXECUTABLES) ; do ./$$f || break ; done
 
 tests/%.o: tests/%.c
 	$(CC) $(TEST_FLAGS) -c $< -o $@

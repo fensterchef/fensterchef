@@ -332,8 +332,11 @@ void update_window_layer(FcWindow *window);
 /* Check if the window accepts input focus. */
 bool is_window_focusable(FcWindow *window);
 
-/* Set the window that is in focus. */
-void set_focus_window(FcWindow *window);
+/* Set the window that is in focus.
+ *
+ * @window may be NULL, then the focus is set to no window.
+ */
+void set_focus_window(_Nullable FcWindow *window);
 
 /* Focus @window and the frame it is contained in if any. */
 void set_focus_window_with_frame(FcWindow *window);

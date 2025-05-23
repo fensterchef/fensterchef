@@ -35,9 +35,6 @@ M - Maintenance
     launcher.  Add default bindings for pulseaudio control in the configuration
     file that will be supplied.
 
-#129 Add action to focus specific monitor
-    Make an action to focus a specific monitor
-
 #130 ...
 
 #150 Add bar
@@ -606,3 +603,6 @@ M - Maintenance
     When a window is opened and there is an empty frame on the monitor with the
     current frame, open the window in that empty frame.  Make a configurable
     option for this.
+
+#129 Add action to focus specific monitor
+    Make an action to focus a specific monitor

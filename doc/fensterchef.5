@@ -16,7 +16,6 @@ the line is ignored.
 Lines can be joined using a backslash (\\).
 This character must be the first non space character on a line which makes this
 line continue the previous line.
-It is also possible to run actions like hiding a window.
 .
 .SH SETTING
 .PP
@@ -31,6 +30,12 @@ or
 or
 .I false
     Fill empty frames with stashed frames automatically.
+.PP
+.B auto find void
+.I true
+or
+.I false
+    Find empty frames to fill on the current monitor.
 .PP
 .B auto remove
 .I true
@@ -118,10 +123,6 @@ or
 .IR number s
     Set the gaps between frames and the monitor edges.
 .PP
-.B modifiers
-.I modifiers
-    Set the modifiers to apply to all future bindings.
-.PP
 .B modifiers ignore
 .I modifiers
     Set the modifiers to ignore for all bindings.
@@ -204,6 +205,10 @@ binding or the window matched in a relation.
 .B focus left
     Focus the frame on the left of the current frame.
 .PP
+.B focus monitor
+.I name
+    Focus the monitor matching given name pattern.
+.PP
 .B focus parent
 .I number?
     Focus the nth parent frame.
@@ -230,9 +235,7 @@ binding or the window matched in a relation.
 .PP
 .B hint split vertically
     Hint that the current frame should split vertically.
-.PP
-.B initiate move
-    Initiate a moving of a window with the mouse.
+.PP .B initiate move Initiate a moving of a window with the mouse.
 .PP
 .B initiate resize
     Initiate a resizing of a window with the mouse.
@@ -378,25 +381,14 @@ to fullscreen and vise versa.
     Toggle the mode of a window from
 .I X
 to tiling and vise versa.
-.PP
-.B unrelate
-    Remove the relation that is currently running (use within a relation).
-.PP
-.B unrelate all
-    Remove all window relations.
-.PP
-.B unrelate match|pattern S
-    Remove a window relation by matching given string or removing the relation
-    defined with given exact pattern.
 .
 .SH BINDING
-.BR release ?
-.BR transparent ?
+.BR [release]
+.BR [transparent]
 .IR MODIFIERS + BUTTON | KEY_SYMBOL
 .I COMMANDS
-
-This creates a binding that triggers when the specified combination of modifiers
-and button/key symbol is pressed/released.
+    This creates a binding that triggers when the specified combination of
+    modifiers and button/key symbol is pressed/released.
 
 To get more information about the modifiers configured on your system, use
 .B xmodmap
@@ -414,33 +406,36 @@ window.
 .I release
 can be used to trigger the bind when releasing the key/button.
 
-.I MODIFIERS
-is combined with the currently configured
-.I modifiers
-setting.
 Note that the ignored modifiers can be used to control which additional
 physically pressed modifiers should not change the interpretation of a binding.
 
 Actions are separated by a comma, for example:
-.PP
 .EX
 # Also trigger all bindings if Lock, Mod2 or Control is down
 modifiers ignore Lock Mod2 Control
 # Show a message when Mod1 (usually Alt) and "t" is pressed
-modifiers Mod1
-t show message Hello!
+Mod1+t show message Hello!
 
 # Split a frame and focus the right frame
 Shift+t split horizontally, focus right
 
 # Focus a window when pressed with the left mouse button
-modifiers None
 transparent LeftButton focus window
 .EE
+.PP
+You can also bind by key code which requires a special syntax:
+.EX
+# Bind to 24 (usually Q)
+Mod1+[24] close window
+.EE
+.PP
+.B unbind [release]
+.IR MODIFIERS + BUTTON | KEY_SYMBOL
+    The unbind command can be used to remove a previously bound key or button.
 .
 .SH RELATION
 .B relate
-.I STRING COMMANDS
+.I [instance,] class commands
 
 The string refers to the instance name (resource name) and class name.
 You can use
@@ -454,11 +449,18 @@ instance name and class name is created.
 Actions are separated by a comma, for example:
 .PP
 .EX
-# Set all firefox windows to floating and focus then when they appear
+# Set all firefox windows to floating and focus them when they appear
 relate firefox set floating, focus window
 .EE
+.PP
+.B unrelate
+    Remove the relation that is currently running (use within a relation).
+.PP
+.B unrelate
+.I [instance,] class
+    Remove a window relation defined by exact pattern.
 .
-.SH SPECIAL
+.SH ALIAS
 .PP
 .B alias
 .I alias_name
@@ -466,6 +468,12 @@ relate firefox set floating, focus window
 .I string
     Create an alias.  Whenever a word (unquoted string) is used, it is attempted
     to resolve it to an alias.  The exception is in alias un-/definitions.
+.PP
+.B unalias
+.I alias_name
+    Remove a previously declared alias
+.
+.SH GROUP
 .PP
 .B group
 .I group_name
@@ -478,85 +486,23 @@ relate firefox set floating, focus window
 .I group_name
     Run all commands within the specified group.
 .PP
-.B source
-.I file
-    The source command can source external files.
-    This allows to split a configuration into multiple parts.
-.PP
-.B unalias
-.I alias_name
-    Remove a previously declared alias
-.PP
-.B unbind
-.BR release ?
-.IR MODIFIERS + BUTTON | KEY_SYMBOL
-    The unbind command can be used to remove a previously bound key or button.
-.PP
 .B ungroup
 .I group_name
     The ungroup command removes all bindings and relations a specific group
     created.
 .
+.SH SOURCE
+.B source
+.I file
+    The source command can source external files.
+    This allows to split a configuration into multiple parts.
+.
 .SH EXAMPLE
-.SS Parts of the default configuration
-.EX
-overlap 80%
-
-auto remove void false
-auto fill void true
-
-font Mono
-
-border size 1
-border color #000000
-
-gaps inner 0
-gaps outer 0
-
-notification duration 2
-text padding 6
-foreground #000000
-background #ffffff
-
-resize tolerance 8
-
-modifiers ignore Lock Mod2
-modifiers Mod4
-
-LeftButton initiate resize
-MiddleButton minimize window
-RightButton initiate move
-
-Shift+r reload configuration
-a focus parent
-b focus child
-Shift+a focus root
-q close window
-Minus minimize window
-n focus next window
-p focus previous window
-r remove frame
-Shift+Space toggle tiling
-Space toggle focus
-f toggle fullscreen
-v split horizontally
-s split vertically
-k focus up
-h focus left
-l focus right
-j focus down
-Shift+k exchange up
-Shift+h exchange left
-Shift+l exchange right
-Shift+j exchange down
-w show list
-Return run '[ -n "$TERMINAL" ] && "$TERMINAL" || xterm'
-.EE
 .SS Initial layout
 .EX
-relate "1,st-256color" assign window 901, focus window
-relate "2,st-256color" assign window 902, focus window
-relate "3,st-256color" assign window 903, focus window
+relate 1, st-256color assign window 901, focus window
+relate 2, st-256color assign window 902, focus window
+relate 3, st-256color assign window 903, focus window
 
 assign 901
 

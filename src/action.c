@@ -652,8 +652,13 @@ void do_action(action_type_t type, const struct parse_data *data)
         configuration.first_window_number = data->u.integer;
         break;
 
-    /* focus a frame with given number */
+    /* focus the window within the current frame */
     case ACTION_FOCUS:
+        set_focus_window(Frame_focus->window);
+        break;
+
+    /* focus a frame with given number */
+    case ACTION_FOCUS_I:
         frame = get_frame_by_number((unsigned) data->u.integer);
         /* check if the frame is already shown */
         if (frame != NULL) {
@@ -735,6 +740,21 @@ void do_action(action_type_t type, const struct parse_data *data)
     case ACTION_FOCUS_LEFT:
         move_to_left_frame(Frame_focus, false);
         break;
+
+    /* focus given monitor by name */
+    case ACTION_FOCUS_MONITOR: {
+        Monitor *monitor;
+
+        monitor = get_monitor_by_pattern(data->u.string);
+        if (monitor == NULL) {
+            LOG_ERROR("no monitor matches %s\n",
+                     data->u.string);
+            break;
+        }
+
+        Frame_focus = monitor->frame;
+        break;
+    }
 
     /* move the focus to the parent frame */
     case ACTION_FOCUS_PARENT:
