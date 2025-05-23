@@ -119,14 +119,15 @@ void get_stream_position(const Parser *parser, size_t index,
             current_column = 0;
             current_line++;
             if (i + 1 < index) {
-                character = (unsigned char) parser->input[i + 1];
-                if (islineend(character)) {
+                const int other = (unsigned char) parser->input[i + 1];
+                /* put \r\n and \n\r together */
+                if ((other == '\n' && character == '\r') ||
+                        (other == '\r' && character == '\n')) {
                     i++;
                 }
             }
         } else if (character == '\t') {
-            current_column = current_column -
-                current_column % PARSE_TAB_SIZE;
+            current_column = current_column - current_column % PARSE_TAB_SIZE;
         } else if (character < ' ') {
             /* these characters are printed as ? */
             current_column++;
@@ -162,8 +163,10 @@ const char *get_stream_line(const Parser *parser, unsigned line,
         index++;
         if (islineend(character)) {
             if (index + 1 < parser->length) {
-                character = (unsigned char) parser->input[index];
-                if (islineend(character)) {
+                const int other = (unsigned char) parser->input[index + 1];
+                /* put \r\n and \n\r together */
+                if ((other == '\n' && character == '\r') ||
+                        (other == '\r' && character == '\n')) {
                     index++;
                 }
             }
