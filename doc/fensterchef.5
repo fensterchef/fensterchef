@@ -520,20 +520,31 @@ run 'st -n 1'
 run 'st -n 2'
 run 'st -n 3'
 .EE
+.SS ratpoison-like tiling
+.EX
+auto split false
+auto fill void true
+auto find void false
+auto remove false
+auto remove void false
+auto equalize false
+.EE
 .SS i3-like tiling
 .EX
 auto split true
-auto equalize true
-auto fill void true
+auto fill void false
+auto find void true
 auto remove true
+auto remove void true
+auto equalize true
 
-v hint split horizontally
-s hint split vertically
+mod+v hint split horizontally
+mod+s hint split vertically
 
-Shift+h move left
-Shift+l move right
-Shift+k move up
-Shift+j move down
+mod+Shift+h move left
+mod+Shift+l move right
+mod+Shift+k move up
+mod+Shift+j move down
 .EE
 .SS Start ALL windows as floating besides terminal windows
 .EX
@@ -556,6 +567,6 @@ group resize (
     q ungroup resize
 )
 
-Control+Mod4+r call resize
+mod+Control+r call resize
 .EE
 .

@@ -76,8 +76,9 @@ notification duration 2
 overlap 80%
 
 
-## Example relations ##
+## Window relations ##
 
+# Example relation:
 # Make all firefox windows floating after the main window has openend
 relate Navigator, firefox (
     set floating, focus window
@@ -148,7 +149,7 @@ mod+f toggle fullscreen
 mod+v split horizontally
 mod+s split vertically
 
-# Move between frames
+# Change focus between frames
 mod+k focus up
 mod+h focus left
 mod+l focus right
