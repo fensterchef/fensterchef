@@ -263,8 +263,8 @@ void reload_frame(Frame *frame)
 
     get_frame_gaps(frame, &gaps);
 
-    gaps.right += gaps.left + configuration.border_size * 2;
-    gaps.bottom += gaps.top + configuration.border_size * 2;
+    gaps.right += gaps.left + frame->window->border_size * 2;
+    gaps.bottom += gaps.top + frame->window->border_size * 2;
     set_window_size(frame->window,
             frame->x + gaps.left,
             frame->y + gaps.top,

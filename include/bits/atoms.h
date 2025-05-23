@@ -180,9 +180,6 @@
     /* the window may be put below all other windows */ \
     X(_NET_WM_ACTION_BELOW) \
 \
-    /* hints defined by the motif window manager */ \
-    X(_MOTIF_WM_HINTS) \
-\
     /* our special property for running commands */ \
     X(FENSTERCHEF_COMMAND)
 

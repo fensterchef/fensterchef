@@ -186,39 +186,12 @@ void synchronize_with_server(void)
      */
     reconfigure_monitor_frames();
 
-    /* set the borders of the windows and manage the focused state */
+    /* update the focused state of all windows */
     for (window = Window_first; window != NULL; window = window->next) {
         /* remove the focused state from windows that are not focused */
         if (window != Window_focus) {
             atoms[0] = ATOM(_NET_WM_STATE_FOCUSED);
             remove_window_states(window, atoms, 1);
-        }
-
-        /* update the border size */
-        if (is_window_borderless(window)) {
-            window->border_size = 0;
-        } else {
-            window->border_size = configuration.border_size;
-        }
-
-        /* set the color of the focused window */
-        if (window == Window_focus) {
-            window->border_color = configuration.border_color_focus;
-        /* deeply set the colors of all windows within the focused frame */
-        } else if ((Window_focus == NULL ||
-                        Window_focus->state.mode == WINDOW_MODE_TILING) &&
-                window->state.mode == WINDOW_MODE_TILING &&
-                is_window_part_of(window, Frame_focus)) {
-            window->border_color = configuration.border_color_focus;
-        /* if the window is the top window or within the focused frame, give it
-         * the active color
-         */
-        } else if (is_window_part_of(window, Frame_focus) ||
-                (window->state.mode == WINDOW_MODE_FLOATING &&
-                    window == Window_top)) {
-            window->border_color = configuration.border_color_active;
-        } else {
-            window->border_color = configuration.border_color;
         }
     }
 
@@ -228,12 +201,43 @@ void synchronize_with_server(void)
 
     /* configure all visible windows and map them */
     for (window = Window_top; window != NULL; window = window->below) {
+        uint32_t new_border_color;
+        unsigned new_border_size;
+
         if (!window->state.is_visible) {
             continue;
         }
+
+        /* set the color of the focused window */
+        if (window == Window_focus) {
+            new_border_color = window->border_color;
+        /* deeply set the colors of all windows within the focused frame */
+        } else if ((Window_focus == NULL ||
+                        Window_focus->state.mode == WINDOW_MODE_TILING) &&
+                window->state.mode == WINDOW_MODE_TILING &&
+                is_window_part_of(window, Frame_focus)) {
+            new_border_color = window->border_color;
+        /* if the window is the top window or within the focused frame, give it
+         * the active color
+         */
+        } else if (is_window_part_of(window, Frame_focus) ||
+                (window->state.mode == WINDOW_MODE_FLOATING &&
+                    window == Window_top)) {
+            new_border_color = configuration.border_color_active;
+        } else {
+            new_border_color = configuration.border_color;
+        }
+
+        if (window->state.mode != WINDOW_MODE_TILING && window->state.mode !=
+                WINDOW_MODE_FLOATING) {
+            new_border_size = 0;
+        } else {
+            new_border_size = window->border_size;
+        }
+
         configure_client(&window->reference, window->x, window->y,
-                window->width, window->height, window->border_size);
-        change_client_attributes(&window->reference, window->border_color);
+                window->width, window->height, new_border_size);
+        change_client_attributes(&window->reference, new_border_color);
 
         atoms[0] = ATOM(_NET_WM_STATE_HIDDEN);
         remove_window_states(window, atoms, 1);

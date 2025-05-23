@@ -32,6 +32,10 @@
     X(ACTION_BACKGROUND, "background I") \
     /* the border color of "active" windows */ \
     X(ACTION_BORDER_COLOR_ACTIVE, "border color active I") \
+    /* set the border color of the current window */ \
+    X(ACTION_BORDER_COLOR_CURRENT, "border color current I") \
+    /* set the border size of the current window */ \
+    X(ACTION_BORDER_SIZE_CURRENT, "border size current I") \
     /* the border color of focused windows */ \
     X(ACTION_BORDER_COLOR_FOCUS, "border color focus I") \
     /* the border color of all windows */ \

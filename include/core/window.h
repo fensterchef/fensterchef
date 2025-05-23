@@ -125,13 +125,9 @@ struct fensterchef_window {
     unsigned width;
     unsigned height;
 
-    /* if the window should have no border as floating window; to check if a
-     * window *actually* has no border, use `is_window_borderless()`
-     */
-    bool is_borderless;
     /* size and color of the border */
     unsigned border_size;
-    unsigned border_color;
+    uint32_t border_color;
 
     /* position/size when the window was in floating mode */
     Rectangle floating;

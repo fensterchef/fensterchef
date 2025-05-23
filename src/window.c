@@ -174,25 +174,6 @@ bool cache_window_property(FcWindow *window, Atom atom)
     } else if (atom == ATOM(_NET_WM_FULLSCREEN_MONITORS)) {
         get_fullscreen_monitors_property(window->reference.id,
                 &window->properties.fullscreen_monitors);
-    } else if (atom == ATOM(_MOTIF_WM_HINTS)) {
-        struct motif_wm_hints hints;
-
-        window->is_borderless = false;
-
-        if (get_motif_wm_hints_property(window->reference.id, &hints)) {
-            if ((hints.flags & MOTIF_WM_HINTS_FLAGS_DECORATIONS)) {
-                /* if `decorate_all` is set, the other flags are exclusive */
-                if ((hints.decorations & MOTIF_WM_HINTS_DECORATIONS_ALL)) {
-                    if ((hints.decorations &
-                                MOTIF_WM_HINTS_DECORATIONS_BORDER)) {
-                        window->is_borderless = true;
-                    }
-                } else if (!(hints.decorations &
-                            MOTIF_WM_HINTS_DECORATIONS_BORDER)) {
-                    window->is_borderless = true;
-                }
-            }
-        }
     } else {
         return false;
     }
@@ -404,7 +385,7 @@ FcWindow *create_window(Window id)
     }
 
     /* set the initial border color */
-    set_attributes.border_pixel = configuration.border_color;
+    set_attributes.border_pixel = configuration.border_color_focus;
     /* we want to know if if any properties change */
     set_attributes.event_mask = PropertyChangeMask;
     XChangeWindowAttributes(display, id, CWBorderPixel | CWEventMask,
@@ -421,7 +402,8 @@ FcWindow *create_window(Window id)
     window->reference.y = x;
     window->reference.width = width;
     window->reference.height = height;
-    window->reference.border = configuration.border_color;
+    window->reference.border = configuration.border_color_focus;
+    window->reference.border_width = border_width;
     /* check if the window is already mapped on the X server */
     if (attributes.map_state != IsUnmapped) {
         window->reference.is_mapped = true;
@@ -433,7 +415,8 @@ FcWindow *create_window(Window id)
     window->y = y;
     window->width = width;
     window->height = height;
-    window->border_color = window->reference.border;
+    window->border_color = configuration.border_color_focus;
+    window->border_size = configuration.border_size;
 
     /* link into the Z, age and number linked lists */
     if (Window_first == NULL) {
@@ -671,20 +654,6 @@ bool supports_window_protocol(FcWindow *window, Atom protocol)
 bool has_window_state(FcWindow *window, Atom state)
 {
     return is_atom_included(window->properties.states, state);
-}
-
-/* Check if @window should have no border. */
-bool is_window_borderless(FcWindow *window)
-{
-    /* tiling windows always have a border */
-    if (window->state.mode == WINDOW_MODE_TILING) {
-        return false;
-    }
-    /* fullscreen, dock and desktop windows have no border */
-    if (window->state.mode != WINDOW_MODE_FLOATING) {
-        return true;
-    }
-    return window->is_borderless;
 }
 
 /* Get the side of a monitor @window would like to attach to. */

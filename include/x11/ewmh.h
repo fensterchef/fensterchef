@@ -104,24 +104,6 @@ typedef enum {
 /* a state should be toggled (removed if it exists and added otherwise) */
 #define _NET_WM_STATE_TOGGLE 2
 
-#define MOTIF_WM_HINTS_FLAGS_DECORATIONS (1 << 1)
-#define MOTIF_WM_HINTS_DECORATIONS_ALL ((1 << 0))
-#define MOTIF_WM_HINTS_DECORATIONS_BORDER ((1 << 2) | (1 << 3))
-
-/* hints of the motif window manager which many applications still use */
-struct motif_wm_hints {
-    /* what fields below are available */
-    int flags;
-    /* IGNORED */
-    int functions;
-    /* border/frame decoration flags */
-    int decorations;
-    /* IGNORED */
-    int input_mode;
-    /* IGNORED */
-    int status;
-};
-
 /* Create the wm check window.
  *
  * This can be used by other applications to identify our window manager.
@@ -185,13 +167,6 @@ bool get_fullscreen_monitors_property(Window window,
  * @return if the window has any strut properties.
  */
 bool get_strut_property(Window window, _Out wm_strut_partial_t *strut);
-
-/* Get the _MOTIF_WM_HINTS window property.
- *
- * @return if the window has this property.
- */
-bool get_motif_wm_hints_property(Window window,
-        _Out struct motif_wm_hints *hints);
 
 /* Get the FENSTERCHEF_COMMAND window property.
  *

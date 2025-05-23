@@ -16,11 +16,6 @@ M - Maintenance
     are switchable.  This could be a file viewer, application launcher or the
     window list.
 
-#84 Give each window its own individual settings
-    Each window should have its own settings for border and gaps.  Actions have
-    to be made that set these individual settings.  Whether a setting is
-    individual or not has to be stored within the window.
-
 #107 ? Add window mode descriptions
     Add a format to describe window modes.  For example whether they can
     move/resize or their identifying letter, what kind of border they have.
@@ -606,3 +601,8 @@ M - Maintenance
     Add documentation about configuring a terminal emulator or application
     launcher.  Add default bindings for pulseaudio control in the configuration
     file that will be supplied.
+
+#84 Give each window its own individual settings
+    Each window should have its own settings for border and gaps.  Actions have
+    to be made that set these individual settings.  Whether a setting is
+    individual or not has to be stored within the window.

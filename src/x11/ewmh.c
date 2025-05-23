@@ -209,23 +209,6 @@ bool get_fullscreen_monitors_property(Window window,
     }
 }
 
-/* Get the _MOTIF_WM_HINTS window property. */
-bool get_motif_wm_hints_property(Window window, struct motif_wm_hints *hints)
-{
-    long *longs;
-
-    longs = get_long_property(window, ATOM(_MOTIF_WM_HINTS),
-            sizeof(*hints) / sizeof(hints->flags));
-    if (longs == NULL) {
-        return false;
-    } else {
-        hints->flags = longs[0];
-        hints->decorations = longs[2];
-        XFree(longs);
-        return true;
-    }
-}
-
 /* Gets the `FENSTERCHEF_COMMAND` property from @window. */
 char *get_fensterchef_command_property(Window window)
 {

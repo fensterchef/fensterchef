@@ -497,13 +497,47 @@ void do_action(action_type_t type, const struct parse_data *data)
         configuration.border_color_active = data->u.integer;
         break;
 
+    /* set the border color of the current window */
+    case ACTION_BORDER_COLOR_CURRENT:
+        if (window == NULL) {
+            break;
+        }
+        window->border_color = data->u.integer;
+        break;
+
+    /* set the border size of the current window */
+    case ACTION_BORDER_SIZE_CURRENT:
+        if (window == NULL) {
+            break;
+        }
+        window->border_size = data->u.integer;
+        break;
+
     /* the border color of focused windows */
     case ACTION_BORDER_COLOR_FOCUS:
+        /* set the border color of all windows that have this color */
+        for (FcWindow *window = Window_first;
+                window != NULL;
+                window = window->next) {
+            /* make changes persistent when reloading */
+            if (window->border_color == configuration.border_color_focus) {
+                window->border_color = data->u.integer;
+            }
+        }
         configuration.border_color_focus = data->u.integer;
         break;
 
     /* the border size of all windows */
     case ACTION_BORDER_SIZE:
+        /* set the border size of all windows that have this size */
+        for (FcWindow *window = Window_first;
+                window != NULL;
+                window = window->next) {
+            /* make changes persistent when reloading */
+            if (window->border_size == configuration.border_size) {
+                window->border_size = data->u.integer;
+            }
+        }
         configuration.border_size = data->u.integer;
         break;
 

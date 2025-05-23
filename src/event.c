@@ -300,8 +300,7 @@ static void handle_configure_request(XConfigureRequestEvent *event)
         notify_event.xconfigure.y = window->y;
         notify_event.xconfigure.width = window->width;
         notify_event.xconfigure.height = window->height;
-        notify_event.xconfigure.border_width = is_window_borderless(window) ?
-            0 : window->border_size;
+        notify_event.xconfigure.border_width = window->reference.border_width;
         LOG("sending fake configure notify event %V to %W\n",
                 &notify_event, window);
         XSendEvent(display, window->reference.id, false,
