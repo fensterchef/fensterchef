@@ -82,6 +82,17 @@ void skip_all_statements(Parser *parser)
     } while (false);
 }
 
+/* Check if @character is a meta character in a pattern. */
+static bool is_pattern_character(int character)
+{
+    if (character == '[' || character == ']' || character == '*' ||
+            character == '?') {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 /* Check if @character can be part of a word. */
 static bool is_word_character(int character)
 {
@@ -129,8 +140,8 @@ int read_string_no_alias(Parser *parser)
             /* escape any characters following \ */
             if (character == '\\') {
                 character = get_stream_character(parser);
-                /* keep the \ for all but the quote used and another \ */
-                if (character != quote && character != '\\') {
+                /* keep the \ for pattern characters */
+                if (is_pattern_character(character)) {
                     LIST_APPEND_VALUE(parser->string, '\\');
                 }
                 if (character == EOF || character == '\n') {
@@ -150,6 +161,17 @@ int read_string_no_alias(Parser *parser)
                 is_word_character(character)) {
             (void) get_stream_character(parser);
 
+            /* escape any characters following \ */
+            if (character == '\\') {
+                character = get_stream_character(parser);
+                /* keep the \ for pattern characters */
+                if (is_pattern_character(character)) {
+                    LIST_APPEND_VALUE(parser->string, '\\');
+                }
+                if (character == EOF || character == '\n') {
+                    break;
+                }
+            }
             LIST_APPEND_VALUE(parser->string, character);
         }
 

@@ -30,11 +30,6 @@ M - Maintenance
     There should be a pool for action lists so the memory is managed more
     properly.  This should get its own file.
 
-#123 Add documentation about terminal emulator
-    Add documentation about configuring a terminal emulator or application
-    launcher.  Add default bindings for pulseaudio control in the configuration
-    file that will be supplied.
-
 #130 ...
 
 #150 Add bar
@@ -606,3 +601,8 @@ M - Maintenance
 
 #129 Add action to focus specific monitor
     Make an action to focus a specific monitor
+
+#123 Add documentation about terminal emulator
+    Add documentation about configuring a terminal emulator or application
+    launcher.  Add default bindings for pulseaudio control in the configuration
+    file that will be supplied.
