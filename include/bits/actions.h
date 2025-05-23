@@ -20,6 +20,8 @@
     X(ACTION_AUTO_EQUALIZE, "auto equalize I") \
     /* automatic filling of voids */ \
     X(ACTION_AUTO_FILL_VOID, "auto fill void I") \
+    /* automatic finding of voids to fill */ \
+    X(ACTION_AUTO_FIND_VOID, "auto find void I") \
     /* automatic removal of windows (implies remove void) */ \
     X(ACTION_AUTO_REMOVE, "auto remove I") \
     /* automatic removal of voids */ \

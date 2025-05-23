@@ -63,11 +63,6 @@ M - Maintenance
 #117 Write test code
     Write test code for... everything
 
-#96 New auto fill void
-    When a window is opened and there is an empty frame on the monitor with the
-    current frame, open the window in that empty frame.  Make a configurable
-    option for this.
-
 [Recheck]
 #45 ! Fix weird flicker of Steam window
     Steam flickers back and forth (once) when hovering over a menu item
@@ -606,3 +601,8 @@ M - Maintenance
 
 #128 Change parser for relations
     The relation parser should look for the comma token
+
+#96 New auto fill void
+    When a window is opened and there is an empty frame on the monitor with the
+    current frame, open the window in that empty frame.  Make a configurable
+    option for this.

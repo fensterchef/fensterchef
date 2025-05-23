@@ -76,6 +76,13 @@ Monitor *get_monitor_containing_frame(Frame *frame);
 /* Get the monitor the window is on. */
 Monitor *get_monitor_containing_window(FcWindow *window);
 
+/* Get the focused monitor.
+ *
+ * This either gets the monitor the focused window is on or the monitor the
+ * focused frame is on.
+ */
+Monitor *get_focused_monitor(void);
+
 /* Get a window covering given monitor. */
 FcWindow *get_window_covering_monitor(Monitor *monitor);
 

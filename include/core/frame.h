@@ -323,6 +323,12 @@ void split_frame(Frame *split_from, Frame *other, bool is_left_split,
  */
 void remove_frame(Frame *frame);
 
+/* Try to find any empty frame on the monitor @frame is on.
+ *
+ * @return NULL if there is no empty frame.
+ */
+Frame *find_frame_void(Frame *frame);
+
 /* Take frame away from the screen, this leaves a singular empty frame.
  *
  * @frame is made into a completely empty frame as all children and windows are

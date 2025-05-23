@@ -133,11 +133,7 @@ static int render_window_list(void)
     }
 
     /* get the monitor the window list should be on */
-    if (Window_focus == NULL) {
-        monitor = get_monitor_containing_frame(Frame_focus);
-    } else {
-        monitor = get_monitor_containing_window(Window_focus);
-    }
+    monitor = get_focused_monitor();
 
     /* put enough text items on the stack */
     Text texts[Window_count + 1];

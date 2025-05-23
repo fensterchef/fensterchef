@@ -871,11 +871,7 @@ static void configure_floating_size(FcWindow *window)
         /* put the window on the monitor that is either on the same monitor as
          * the focused window or the focused frame
          */
-        if (Window_focus != NULL) {
-            monitor = get_monitor_containing_window(Window_focus);
-        } else {
-            monitor = get_monitor_containing_frame(Frame_focus);
-        }
+        monitor = get_focused_monitor();
 
         if ((window->properties.size_hints.flags & PSize)) {
             width = window->properties.size_hints.width;
@@ -1069,6 +1065,23 @@ static void update_shown_window(FcWindow *window)
             frame->window = window;
             reload_frame(frame);
             break;
+        }
+
+        if (configuration.auto_find_void) {
+            Monitor *monitor;
+
+            frame = find_frame_void(Frame_focus);
+            if (frame == NULL) {
+                monitor = get_focused_monitor();
+                frame = find_frame_void(monitor->frame);
+            }
+            if (frame != NULL) {
+                LOG("found a void to fill\n");
+
+                frame->window = window;
+                reload_frame(frame);
+                break;
+            }
         }
 
         if (configuration.auto_split && Frame_focus->window != NULL) {

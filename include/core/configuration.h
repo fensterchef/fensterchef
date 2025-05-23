@@ -28,6 +28,8 @@ extern struct configuration {
     bool auto_equalize;
     /* whether to fill in empty frames automatically */
     bool auto_fill_void;
+    /* whether to look for voids on the same monitor */
+    bool auto_find_void;
     /* whether to remove frames automatically when their inner windows is
      * hidden
      */

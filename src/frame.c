@@ -1154,6 +1154,59 @@ void remove_frame(Frame *frame)
     destroy_frame(other);
 }
 
+/* Find any empty frame within @frame. */
+static Frame *find_frame_void_within(Frame *frame)
+{
+    Frame *child;
+
+    if (is_frame_void(frame)) {
+        return frame;
+    }
+
+    if (frame->left == NULL) {
+        return NULL;
+    }
+
+    child = find_frame_void(frame->left);
+    if (child != NULL) {
+        return child;
+    }
+
+    return find_frame_void(frame->right);
+}
+
+/* Try to find any empty frame on the monitor @frame is on. */
+Frame *find_frame_void(Frame *frame)
+{
+    Frame *other, *parent;
+
+    other = find_frame_void_within(frame);
+    if (other != NULL) {
+        return NULL;
+    }
+
+    /* move up the frame and always check the branch we did not come frome */
+    do {
+        parent = frame->parent;
+        if (parent == NULL) {
+            other = NULL;
+            break;
+        }
+
+        if (parent->left == frame) {
+            other = parent->right;
+        } else {
+            other = parent->left;
+        }
+
+        other = find_frame_void_within(other);
+
+        frame = parent;
+    } while (other == NULL);
+
+    return other;
+}
+
 /******************
  * Frame stashing *
  ******************/

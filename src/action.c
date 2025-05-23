@@ -462,6 +462,11 @@ void do_action(action_type_t type, const struct parse_data *data)
         configuration.auto_fill_void = data->u.integer;
         break;
 
+    /* automatic finding of voids to fill */
+    case ACTION_AUTO_FIND_VOID:
+        configuration.auto_find_void = data->u.integer;
+        break;
+
     /* automatic removal of windows (implies remove void) */
     case ACTION_AUTO_REMOVE:
         configuration.auto_remove = data->u.integer;

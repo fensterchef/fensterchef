@@ -315,6 +315,16 @@ inline Monitor *get_monitor_containing_window(FcWindow *window)
             window->width, window->height);
 }
 
+/* Get the focused monitor. */
+Monitor *get_focused_monitor(void)
+{
+    if (Window_focus != NULL) {
+        return get_monitor_containing_window(Window_focus);
+    } else {
+        return get_monitor_containing_frame(Frame_focus);
+    }
+}
+
 /* Get a window covering given monitor. */
 FcWindow *get_window_covering_monitor(Monitor *monitor)
 {
