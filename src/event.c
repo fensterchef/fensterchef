@@ -104,8 +104,8 @@ int next_cycle(void)
              * - The focused window is a non tiling window
              */
             if (Frame_focus->window == NULL ||
-                     Frame_focus->window->border_size == 0 ||
-                     (Window_focus != NULL &&
+                    Frame_focus->window->border_size == 0 ||
+                    (Window_focus != NULL &&
                         Window_focus->state.mode != WINDOW_MODE_TILING)) {
                 char number[MAXIMUM_DIGITS(Frame_focus->number) + 1];
 

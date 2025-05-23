@@ -1006,91 +1006,6 @@ void reset_window_size(FcWindow *window)
  * Window state *
  ****************/
 
-/* When a window changes mode or is shown, this is called.
- *
- * This adjusts the window size or puts the window into the tiling layout.
- */
-static void update_shown_window(FcWindow *window)
-{
-    switch (window->state.mode) {
-    /* the window has to become part of the tiling layout */
-    case WINDOW_MODE_TILING: {
-        Frame *frame;
-
-        frame = get_window_frame(window);
-        /* we never would want this to happen */
-        if (frame != NULL) {
-            LOG_ERROR("window %W is already in frame %F\n",
-                    window, frame);
-            reload_frame(frame);
-            break;
-        }
-
-        frame = get_frame_by_number(window->number);
-        if (frame != NULL) {
-            LOG("found frame %F matching the window id\n",
-                    frame);
-            (void) stash_frame(frame);
-            frame->window = window;
-            reload_frame(frame);
-            break;
-        }
-
-        if (configuration.auto_find_void) {
-            Monitor *monitor;
-
-            frame = find_frame_void(Frame_focus);
-            if (frame == NULL) {
-                monitor = get_focused_monitor();
-                frame = find_frame_void(monitor->frame);
-            }
-            if (frame != NULL) {
-                LOG("found a void to fill\n");
-
-                frame->window = window;
-                reload_frame(frame);
-                break;
-            }
-        }
-
-        if (configuration.auto_split && Frame_focus->window != NULL) {
-            Frame *const wrap = create_frame();
-            wrap->window = window;
-            split_frame(Frame_focus, wrap, false, Frame_focus->split_direction);
-            Frame_focus = wrap;
-        } else {
-            stash_frame(Frame_focus);
-            Frame_focus->window = window;
-            reload_frame(Frame_focus);
-        }
-        break;
-    }
-
-    /* the window has to show as floating window */
-    case WINDOW_MODE_FLOATING:
-        configure_floating_size(window);
-        break;
-
-    /* the window has to show as fullscreen window */
-    case WINDOW_MODE_FULLSCREEN:
-        configure_fullscreen_size(window);
-        break;
-
-    /* the window has to show as dock window */
-    case WINDOW_MODE_DOCK:
-        configure_dock_size(window);
-        break;
-
-    /* do nothing, the desktop window should know better */
-    case WINDOW_MODE_DESKTOP:
-        break;
-
-    /* not a real window mode */
-    case WINDOW_MODE_MAX:
-        break;
-    }
-}
-
 /* Synchronize the _NET_WM_ALLOWED_ACTIONS X property. */
 static void synchronize_allowed_actions(FcWindow *window)
 {
@@ -1168,39 +1083,20 @@ void set_window_mode(FcWindow *window, window_mode_t mode)
     } else {
         window->state.previous_mode = window->state.mode;
     }
-    window->state.mode = mode;
 
     if (window->state.is_visible) {
-        /* pop out from tiling layout */
-        if (window->state.previous_mode == WINDOW_MODE_TILING) {
-            /* make sure no shortcut is taken in `get_window_frame()` */
-            window->state.mode = WINDOW_MODE_TILING;
-            Frame *const frame = get_window_frame(window);
-            if (frame == NULL) {
-                /* code is broken */
-                LOG_DEBUG("this code path should not have been reached\n");
-                return;
-            }
-            window->state.mode = mode;
-
-            frame->window = NULL;
-            if (configuration.auto_remove ||
-                    configuration.auto_remove_void) {
-                /* do not remove a root */
-                if (frame->parent != NULL) {
-                    remove_frame(frame);
-                    destroy_frame(frame);
-                }
-            } else if (configuration.auto_fill_void) {
-                fill_void_with_stash(frame);
-            }
-        }
-
-        update_shown_window(window);
+        FcWindow *const focus = Window_focus;
+        Window_focus = NULL;
+        hide_window(window);
+        window->state.mode = mode;
+        show_window(window);
+        Window_focus = focus;
+    } else {
+        window->state.mode = mode;
     }
 
     /* update the window states */
-    if (mode == WINDOW_MODE_FULLSCREEN) {
+    if (window->state.mode == WINDOW_MODE_FULLSCREEN) {
         states[0] = ATOM(_NET_WM_STATE_FULLSCREEN);
         states[1] = ATOM(_NET_WM_STATE_MAXIMIZED_HORZ);
         states[2] = ATOM(_NET_WM_STATE_MAXIMIZED_VERT);
@@ -1224,7 +1120,83 @@ void show_window(FcWindow *window)
         return;
     }
 
-    update_shown_window(window);
+    switch (window->state.mode) {
+    /* the window has to become part of the tiling layout */
+    case WINDOW_MODE_TILING: {
+        Frame *frame;
+
+        frame = get_window_frame(window);
+        /* we never would want this to happen */
+        if (frame != NULL) {
+            LOG_ERROR("window %W is already in frame %F\n",
+                    window, frame);
+            reload_frame(frame);
+            break;
+        }
+
+        frame = get_frame_by_number(window->number);
+        if (frame != NULL) {
+            LOG("found frame %F matching the window id\n",
+                    frame);
+            (void) stash_frame(frame);
+            frame->window = window;
+            reload_frame(frame);
+            break;
+        }
+
+        if (configuration.auto_find_void) {
+            Monitor *monitor;
+
+            frame = find_frame_void(Frame_focus);
+            if (frame == NULL) {
+                monitor = get_focused_monitor();
+                frame = find_frame_void(monitor->frame);
+            }
+            if (frame != NULL) {
+                LOG("found a void to fill\n");
+
+                frame->window = window;
+                reload_frame(frame);
+                break;
+            }
+        }
+
+        if (configuration.auto_split && Frame_focus->window != NULL) {
+            Frame *const wrap = create_frame();
+            wrap->window = window;
+            split_frame(Frame_focus, wrap, false, Frame_focus->split_direction);
+            Frame_focus = wrap;
+        } else {
+            stash_frame(Frame_focus);
+            Frame_focus->window = window;
+            reload_frame(Frame_focus);
+        }
+        break;
+    }
+
+    /* the window has to show as floating window */
+    case WINDOW_MODE_FLOATING:
+        configure_floating_size(window);
+        break;
+
+    /* the window has to show as fullscreen window */
+    case WINDOW_MODE_FULLSCREEN:
+        configure_fullscreen_size(window);
+        break;
+
+    /* the window has to show as dock window */
+    case WINDOW_MODE_DOCK:
+        configure_dock_size(window);
+        break;
+
+    /* do nothing, the desktop window should know better */
+    case WINDOW_MODE_DESKTOP:
+        break;
+
+    /* not a real window mode */
+    case WINDOW_MODE_MAX:
+        break;
+    }
 
     window->state.is_visible = true;
 }
@@ -1244,11 +1216,6 @@ void hide_window(FcWindow *window)
         Frame *pop;
 
         frame = get_window_frame(window);
-        if (frame == NULL) {
-            /* code is broken */
-            LOG_DEBUG("this code path should not have been reached\n");
-            break;
-        }
 
         pop = pop_stashed_frame();
 

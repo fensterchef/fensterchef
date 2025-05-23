@@ -1249,7 +1249,8 @@ static unsigned validate_inner_windows(Frame *frame)
             validate_inner_windows(frame->right);
     } else if (frame->window != NULL) {
         if (frame->window->reference.id == None ||
-                frame->window->state.is_visible) {
+                frame->window->state.is_visible ||
+                frame->window->state.mode != WINDOW_MODE_TILING) {
             dereference_window(frame->window);
             frame->window = NULL;
             return 0;

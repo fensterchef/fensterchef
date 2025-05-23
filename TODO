@@ -10,17 +10,6 @@ M - Maintenance
 [Done] - Finished tasks
 
 [Tasks]
-#71 Make generic menu item chooser
-    Abstract parts of the window list away to make more choose menus like an
-    application launcher.  Make a single window that can hold many lists which
-    are switchable.  This could be a file viewer, application launcher or the
-    window list.
-
-#107 ? Add window mode descriptions
-    Add a format to describe window modes.  For example whether they can
-    move/resize or their identifying letter, what kind of border they have.
-    This could then also be configurable.
-
 #112 M Make memory pool for action lists
     There should be a pool for action lists so the memory is managed more
     properly.  This should get its own file.
@@ -47,6 +36,12 @@ M - Maintenance
     Make an additional repository that hosts fensterland
 
 [In Progress]
+#71 Make generic menu item chooser
+    Abstract parts of the window list away to make more choose menus like an
+    application launcher.  Make a single window that can hold many lists which
+    are switchable.  This could be a file viewer, application launcher or the
+    window list.
+
 #117 Write test code
     Write test code for... everything
 
@@ -173,6 +168,11 @@ M - Maintenance
 #63 ? Replace deletion of atom with setting of another
     When a command is sent via the FENSTERCHEF_COMMAND atom, it is currently
     deleted. Instead, set FENSTERCHEF_RETURN on the window.
+
+#107 ? Add window mode descriptions
+    Add a format to describe window modes.  For example whether they can
+    move/resize or their identifying letter, what kind of border they have.
+    This could then also be configurable.
 
 [Done]
 #9 Add maintainability macros

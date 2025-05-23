@@ -310,9 +310,10 @@ inline Monitor *get_monitor_containing_window(FcWindow *window)
 {
     if (window->state.mode == WINDOW_MODE_TILING) {
         return get_monitor_containing_frame(get_window_frame(window));
+    } else {
+        return get_monitor_from_rectangle_or_primary(window->x, window->y,
+                window->width, window->height);
     }
-    return get_monitor_from_rectangle_or_primary(window->x, window->y,
-            window->width, window->height);
 }
 
 /* Get the focused monitor. */
