@@ -1,0 +1,215 @@
+# Fensterchef version 2.0 configuration options #
+
+## Default settings ##
+
+# Automatically resize frames
+auto equalize true
+
+# Automatically fill empty frames created
+auto fill void true
+
+# Automatically look for empty frames to fill
+auto find void false
+
+# Automatically remove a frame when its window is closed
+auto remove false
+
+# Automatically remove empty frames when they appear implicitly
+auto remove void false
+
+# Automatically split a frame when a window is shown
+auto split false
+
+
+# Set the font used for fensterchef windows
+font monospace
+
+# Set the text color
+foreground #7fd0f1
+
+# Set the background color of fensterchef windows
+background #49494d
+
+# Set the offset within text rendered in fensterchef windows
+text padding 6
+
+
+# Set the border color of active windows
+border color active #939388
+
+# Set the border color of focused windows
+border color focus #7fd0f1
+
+# Set the color of inactive/unfocused windows
+border color #49494d
+
+# Set the size of borders
+border size 2
+
+
+# Set the cursor used on the root window
+cursor root left_ptr
+
+# Set the cursor used for moving windows
+cursor moving fleur
+
+# Set the cursor used for sizing horizontally
+cursor horizontal sb_h_double_arrow
+
+# Set the cursor used for sizing vertically
+cursor vertical sb_v_double_arrow
+
+# Set the cursor used for sizing window corners
+cursor sizing sizing
+
+
+# Set the gaps between frames
+gaps inner 4 4 4 4
+
+# Set the gaps between frames and monitors
+gaps outer 0 0 0 0 
+
+# Set the duration a notification window should stay for
+notification duration 2
+
+# When to count a window as overlapping a a monitor
+overlap 80%
+
+
+## Example relations ##
+
+# Make all firefox windows floating after the main window has openend
+relate Navigator, firefox (
+    set floating, focus window
+    unrelate
+    relate firefox set floating, focus window
+)
+
+
+## Default bindings ##
+
+# Set the ignored modifiers
+modifiers ignore Lock + Mod2
+
+# Modifier
+alias mod = Mod4
+
+# Move/Resize windows
+mod+LeftButton initiate resize
+
+# Hide a window
+mod+MiddleButton minimize window
+
+# Move a window
+mod+RightButton initiate move
+
+# Reload this configuration file
+mod+Shift+r reload configuration
+
+# Focus the parent frame
+mod+a focus parent
+
+# Focus the child frame
+mod+b focus child
+
+# Focus the root frame
+mod+Shift+a focus root
+
+# Equalize all child frames
+mod+equal equalize
+
+# Close the focused window
+mod+q close window
+
+# Hide the focused window
+mod+minus minimize window
+
+# Show the next window in the tiling
+mod+n show next window
+# Show the previous window in the tiling
+mod+p show previous window
+
+# Remove the focused frame
+mod+r remove
+
+# Pop a frame from the frame stash
+mod+o pop stash
+
+# Focus from tiling to non tiling and vise versa
+mod+space toggle focus
+
+# Toggle between tiling and the previous mode
+mod+Shift+space toggle tiling
+
+# Toggle between fullscreen and the previous mode
+mod+f toggle fullscreen
+
+# Split a frame
+mod+v split horizontally
+mod+s split vertically
+
+# Move between frames
+mod+k focus up
+mod+h focus left
+mod+l focus right
+mod+j focus down
+
+mod+Up focus up
+mod+Left focus left
+mod+Right focus right
+mod+Down focus down
+
+# Exchange frames
+mod+Shift+k exchange up
+mod+Shift+h exchange left
+mod+Shift+l exchange right
+mod+Shift+j exchange down
+
+mod+Shift+Up exchange up
+mod+Shift+Left exchange left
+mod+Shift+Right exchange right
+mod+Shift+Down exchange down
+
+# Show the interactive window list
+mod+w show list
+
+# Start a terminal
+mod+Return run '[ -n "$TERMINAL" ] && exec "$TERMINAL" || exec xterm'
+
+# Window resizing group
+group resize (
+    h resize window by -1% 0
+    j resize window by 0 -1%
+    k resize window by 0 1%
+    l resize window by 1% 0
+    
+    q ungroup resize
+    Escape ungroup resize
+)
+mod+Control+r call resize
+
+# Application launcher
+mod+m run menu.sh
+
+# Pulseaudio volume control
+group volume show run volume.sh
+XF86AudioRaiseVolume run "pactl set-sink-volume @DEFAULT_SINK@ +5%", call volume
+XF86AudioLowerVolume run "pactl set-sink-volume @DEFAULT_SINK@ -5%", call volume
+Control+XF86AudioRaiseVolume run "pactl set-sink-volume @DEFAULT_SINK@ +15%", call volume
+Control+XF86AudioLowerVolume run "pactl set-sink-volume @DEFAULT_SINK@ -15%", call volume
+Shift+XF86AudioRaiseVolume run "pactl set-sink-volume @DEFAULT_SINK@ +1%", call volume
+Shift+XF86AudioLowerVolume run "pactl set-sink-volume @DEFAULT_SINK@ -1%", call volume
+XF86AudioMute run "pactl set-sink-mute @DEFAULT_SINK@ toggle"
+XF86AudioMicMute run "pactl set-source-mute @DEFAULT_SOURCE@ toggle"
+
+# Screenshots
+F12 run "screencast.sh -a -i -r Screenshots"
+Shift+F12 run "screencast.sh -i -r Screenshots"
+Shift+F11 run "screencast.sh -r Screenshots"
+Control+Shift+F11 run "pkill ffmpeg"
+
+# Quit fensterchef
+mod+Control+Shift+e quit
+
+# Show a message that the configuration was loaded
+show message "Configuration reloaded"
