@@ -29,15 +29,18 @@ all steps first before going into it):
 
 ### General
 
+- It is highly recommend to at least try fensterchef for yourself and read the
+  guide at: https://fensterchef.org/wm.html
+
 - You will need GNU make, git and a unix shell
 - Clone the repository using `git clone
   https://github.com/fensterchef/fensterchef`
 - Install `gdb` and `Xephyr`
-- Build and run the program using `make -f build/GNUmakefile sandbox`
+- Build and run the program using `make sandbox`
 - Use `Ctrl+Shift` to let `Xephyr` grab the keyboard and use some key bindings,
-  try to open a few terminals (`Super+Return`) and try to use the window list
-  to view a list of all windows (`Super+w`)
-- Use `Super+Ctrl+Shift+e` to quit
+  try to open a few terminals (`Mod4+Return`) and try to use the window list
+  to view a list of all windows (`Mod4+w`)
+- Use `Mod4+Ctrl+Shift+e` to quit
 - Investigate the log to see the inner workings of fensterchef
 - Go to `src/main.c` which shows the entire startup sequence of fensterchef
 - Note that `.h` files always have a verbose description of a function whereas
@@ -56,14 +59,24 @@ Windows were designed to be a very easy to use abstractions.  You can do for
 example `window->x = 8` and this will automatically synchronize the window X
 position with the X server on the next event cycle.
 
+Windows are linked into quite a few lists:
+- Age list: When the window was added
+- Stacking list: How the window is positioned relative to other windows on the
+  Z axis
+- Server stacking list: How the server currently sees the stacking list
+- Number linked list: The windows sorted by their number
+
 - Go to `src/event.c` to see how a few X events are handled, most importantly:
   - `handle_map_request()`
   - `handle_property_notify()`
 - Go to `src/window.c` to see how we wrap around X windows
-- Go to `src/window_properties.c` to see how window modes are determined based
-  off the X atoms and how the X atoms are kept in sync with the X server
-- Go to `src/window_state.c` to see how the different window modes like tiling,
-  floating etc. are implemented
+  - read through `create_window()`
+  - the file is separated in sections indicated by:
+    ```
+    ###########
+    # Section #
+    ###########
+    ```
 
 ### Frame management
 
@@ -71,63 +84,32 @@ Frames are used to partition the screen space.  Each frame can be split into two
 sub frames.  The parent remains and is wrapped around the children.
 The children share the parent space.
 
-- Remember how `src/window_state.c` shows and hides tiling windows
-- Go to `src/frame.c` to see how frames are set up, using `create_frame()` gets
-  a completely usable and valid frame and no further setup is needed
-- All other functions are helper functions to manage frames, refer to the
-  comments describing them in `include/frame.h`
-- Go to `src/frame_splitting.c` to see how frames are split in two and
-  unsplitted
-- Note that unlike windows, doing `frame->x = 8` visibly does not change
-  anything.  In addition, you must call `reload_frame(frame)` to also size the
-  inner window.  To size the inner children, use `resize_frame(frame, x, y,
-  width, height)` from `include/frame_sizing.h`
-- Go to `src/frame_sizing.c` to see how frames are sized and how when parents
-  are resized, recursively resize their children
-- Go to `src/frame_moving.c` to see how frames are moved around the tiling
-  layout and how we get from one frame to another
-- Go to `src/frame_stashing.c` to see how frames are stashed, stashed frames are
-  simply off-screen frames
+The `src/frame.c` file has all related to frames.
+
+Just like the window file, you can also find the separation in sections.
 
 ### X client management
 
-Calling any functions (besides changing the stacking order) does not synchronize
-with the X server.  This approach was chosen to have a high tolerance against
-back and forth changes, making it easy to write new functions using existing
-functions.
+Calling any functions does not synchronize with the X server.
+This approach was chosen to have a high tolerance against back and forth
+changes, making it easy to write new functions using existing functions.
 
-- Go to `src/x11_management.c`.  Here the connection is initialized to the X
+We do not really separate between x11 and our code but a lot of x11 heavy
+lifting is done by `src/x11/*`.
+
+- Go to `src/x11/display.c`.  Here the connection is initialized to the X
   server.  We use the convenient `XkbOpenDisplay()` which does some Xkb version
-  checks for us
+  checks for us.
 - Go back to `src/event.c` and look at `next_cycle()`.  This is the heart of
   the event loop and synchronizes all that has happened with the X server using
-  `synchronize_with_server()`
+  `synchronize_with_server()`.  This function can be found in
+  `src/x11/synchronize.c`.
 
 ### Configuration
 
-The configuration parser is split into a stream reader and the actual parser.
-Both are global variables (`input_stream` and `parser` (which may need to be
-renamed?)).
-
-- Go to `src/configuration/action.c`.  This is where all actions the user can
-  use are defined.  The parser will use the action strings to figure out which
-  action is used.
-- Go to `src/configuration/stream.c`.  A stream is initialized from a file or
-  string.  When it is a file, the entire file is read into memory.  The stream
-  already skips over comments (lines starting with `#`) and handles escaped line
-  endings which are denoted by (regex) `\n\s*\\`.
-- Take note of the parser struct in `include/configuration/parse_struct.h`.
-- Go to `src/configuration/parse.c`.  `parse_stream()` is the base function that
-  starts the parsing process.  We use a try-catch mechanism using `setjmp.h`.
-  The parser branches off into either action parsing and if no word starts with
-  the word, binding parsing.  If there is a starting ", then an association is
-  parsed.  Then binding and association parser then also go into the action
-  parser.
-- Go to `src/configuration/parse_action.c`.  Actions are parsed by finding those
-  actions whose prefix matches the current series of read strings.  Note that
-  strings refer to quoted strings but also just regular words.
-- Go to `src/configuration/default.c`.  This has the default configuration.  It
-  is embedded in the executable.
+The configuration parser is split into sections within `src/parse/*`.
+In each header file you can find the purpose of the file at the top.
+All actions the parser understands are defined in `include/bits/actions.h`.
 
 ### Miscalleneous
 
@@ -135,7 +117,7 @@ These are files used to extend fensterchef and implement core utility features
 
 #### Utility
 
-- See [https://gitlab.com/thepsauce/c-utility](c-utility)
+- See [https://gitlab.com/thepsauce/c99-utility](c99-utility)
 
 #### Logging
 
@@ -156,7 +138,7 @@ These are files used to extend fensterchef and implement core utility features
 
 #### Window list
 
-- Go to `src/window_list` to see how the window list is initialized on demand
+- Go to `src/window_list.c` to see how the window list is initialized on demand
   and how it behaves
 
 #### Notification window
@@ -165,7 +147,7 @@ These are files used to extend fensterchef and implement core utility features
 
 #### Program options
 
-- Go to `src/program_options.c` to see what program options are handled.  There
+- Go to `src/main.c` to see what program options are handled.  There
   is a simple parser for the command line
 
 ## Notable files
@@ -188,14 +170,14 @@ These are files used to extend fensterchef and implement core utility features
 We use `GNU make` for debug building and a wide range unix compatible make
 script for the release build.
 
-The `build/GNUmakefile` is the main tool for development, it has the following
+The `GNUmakefile` is the main tool for development, it has the following
 "targets":
 
 - `build` builds the entire project and puts the object files in `build/` and
   the executable in `build/fensterchef`
 - `sandbox` builds and starts `Xephyr` with fensterchef running
-  privileges)
-- `clean` removes the `build/` and `release/` directories
+- `gdb-sandbox` is the same as `sandbox` but runs with `gdb`
+- `clean` removes the `build/` directory
 
 ## What now
 
@@ -215,44 +197,34 @@ yet initialized.  Or use monitor management functions without having called
 I want to keep this brief as I find it be be no problem if syntax is different
 from the current fensterchef core.  But some guidelines to keep the code clean:
 - Never use `//` comments
-
 - Keep all ISO C99.  No compiler warnings/errors allowed.
-
 - Use verbose function and variable names.  The convention used for function
   names is that they are a readable english sentence starting with a verb
   excluding any "the" or "a".  Use snake case.  An exception is the english
   "of" construct, e.g.:
   - "set the size of a window" -> `set_window_size`
-
   - "get the frame of a window" -> `get_window_frame`
-
   - "get a hash of an integer" -> `get_integer_hash`
 
   More examples:
   - "seek through a set" -> `seek_through_set`
-
   - "start reading a file and wait until this is called again":
     `start_reading_file_and_wait` (although there is usually a good way to
     abbreviate these painfully long names) ->
     `read_file_asynchronously` (and describe the function in its declaration)
 
 - We like global variables but give them very verbose names
-
 - Before declaring a typedef, it must have this condition:
   They have a create function to allocate them as fake class objects, for
-  example the `FcWindow` or `Frame` typedef.  Always make them in pascal case
+  example the `FcWindow` or `Frame` typedef.  Always make them in pascal case.
 
 - Comment your code!!  This includes:
   - No comment after a `;`.  Keep them above the thing they describe.
-
   - Comments must always give new information and not re-iterate what is clear
-    from the code
-
-  - Comment assumptions you make that are not clear from the context
-
+    from the code.
+  - Comment assumptions you make that are not directly clear from the context.
   - ALWAYS comment any kind of declaration like struct/function declarations,
     enum constants or `#define` macros.
-
   - Function declarations must be very descriptive.  Describe what arguments
     have special behavior or what the return value means.  We use this syntax:
     ```
@@ -269,9 +241,7 @@ from the current fensterchef core.  But some guidelines to keep the code clean:
      */
      int make_an_example(int param1, int param2);
      ```
-
   - Comment above function implementations (short description)
-
   - Optionally comment above case labels and major statements (for, while,
     switch, case, ...) if they are complicated.
 
