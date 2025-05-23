@@ -1,56 +1,36 @@
 #include "core/window.h"
 #include "parse/action.h"
+#include "parse/input.h"
 #include "parse/parse.h"
 #include "parse/top.h"
 #include "parse/utility.h"
 
-/* Modifies @parser->string and then splits it in two and stores two allocated
- * strings in @class.
- */
-static void resolve_class_string(Parser *parser,
+/* Read an optional ", CLASS" after reading a string. */
+static void read_class_string(Parser *parser,
         struct window_relation *relation)
 {
-    utf8_t *next, *separator;
-    size_t length;
-    unsigned backslash_count;
+    utf8_t *pattern;
 
-    /* separate the parser string into instance and class */
-    next = parser->string;
-    length = parser->string_length;
-    /* handle any comma "," that is escaped by a backslash "\" */
-    do {
-        separator = memchr(next, ',', length);
-        if (separator == NULL) {
-            break;
+    pattern = xstrdup(parser->string);
+
+    skip_blanks(parser);
+    if (peek_stream_character(parser) == ',') {
+        /* skip ',' */
+        (void) get_stream_character(parser);
+
+        if (read_string(parser) != OK) {
+            emit_parse_error(parser,
+                    "expected class name");
+            relation->class_pattern = NULL;
+        } else {
+            relation->class_pattern = xstrdup(parser->string);
         }
 
-        length -= separator - next + 1;
-        next = separator + 1;
-
-        backslash_count = 0;
-        for (; separator > parser->string; separator--) {
-            if (separator[-1] != '\\') {
-                break;
-            }
-            backslash_count++;
-        }
-
-        if (backslash_count % 2 == 1) {
-            /* remove a backslash \ */
-            parser->string_length--;
-            MOVE(separator, separator + 1,
-                    &parser->string[parser->string_length] - separator);
-            continue;
-        }
-    } while (0);
-
-    if (separator == NULL) {
-        relation->instance_pattern = xstrdup("*");
+        relation->instance_pattern = pattern;
     } else {
-        relation->instance_pattern =
-            xstrndup(parser->string, separator - parser->string);
+        relation->instance_pattern = xstrdup("*");
+        relation->class_pattern = pattern;
     }
-    relation->class_pattern = xstrndup(next, length);
 }
 
 /* Parse the next assigment in the active stream. */
@@ -68,7 +48,7 @@ void continue_parsing_relation(Parser *parser,
         return;
     }
 
-    resolve_class_string(parser, &relation);
+    read_class_string(parser, &relation);
 
     ZERO(&sub_list, 1);
     if (parse_top(parser, &sub_list) != OK) {
@@ -108,7 +88,7 @@ void continue_parsing_unrelate(Parser *parser,
         item.data_count = 0;
         LIST_APPEND_VALUE(list->items, item);
     } else {
-        resolve_class_string(parser, &relation);
+        read_class_string(parser, &relation);
 
         ZERO(&relation.actions, 1);
 

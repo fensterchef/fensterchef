@@ -35,12 +35,15 @@ M - Maintenance
     launcher.  Add default bindings for pulseaudio control in the configuration
     file that will be supplied.
 
-#129 ...
+#129 Add action to focus specific monitor
+    Make an action to focus a specific monitor
 
-#130 Add bar
+#130 ...
+
+#150 Add bar
     I just want to try this and see how it goes to learn about bars.
 
-#150 Add custom window borders
+#180 Add custom window borders
     Yes, it is happening soon...
     Use the shape extension for very advanced graphical beauties
 
@@ -59,9 +62,6 @@ M - Maintenance
 [In Progress]
 #117 Write test code
     Write test code for... everything
-
-#128 Change parser for relations
-    The relation parser should look for the comma token
 
 #96 New auto fill void
     When a window is opened and there is an empty frame on the monitor with the
@@ -603,3 +603,6 @@ M - Maintenance
 
 #127 Allow center window to for tiling windows
     Tiling windows should then be placed in the center of given monitor
+
+#128 Change parser for relations
+    The relation parser should look for the comma token

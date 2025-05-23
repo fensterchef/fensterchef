@@ -99,7 +99,7 @@ static bool is_word_character(int character)
             character == '{' || character == '}' ||
             character == '[' || character == ']' ||
             character == '&' || character == '|' ||
-            character == '+' || character == '*' || character == '=') {
+            character == '+' || character == '=') {
         return false;
     }
 
