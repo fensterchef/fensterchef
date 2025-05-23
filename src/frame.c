@@ -390,25 +390,8 @@ Frame *get_below_frame(Frame *frame)
     return get_right_or_below_frame(frame, FRAME_SPLIT_VERTICALLY);
 }
 
-/* Get the most left within @frame. */
-Frame *get_most_left_leaf_frame(Frame *frame, int y)
-{
-    while (frame->left != NULL) {
-        if (frame->split_direction == FRAME_SPLIT_VERTICALLY) {
-            if (frame->left->y + (int) frame->left->height >= y) {
-                frame = frame->left;
-            } else {
-                frame = frame->right;
-            }
-        } else {
-            frame = frame->left;
-        }
-    }
-    return frame;
-}
-
-/* Get the frame at the top within @frame. */
-Frame *get_top_leaf_frame(Frame *frame, int x)
+/* Get a child frame of @frame that is positioned according to @x and @y. */
+Frame *get_best_leaf_frame(Frame *frame, int x, int y)
 {
     while (frame->left != NULL) {
         if (frame->split_direction == FRAME_SPLIT_HORIZONTALLY) {
@@ -418,93 +401,14 @@ Frame *get_top_leaf_frame(Frame *frame, int x)
                 frame = frame->right;
             }
         } else {
-            frame = frame->left;
-        }
-    }
-    return frame;
-}
-
-/* Get the most right frame within @frame. */
-Frame *get_most_right_leaf_frame(Frame *frame, int y)
-{
-    while (frame->left != NULL) {
-        if (frame->split_direction == FRAME_SPLIT_VERTICALLY) {
             if (frame->left->y + (int) frame->left->height >= y) {
                 frame = frame->left;
             } else {
                 frame = frame->right;
             }
-        } else {
-            frame = frame->right;
         }
     }
     return frame;
-}
-
-/* Get the frame at the bottom within @frame. */
-Frame *get_bottom_leaf_frame(Frame *frame, int x)
-{
-    while (frame->left != NULL) {
-        if (frame->split_direction == FRAME_SPLIT_HORIZONTALLY) {
-            if (frame->left->x + (int) frame->left->width >= x) {
-                frame = frame->left;
-            } else {
-                frame = frame->right;
-            }
-        } else {
-            frame = frame->right;
-        }
-    }
-    return frame;
-}
-
-/* Utility function for moving frames.
- *
- * @original is the frame that should be moved
- * @frame is the frame to split off from
- */
-static void resplit_frame(Frame *frame, Frame *original, bool is_left_split,
-        frame_split_direction_t direction)
-{
-    /* If they have the same parent, then `remove_frame()` would
-     * invalidate the `frame` pointer.  We would need to split off
-     * the parent.
-     */
-    if (frame->parent != NULL && frame->parent == original->parent) {
-        frame = frame->parent;
-    }
-
-    if (is_frame_void(frame)) {
-        LOG_DEBUG("splitting off a void\n");
-
-        /* case S1 */
-        if (Frame_focus == original) {
-            Frame_focus = frame;
-        }
-        replace_frame(frame, original);
-        /* do not destroy root frames */
-        if (original->parent != NULL) {
-            remove_frame(original);
-            destroy_frame(original);
-        }
-    } else {
-        LOG_DEBUG("splitting off a normal frame\n");
-
-        const bool refocus = Frame_focus == original;
-        if (original->parent == NULL) {
-            /* make a wrapper around the root */
-            Frame *const new = create_frame();
-            replace_frame(new, original);
-            original = new;
-        } else {
-            /* disconect the frame from the layout */
-            remove_frame(original);
-        }
-        split_frame(frame, original, is_left_split, direction);
-        if (refocus) {
-            Frame_focus = is_left_split ? frame->left : frame->right;
-        }
-    }
 }
 
 /* Move @frame up or to the left.
@@ -564,11 +468,13 @@ static bool move_frame_up_or_left(Frame *frame,
             if (frame->left != NULL) {
                 /* case 2, 5 */
                 if (direction == FRAME_SPLIT_HORIZONTALLY) {
-                    frame = get_most_right_leaf_frame(frame,
+                    frame = get_best_leaf_frame(frame,
+                            INT_MAX,
                             original->y + original->height / 2);
                 } else {
-                    frame = get_bottom_leaf_frame(frame,
-                            original->x + original->width / 2);
+                    frame = get_best_leaf_frame(frame,
+                            original->x + original->width / 2,
+                            INT_MAX);
                 }
             } else {
                 /* case 4 */
@@ -654,11 +560,13 @@ static bool move_frame_down_or_right(Frame *frame,
             if (frame->left != NULL) {
                 /* case 2, 5 */
                 if (direction == FRAME_SPLIT_HORIZONTALLY) {
-                    frame = get_most_right_leaf_frame(frame,
+                    frame = get_best_leaf_frame(frame,
+                            INT_MAX,
                             original->y + original->height / 2);
                 } else {
-                    frame = get_bottom_leaf_frame(frame,
-                            original->x + original->width / 2);
+                    frame = get_best_leaf_frame(frame,
+                            original->x + original->width / 2,
+                            INT_MAX);
                 }
             } else {
                 /* case 4 */
@@ -1081,6 +989,51 @@ void equalize_frame(Frame *frame, frame_split_direction_t direction)
  * Frame splitting *
  *******************/
 
+/* Move a frame to another position in the tree. */
+void resplit_frame(Frame *frame, Frame *original, bool is_left_split,
+        frame_split_direction_t direction)
+{
+    /* If they have the same parent, then `remove_frame()` would
+     * invalidate the `frame` pointer.  We would need to split off
+     * the parent.
+     */
+    if (frame->parent != NULL && frame->parent == original->parent) {
+        frame = frame->parent;
+    }
+
+    if (is_frame_void(frame)) {
+        LOG_DEBUG("splitting off a void\n");
+
+        /* case S1 */
+        if (Frame_focus == original) {
+            Frame_focus = frame;
+        }
+        replace_frame(frame, original);
+        /* do not destroy root frames */
+        if (original->parent != NULL) {
+            remove_frame(original);
+            destroy_frame(original);
+        }
+    } else {
+        LOG_DEBUG("splitting off a normal frame\n");
+
+        const bool refocus = Frame_focus == original;
+        if (original->parent == NULL) {
+            /* make a wrapper around the root */
+            Frame *const new = create_frame();
+            replace_frame(new, original);
+            original = new;
+        } else {
+            /* disconnect the frame from the layout */
+            remove_frame(original);
+        }
+        split_frame(frame, original, is_left_split, direction);
+        if (refocus) {
+            Frame_focus = is_left_split ? frame->left : frame->right;
+        }
+    }
+}
+
 /* Split a frame horizontally or vertically. */
 void split_frame(Frame *split_from, Frame *other, bool is_left_split,
         frame_split_direction_t direction)
@@ -1189,29 +1142,9 @@ void remove_frame(Frame *frame)
 
     /* do not leave behind broken focus */
     if (Frame_focus == frame || Frame_focus == other) {
-        Frame *new;
-
-        const int x = parent->x + parent->width / 2;
-        const int y = parent->y + parent->height / 2;
-        new = parent;
-        /* move down the parent to find the most centered new frame to focus */
-        while (new->left != NULL) {
-            if (new->split_direction == FRAME_SPLIT_HORIZONTALLY) {
-                if (new->left->x + (int) new->left->width >= x) {
-                    new = new->left;
-                } else {
-                    new = new->right;
-                }
-            } else {
-                if (new->left->y + (int) new->left->height >= y) {
-                    new = new->left;
-                } else {
-                    new = new->right;
-                }
-            }
-        }
-
-        Frame_focus = new;
+        Frame_focus = get_best_leaf_frame(parent,
+                parent->x + parent->width / 2,
+                parent->y + parent->height / 2);
     }
 
     if (configuration.auto_equalize) {
@@ -1305,7 +1238,7 @@ Frame *stash_frame(Frame *frame)
     return stash;
 }
 
-/* Unlinks given @frame from the stash linked list. */
+/* Unlink given @frame from the stash linked list. */
 void unlink_frame_from_stash(Frame *frame)
 {
     Frame *previous;
@@ -1324,7 +1257,7 @@ void unlink_frame_from_stash(Frame *frame)
     show_and_dereference_inner_windows(frame);
 }
 
-/* Frees @frame and all child frames. */
+/* Free @frame and all child frames. */
 static void free_frame_recursively(Frame *frame)
 {
     if (frame->left != NULL) {
@@ -1342,9 +1275,9 @@ Frame *pop_stashed_frame(void)
 {
     Frame *pop = NULL;
 
-    /* find the first valid frame in the pop list, it might be that a stashed
-     * frame got invalidated because it lost all inner window and is now
-     * completely empty
+    /* Find the first valid frame in the pop list.  It might be that a stashed
+     * frame got invalidated because it lost all inner windows and is now
+     * completely empty.
      */
     while (Frame_last_stashed != NULL) {
         if (validate_inner_windows(Frame_last_stashed) > 0 ||
@@ -1366,7 +1299,7 @@ Frame *pop_stashed_frame(void)
     return pop;
 }
 
-/* Puts a frame from the stash into given @frame. */
+/* Put a frame from the stash into given @frame. */
 void fill_void_with_stash(Frame *frame)
 {
     Frame *pop;

@@ -272,7 +272,8 @@ static bool move_to_above_frame(Frame *relative, bool do_exchange)
         return false;
     }
 
-    frame = get_bottom_leaf_frame(frame, relative->x + relative->width / 2);
+    frame = get_best_leaf_frame(frame,
+            relative->x + relative->width / 2, INT_MAX);
     move_to_frame(relative, frame, do_exchange);
     return true;
 }
@@ -305,8 +306,8 @@ static bool move_to_left_frame(Frame *relative, bool do_exchange)
         return false;
     }
 
-    frame = get_most_right_leaf_frame(frame,
-            relative->y + relative->height / 2);
+    frame = get_best_leaf_frame(frame,
+            INT_MAX, relative->y + relative->height / 2);
     move_to_frame(relative, frame, do_exchange);
     return true;
 }
@@ -339,7 +340,8 @@ static bool move_to_right_frame(Frame *relative, bool do_exchange)
         return false;
     }
 
-    frame = get_most_left_leaf_frame(frame, relative->y + relative->height / 2);
+    frame = get_best_leaf_frame(frame,
+            INT_MIN, relative->y + relative->height / 2);
     move_to_frame(relative, frame, do_exchange);
     return true;
 }
@@ -372,7 +374,8 @@ static bool move_to_below_frame(Frame *relative, bool do_exchange)
         return false;
     }
 
-    frame = get_top_leaf_frame(frame, relative->y + relative->height / 2);
+    frame = get_best_leaf_frame(frame,
+            INT_MIN, relative->y + relative->height / 2);
     move_to_frame(relative, frame, do_exchange);
     return true;
 }
@@ -545,10 +548,25 @@ void do_action(action_type_t type, const struct parse_data *data)
             break;
         }
 
-        set_window_size(window,
-                monitor->x + (monitor->width - window->width) / 2,
-                monitor->y + (monitor->height - window->height) / 2,
-                window->width, window->height);
+        if (window->state.mode == WINDOW_MODE_TILING) {
+            Frame *frame, *center;
+
+            frame = get_window_frame(window);
+
+            center = monitor->frame;
+            center = get_best_leaf_frame(center,
+                    center->x + center->width / 2,
+                    center->y + center->height / 2);
+
+            if (center != frame) {
+                resplit_frame(center, frame, false, FRAME_SPLIT_HORIZONTALLY);
+            }
+        } else {
+            set_window_size(window,
+                    monitor->x + (monitor->width - window->width) / 2,
+                    monitor->y + (monitor->height - window->height) / 2,
+                    window->width, window->height);
+        }
         break;
     }
 

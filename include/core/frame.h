@@ -12,6 +12,7 @@
  */
 
 #include <stdbool.h>
+#include <limits.h>
 
 #include "bits/frame.h"
 #include "bits/window.h"
@@ -193,41 +194,22 @@ Frame *get_right_frame(Frame *frame);
 /* Get the frame below @frame. */
 Frame *get_below_frame(Frame *frame);
 
-/* Get the most left within @frame.
+/* Get a child frame of @frame that is positioned according to @x and @y.
  *
- * @frame can not be NULL.
- * @y is a hint so that the best frame is picked if more are most left.
- *
- * @return always a leaf frame and never NULL.
+ * Examples:
+ * Getting a centered frame:
+ *     get_best_leaf_frame(frame,
+ *             frame->x + frame->width / 2,
+ *             frame->y + frame->height / 2);
+ * Getting the most left/right frame:
+ *     get_best_leaf_frame(frame,
+ *             INT_MIN,
+ *             frame->y + frame->height / 2);
+ *     get_best_leaf_frame(frame,
+ *             INT_MAX,
+ *             frame->y + frame->height / 2);
  */
-Frame *get_most_left_leaf_frame(Frame *frame, int y);
-
-/* Get the frame at the top within @frame.
- *
- * @frame can not be NULL.
- * @x is a hint so that the best frame is picked if more are at the most above.
- *
- * @return always a leaf frame and never NULL.
- */
-Frame *get_top_leaf_frame(Frame *frame, int x);
-
-/* Get the most right frame within @frame.
- *
- * @frame can not be NULL.
- * @y is a hint so that the best frame is picked if more are most right.
- *
- * @return always a leaf frame and never NULL.
- */
-Frame *get_most_right_leaf_frame(Frame *frame, int y);
-
-/* Get the frame at the bottom within @frame.
- *
- * @frame can not be NULL.
- * @x is a hint so that the best frame is picked if more are at the most bottom.
- *
- * @return always a leaf frame and never NULL.
- */
-Frame *get_bottom_leaf_frame(Frame *frame, int x);
+Frame *get_best_leaf_frame(Frame *frame, int x, int y);
 
 /* The `move_frame_XXX()` functions work analogous.  Here is an illustration:
  * +-----+---+---+---+
@@ -310,6 +292,14 @@ int bump_frame_edge(Frame *frame, frame_edge_t edge, int amount);
  * direction.
  */
 void equalize_frame(Frame *frame, frame_split_direction_t direction);
+
+/* Move a frame to another position in the tree.
+ *
+ * @original is the frame that should be moved.
+ * @frame is the frame to split off from.
+ */
+void resplit_frame(Frame *frame, Frame *original, bool is_left_split,
+        frame_split_direction_t direction);
 
 /* Split a frame horizontally or vertically.
  *

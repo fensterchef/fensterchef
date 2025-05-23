@@ -21,11 +21,6 @@ M - Maintenance
     to be made that set these individual settings.  Whether a setting is
     individual or not has to be stored within the window.
 
-#96 New auto fill void
-    When a window is opened and there is an empty frame on the monitor with the
-    current frame, open the window in that empty frame.  Make a configurable
-    option for this.
-
 #107 ? Add window mode descriptions
     Add a format to describe window modes.  For example whether they can
     move/resize or their identifying letter, what kind of border they have.
@@ -40,7 +35,7 @@ M - Maintenance
     launcher.  Add default bindings for pulseaudio control in the configuration
     file that will be supplied.
 
-#127 ...
+#129 ...
 
 #130 Add bar
     I just want to try this and see how it goes to learn about bars.
@@ -64,6 +59,14 @@ M - Maintenance
 [In Progress]
 #117 Write test code
     Write test code for... everything
+
+#128 Change parser for relations
+    The relation parser should look for the comma token
+
+#96 New auto fill void
+    When a window is opened and there is an empty frame on the monitor with the
+    current frame, open the window in that empty frame.  Make a configurable
+    option for this.
 
 [Recheck]
 #45 ! Fix weird flicker of Steam window
@@ -597,3 +600,6 @@ M - Maintenance
 #118 Add [keycode] syntax to parser
     [keycode] seems like a logical syntax as it means "key at index" which
     essentially is the key code.  This should replace the old way.
+
+#127 Allow center window to for tiling windows
+    Tiling windows should then be placed in the center of given monitor
