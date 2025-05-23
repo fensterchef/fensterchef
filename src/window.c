@@ -1015,8 +1015,6 @@ static void synchronize_allowed_actions(FcWindow *window)
             ATOM(_NET_WM_ACTION_RESIZE),
             ATOM(_NET_WM_ACTION_MINIMIZE),
             ATOM(_NET_WM_ACTION_FULLSCREEN),
-            ATOM(_NET_WM_ACTION_MAXIMIZE_HORZ),
-            ATOM(_NET_WM_ACTION_MAXIMIZE_VERT),
             ATOM(_NET_WM_ACTION_CLOSE),
             None,
         },
@@ -1026,8 +1024,6 @@ static void synchronize_allowed_actions(FcWindow *window)
             ATOM(_NET_WM_ACTION_RESIZE),
             ATOM(_NET_WM_ACTION_MINIMIZE),
             ATOM(_NET_WM_ACTION_FULLSCREEN),
-            ATOM(_NET_WM_ACTION_MAXIMIZE_HORZ),
-            ATOM(_NET_WM_ACTION_MAXIMIZE_VERT),
             ATOM(_NET_WM_ACTION_CLOSE),
             ATOM(_NET_WM_ACTION_ABOVE),
             None,
@@ -1068,8 +1064,6 @@ static void synchronize_allowed_actions(FcWindow *window)
  */
 void set_window_mode(FcWindow *window, window_mode_t mode)
 {
-    Atom states[3];
-
     if (window->state.mode == mode) {
         return;
     }
@@ -1097,15 +1091,15 @@ void set_window_mode(FcWindow *window, window_mode_t mode)
 
     /* update the window states */
     if (window->state.mode == WINDOW_MODE_FULLSCREEN) {
-        states[0] = ATOM(_NET_WM_STATE_FULLSCREEN);
-        states[1] = ATOM(_NET_WM_STATE_MAXIMIZED_HORZ);
-        states[2] = ATOM(_NET_WM_STATE_MAXIMIZED_VERT);
-        add_window_states(window, states, SIZE(states));
+        Atom state;
+
+        state = ATOM(_NET_WM_STATE_FULLSCREEN);
+        add_window_states(window, &state, 1);
     } else if (window->state.previous_mode == WINDOW_MODE_FULLSCREEN) {
-        states[0] = ATOM(_NET_WM_STATE_FULLSCREEN);
-        states[1] = ATOM(_NET_WM_STATE_MAXIMIZED_HORZ);
-        states[2] = ATOM(_NET_WM_STATE_MAXIMIZED_VERT);
-        remove_window_states(window, states, SIZE(states));
+        Atom state;
+
+        state = ATOM(_NET_WM_STATE_FULLSCREEN);
+        remove_window_states(window, &state, 1);
     }
 
     update_window_layer(window);
