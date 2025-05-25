@@ -209,7 +209,7 @@ from the current fensterchef core.  But some guidelines to keep the code clean:
   More examples:
   - "seek through a set" -> `seek_through_set`
   - "start reading a file and wait until this is called again":
-    `start_reading_file_and_wait` (although there is usually a good way to
+    `start_reading_file_and_wait_...` (although there is usually a good way to
     abbreviate these painfully long names) ->
     `read_file_asynchronously` (and describe the function in its declaration)
 
