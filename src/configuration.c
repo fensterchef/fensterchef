@@ -73,8 +73,10 @@ static const struct default_key_binding {
     KeySym key_symbol;
     /* the type of the action */
     action_type_t action;
+    /* the amount of data points (0 or 1) */
+    unsigned data_count;
     /* optional additional action data */
-    const utf8_t *string;
+    struct parse_data data;
 } default_key_bindings[] = {
     /* reload the configuration */
     { ShiftMask, XK_r, .action = ACTION_RELOAD_CONFIGURATION },
@@ -140,8 +142,73 @@ static const struct default_key_binding {
     { 0, XK_w, .action = ACTION_SHOW_LIST },
 
     /* run the terminal or xterm as fall back */
-    { 0, XK_Return, ACTION_RUN,
-            "[ -n \"$TERMINAL\" ] && exec \"$TERMINAL\" || exec xterm"
+    { 0, XK_Return, ACTION_RUN, 1,
+        { 0, PARSE_DATA_TYPE_INTEGER, { .string =
+            (utf8_t*) "[ -n \"$TERMINAL\" ] && exec \"$TERMINAL\" || exec xterm"
+        } }
+    },
+
+    /* assign/select specific windows */
+    { 0, XK_0, ACTION_ASSIGN_WINDOW, 1,
+        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 100 } }
+    },
+    { 0, XK_1, ACTION_ASSIGN_WINDOW, 1,
+        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 101 } }
+    },
+    { 0, XK_2, ACTION_ASSIGN_WINDOW, 1,
+        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 102 } }
+    },
+    { 0, XK_3, ACTION_ASSIGN_WINDOW, 1,
+        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 103 } }
+    },
+    { 0, XK_4, ACTION_ASSIGN_WINDOW, 1,
+        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 104 } }
+    },
+    { 0, XK_5, ACTION_ASSIGN_WINDOW, 1,
+        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 105 } }
+    },
+    { 0, XK_6, ACTION_ASSIGN_WINDOW, 1,
+        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 106 } }
+    },
+    { 0, XK_7, ACTION_ASSIGN_WINDOW, 1,
+        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 107 } }
+    },
+    { 0, XK_8, ACTION_ASSIGN_WINDOW, 1,
+        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 108 } }
+    },
+    { 0, XK_9, ACTION_ASSIGN_WINDOW, 1,
+        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 109 } }
+    },
+
+    { ShiftMask, XK_0, ACTION_FOCUS_WINDOW, 1,
+        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 100 } }
+    },
+    { ShiftMask, XK_1, ACTION_FOCUS_WINDOW, 1,
+        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 101 } }
+    },
+    { ShiftMask, XK_2, ACTION_FOCUS_WINDOW, 1,
+        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 102 } }
+    },
+    { ShiftMask, XK_3, ACTION_FOCUS_WINDOW, 1,
+        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 103 } }
+    },
+    { ShiftMask, XK_4, ACTION_FOCUS_WINDOW, 1,
+        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 104 } }
+    },
+    { ShiftMask, XK_5, ACTION_FOCUS_WINDOW, 1,
+        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 105 } }
+    },
+    { ShiftMask, XK_6, ACTION_FOCUS_WINDOW, 1,
+        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 106 } }
+    },
+    { ShiftMask, XK_7, ACTION_FOCUS_WINDOW, 1,
+        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 107 } }
+    },
+    { ShiftMask, XK_8, ACTION_FOCUS_WINDOW, 1,
+        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 108 } }
+    },
+    { ShiftMask, XK_9, ACTION_FOCUS_WINDOW, 1,
+        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 109 } }
     },
 
     /* quit fensterchef */
@@ -197,12 +264,9 @@ static void set_default_key_bindings(void)
         binding.modifiers = Mod4Mask | default_key_bindings[i].modifiers;
         binding.key_symbol = default_key_bindings[i].key_symbol;
         item.type = default_key_bindings[i].action;
-        if (default_key_bindings[i].string != NULL) {
-            item.data_count = 1;
-            data.type = PARSE_DATA_TYPE_STRING;
-            data.u.string = (utf8_t*) default_key_bindings[i].string;
-        } else {
-            item.data_count = 0;
+        item.data_count = default_key_bindings[i].data_count;
+        if (item.data_count == 1) {
+            data = default_key_bindings[i].data;
         }
 
         set_key_binding(&binding);

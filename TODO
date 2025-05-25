@@ -14,7 +14,7 @@ M - Maintenance
     There should be a pool for action lists so the memory is managed more
     properly.  This should get its own file.
 
-#131 ...
+#132 ...
 
 #150 Add bar
     I just want to try this and see how it goes to learn about bars.
@@ -610,3 +610,6 @@ M - Maintenance
 #130 Add empty action
     Add an action to empty a frame.  This can be used to make bindings more
     consistent with different auto options
+
+#131 Add default bindings to assign numbers
+    There should be default bindings for mod+1-9.

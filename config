@@ -209,6 +209,30 @@ Shift+F12 run "screencast.sh -i -r Screenshots"
 Shift+F11 run "screencast.sh -r Screenshots"
 Control+Shift+F11 run "pkill ffmpeg"
 
+# Assign window numbers
+mod+Shift+0 assign window 100
+mod+Shift+1 assign window 101
+mod+Shift+2 assign window 102
+mod+Shift+3 assign window 103
+mod+Shift+4 assign window 104
+mod+Shift+5 assign window 105
+mod+Shift+6 assign window 106
+mod+Shift+7 assign window 107
+mod+Shift+8 assign window 108
+mod+Shift+9 assign window 109
+
+# Focus specific windows
+mod+0 focus window 100
+mod+1 focus window 101
+mod+2 focus window 102
+mod+3 focus window 103
+mod+4 focus window 104
+mod+5 focus window 105
+mod+6 focus window 106
+mod+7 focus window 107
+mod+8 focus window 108
+mod+9 focus window 109
+
 # Quit fensterchef
 mod+Control+Shift+e quit
 
