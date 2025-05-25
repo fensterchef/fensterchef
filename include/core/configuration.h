@@ -13,12 +13,6 @@
 
 /* the currently loaded configuration settings */
 extern struct configuration {
-    /* how many pixels off the edges of windows should be used for resizing */
-    int resize_tolerance;
-
-    /* the number the first window gets assigned */
-    unsigned first_window_number;
-
     /* at which percentage to count windows to be overlapped with a monitor */
     unsigned overlap;
 

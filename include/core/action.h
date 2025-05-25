@@ -14,7 +14,7 @@
 /* action codes */
 typedef enum {
 #define X(identifier, string) \
-    identifier,
+    ACTION_##identifier,
     DEFINE_ALL_PARSE_ACTIONS
 #undef X
     /* not a real action */

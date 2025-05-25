@@ -10,16 +10,12 @@
 #include "parse/alias.h"
 #include "parse/data_type.h"
 #include "parse/group.h"
-#include "parse/parse.h"
 #include "parse/input.h"
+#include "parse/parse.h"
 #include "window.h"
 
 /* the settings of the default configuration */
 const struct configuration default_configuration = {
-    .resize_tolerance = 8,
-
-    .first_window_number = 1,
-
     .overlap = 80,
 
     .auto_split = false,

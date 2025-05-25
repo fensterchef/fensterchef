@@ -22,7 +22,7 @@
 /* the corresponding string identifier for all actions */
 static const char *action_strings[ACTION_MAX] = {
 #define X(identifier, string) \
-    [identifier] = string,
+    [ACTION_##identifier] = string,
     DEFINE_ALL_PARSE_ACTIONS
 #undef X
 };
@@ -684,11 +684,6 @@ void do_action(action_type_t type, const struct parse_data *data)
     /* exchange the current frame with the above one */
     case ACTION_EXCHANGE_UP:
         move_to_above_frame(Frame_focus, true);
-        break;
-
-    /* the number of the first window */
-    case ACTION_FIRST_WINDOW_NUMBER:
-        configuration.first_window_number = data->u.integer;
         break;
 
     /* focus the window within the current frame */

@@ -54,34 +54,35 @@ bool initiate_window_move_resize(FcWindow *window,
 
     /* figure out a good direction if the caller does not supply one */
     if (direction == _NET_WM_MOVERESIZE_AUTO) {
-        const unsigned border = 2 * configuration.border_size;
+        const int resize_tolerance = MAX(WINDOW_RESIZE_TOLERANCE,
+                window->border_size);
         /* check if the mouse is at the top */
-        if (start_y < window->y + configuration.resize_tolerance) {
-            if (start_x < window->x + configuration.resize_tolerance) {
+        if (start_y < window->y + resize_tolerance) {
+            if (start_x < window->x + resize_tolerance) {
                 direction = _NET_WM_MOVERESIZE_SIZE_TOPLEFT;
-            } else if (start_x - (int) (border + window->width) >=
-                    window->x - configuration.resize_tolerance) {
+            } else if (start_x - (int) window->width >=
+                    window->x - resize_tolerance) {
                 direction = _NET_WM_MOVERESIZE_SIZE_TOPRIGHT;
             } else {
                 direction = _NET_WM_MOVERESIZE_SIZE_TOP;
             }
         /* check if the mouse is at the bottom */
-        } else if (start_y - (int) (border + window->height) >=
-                window->y - configuration.resize_tolerance) {
-            if (start_x < window->x + configuration.resize_tolerance) {
+        } else if (start_y - (int) window->height >=
+                window->y - resize_tolerance) {
+            if (start_x < window->x + resize_tolerance) {
                 direction = _NET_WM_MOVERESIZE_SIZE_BOTTOMLEFT;
-            } else if (start_x - (int) (border + window->width) >=
-                    window->x - configuration.resize_tolerance) {
+            } else if (start_x - (int) window->width >=
+                    window->x - resize_tolerance) {
                 direction = _NET_WM_MOVERESIZE_SIZE_BOTTOMRIGHT;
             } else {
                 direction = _NET_WM_MOVERESIZE_SIZE_BOTTOM;
             }
         /* check if the mouse is left */
-        } else if (start_x < window->x + configuration.resize_tolerance) {
+        } else if (start_x < window->x + resize_tolerance) {
             direction = _NET_WM_MOVERESIZE_SIZE_LEFT;
         /* check if the mouse is right */
-        } else if (start_x - (int) (border + window->width) >=
-                window->x - configuration.resize_tolerance) {
+        } else if (start_x - (int) window->width >=
+                window->x - resize_tolerance) {
             direction = _NET_WM_MOVERESIZE_SIZE_RIGHT;
         /* fall back to simply moving (the mouse is within the window) */
         } else {

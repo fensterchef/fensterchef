@@ -31,6 +31,12 @@
 /* the minimum length of the window that needs to stay visible */
 #define WINDOW_MINIMUM_VISIBLE_SIZE 8
 
+/* the first number of a window */
+#define WINDOW_FIRST_NUMBER 1
+
+/* the amount of pixels on the edges of windows to count as resizable */
+#define WINDOW_RESIZE_TOLERANCE 8
+
 /* the mode of the window */
 typedef enum window_mode {
     /* the window is part of the tiling layout (if visible) */

@@ -15,11 +15,10 @@ static struct cursor_cache_entry {
     /* the X cursor */
     Cursor cursor;
 } cursor_cache[CURSOR_MAX] = {
-    { "left_ptr", None },
-    { "fleur", None },
-    { "sb_h_double_arrow", None },
-    { "sb_v_double_arrow", None },
-    { "sizing", None },
+#define X(identifier, default_name) \
+    [CURSOR_##identifier]  = { default_name, None },
+    DEFINE_ALL_CURSORS
+#undef X
 };
 
 /* Load the cursor with given name using the user's preferred style. */

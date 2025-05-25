@@ -72,18 +72,16 @@ gaps outer 0 0 0 0
 # Set the duration a notification window should stay for
 notification duration 2
 
-# When to count a window as overlapping a a monitor
+# When to count a window as overlapping a monitor
 overlap 80%
 
 
 ## Window relations ##
 
 # Example relation:
-# Make all firefox windows floating after the main window has openend
+# Make the main firefox window floating
 relate Navigator, firefox (
     set floating, focus window
-    unrelate
-    relate firefox set floating, focus window
 )
 
 

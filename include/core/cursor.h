@@ -5,19 +5,25 @@
 
 #include "utility/attributes.h"
 
+/* expand to all cursors we use */
+#define DEFINE_ALL_CURSORS \
+    /* the cursor on the root window */ \
+    X(ROOT, "left_ptr") \
+    /* the cursor when moving a window */ \
+    X(MOVING, "fleur") \
+    /* the cursor when resizing horizontally */ \
+    X(HORIZONTAL, "sb_h_double_arrow") \
+    /* the cursor when resizing vertically */ \
+    X(VERTICAL, "sb_v_double_arrow") \
+    /* the cursor when sizing anything else */ \
+    X(SIZING, "sizing")
+
 /* internal cache points for cursor constants */
 typedef enum cursor {
-    /* the cursor on the root window */
-    CURSOR_ROOT,
-    /* the cursor when moving a window */
-    CURSOR_MOVING,
-    /* the cursor when resizing horizontally */
-    CURSOR_HORIZONTAL,
-    /* the cursor when resizing vertically */
-    CURSOR_VERTICAL,
-    /* the cursor when sizing anything else */
-    CURSOR_SIZING,
-
+#define X(identifier, default_name) \
+    CURSOR_##identifier,
+    DEFINE_ALL_CURSORS
+#undef X
     CURSOR_MAX
 } cursor_id_t;
 

@@ -291,16 +291,16 @@ static inline FcWindow *find_number_gap(void)
     /* if the first window has window number greater than the first number that
      * means there is space at the front
      */
-    if (Window_first->number > configuration.first_window_number) {
+    if (Window_first->number > WINDOW_FIRST_NUMBER) {
         return NULL;
     }
 
     previous = Window_first;
-    /* find the first window with a higher number than
-     * `first_window_number`
+    /* find the first window with a higher number than the first window
+     * number
      */
     for (; previous->next != NULL; previous = previous->next) {
-        if (previous->next->number > configuration.first_window_number) {
+        if (previous->next->number > WINDOW_FIRST_NUMBER) {
             break;
         }
     }
@@ -425,16 +425,16 @@ FcWindow *create_window(Window id)
         Window_top = window;
         Window_server_top = window;
         Window_first = window;
-        window->number = configuration.first_window_number;
+        window->number = WINDOW_FIRST_NUMBER;
     } else {
         previous = find_number_gap();
         if (previous == NULL) {
             window->next = Window_first;
             Window_first = window;
-            window->number = configuration.first_window_number;
+            window->number = WINDOW_FIRST_NUMBER;
         } else {
-            if (previous->number < configuration.first_window_number) {
-                window->number = configuration.first_window_number;
+            if (previous->number < WINDOW_FIRST_NUMBER) {
+                window->number = WINDOW_FIRST_NUMBER;
             } else {
                 window->number = previous->number + 1;
             }
