@@ -12,7 +12,7 @@ usage() {
     echo 'Targets: fensterchef install uninstall'
     echo 'Variables: CC PREFIX'
     exit $1
-}
+} >&2
 
 _command() {
     echo "$@" >&2 && "$@" || exit 1

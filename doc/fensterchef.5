@@ -3,7 +3,8 @@
 fensterchef - format of fensterchef configuration files
 .
 .SH DESCRIPTION
-The fensterchef configuration file format is very simple and easy to understand.
+The fensterchef configuration file format is used for the fensterchef window
+manager.
 
 Settings can be set through simple
 .B key value
@@ -172,6 +173,13 @@ binding or the window matched in a relation.
 .B dump layout
 .I file_name
     Dump all frames and windows to a file.
+.PP
+.B empty
+    Make the current frame completely empty, removing all children and hiding
+    all windows.
+.PP
+.B equalize
+    Equalize the size of all children within the current frame.
 .PP
 .B exchange down
     Exchange the current frame with the frame below it.

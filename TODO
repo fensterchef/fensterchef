@@ -14,7 +14,7 @@ M - Maintenance
     There should be a pool for action lists so the memory is managed more
     properly.  This should get its own file.
 
-#130 ...
+#131 ...
 
 #150 Add bar
     I just want to try this and see how it goes to learn about bars.
@@ -606,3 +606,7 @@ M - Maintenance
     Each window should have its own settings for border and gaps.  Actions have
     to be made that set these individual settings.  Whether a setting is
     individual or not has to be stored within the window.
+
+#130 Add empty action
+    Add an action to empty a frame.  This can be used to make bindings more
+    consistent with different auto options

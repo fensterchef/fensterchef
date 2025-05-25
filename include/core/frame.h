@@ -350,8 +350,8 @@ Frame *stash_frame_later(Frame *frame);
  */
 void link_frame_into_stash(Frame *frame);
 
-/* Take frame away from the screen, hiding all inner windows and leaves a
- * singular empty frame.
+/* Take @frame away from the screen, hiding all inner windows and leave a
+ * singular empty frame behind.
  *
  * This is a simple wrapper around `stash_frame_later()` that calls
  * `link_into_stash()` immediately.

@@ -655,6 +655,11 @@ void do_action(action_type_t type, const struct parse_data *data)
         }
         break;
 
+    /* make a frame empty */
+    case ACTION_EMPTY:
+        (void) stash_frame(Frame_focus);
+        break;
+
     /* equalize the size of the child frames within a frame */
     case ACTION_EQUALIZE:
         equalize_frame(Frame_focus, FRAME_SPLIT_HORIZONTALLY);

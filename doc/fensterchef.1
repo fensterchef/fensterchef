@@ -72,7 +72,7 @@ and add:
 exec fensterchef
 .EX
 
-Without a display manager it is the same but you must instead edit
+Without a display manager, you can instead edit
 .IR ~/.xinitrc .
 .
 .SH TERMINOLOGY
@@ -95,15 +95,15 @@ This may also be a group of frames in case you moved to a parent frame.
 The stash is a stack that holds onto frames in the background.
 Whenever you remove a frame from the screen, the frame is put into the stash.
 When splitting a frame (and having
-.B auto-fill-void
+.B auto fill void
 configure set to true) frames are popped from the stash.
 .SS Window list
-The window list can be opened with
-.BR Mod4 + W
+The window list can be opened with (default modifier)
+.RB + W
 by default and is
 .I the
 way to show hidden windows.
-There are other ways to show hidden windows through assignments, see
+There are other ways to show hidden windows through relations, see
 .BR fensterchef (5).
 
 When the window list is open, use the arrow keys or home row keys to navigate

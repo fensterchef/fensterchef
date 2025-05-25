@@ -64,6 +64,8 @@
     X(ACTION_CURSOR_VERTICAL, "cursor vertical S") \
     /* write all fensterchef information to a file */ \
     X(ACTION_DUMP_LAYOUT, "dump layout S") \
+    /* remove all within a frame but not the frame itself */ \
+    X(ACTION_EMPTY, "empty") \
     /* equalize the size of the child frames within the current frame */ \
     X(ACTION_EQUALIZE, "equalize") \
     /* exchange the current frame with the below one */ \
