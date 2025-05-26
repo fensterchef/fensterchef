@@ -1172,34 +1172,34 @@ static void log_frame(const Frame *frame)
 }
 
 /* Log given data point to stderr. */
-static void log_parse_data(const struct parse_data *data)
+static void log_action_data(const struct action_data *data)
 {
     switch (data->type) {
-    case PARSE_DATA_TYPE_INTEGER:
-        fprintf(stderr, COLOR(GREEN) "%" PRIiPARSE_INTEGER,
+    case ACTION_DATA_TYPE_INTEGER:
+        fprintf(stderr, COLOR(GREEN) "%" PRIiACTION_INTEGER,
                 data->u.integer);
-        if ((data->flags & PARSE_DATA_FLAGS_IS_PERCENT)) {
+        if ((data->flags & ACTION_DATA_FLAGS_IS_PERCENT)) {
             fputc('%', stderr);
         }
         fputs(CLEAR_COLOR, stderr);
         break;
 
-    case PARSE_DATA_TYPE_STRING:
+    case ACTION_DATA_TYPE_STRING:
         log_formatted("%s",
                 data->u.string);
         break;
 
-    case PARSE_DATA_TYPE_RELATION: {
+    case ACTION_DATA_TYPE_RELATION: {
         const struct window_relation *const relation =
             &data->u.relation;
-        log_formatted("%s,%s ( %A )",
+        log_formatted("%s,%s %A",
                 relation->instance_pattern,
                 relation->class_pattern,
-                &relation->actions);
+                relation->actions);
         break;
     }
 
-    case PARSE_DATA_TYPE_BUTTON: {
+    case ACTION_DATA_TYPE_BUTTON: {
         const struct button_binding *const binding = &data->u.button;
         if (binding->is_release) {
             fprintf(stderr, COLOR(YELLOW) "release" CLEAR_COLOR " ");
@@ -1211,12 +1211,12 @@ static void log_parse_data(const struct parse_data *data)
             log_formatted("%u+",
                     binding->modifiers);
         }
-        log_formatted("%u ( %A )",
-                binding->modifiers, &binding->actions);
+        log_formatted("%u %A",
+                binding->modifiers, binding->actions);
         break;
     }
 
-    case PARSE_DATA_TYPE_KEY: {
+    case ACTION_DATA_TYPE_KEY: {
         const struct key_binding *const binding = &data->u.key;
         if (binding->is_release) {
             fprintf(stderr, COLOR(YELLOW) "release" CLEAR_COLOR " ");
@@ -1234,25 +1234,31 @@ static void log_parse_data(const struct parse_data *data)
                     XKeysymToString(binding->key_symbol));
         }
 
-        log_formatted(" ( %A )",
-                &binding->actions);
+        log_formatted(" %A",
+                binding->actions);
         break;
     }
 
-    case PARSE_DATA_TYPE_MAX:
+    case ACTION_DATA_TYPE_MAX:
         /* nothing */
         break;
     }
 }
 
-/* Log a list of actions to stderr. */
-static void log_action_list(const struct action_list *list)
+/* Log a block of actions to stderr. */
+static void log_action_block(const ActionBlock *block)
 {
-    const struct action_list_item *item;
-    const struct parse_data *data, *previous_data;
+    const struct action_block_item *item;
+    const struct action_data *data, *previous_data;
 
-    data = list->data;
-    for (size_t i = 0; i < list->number_of_items; i++) {
+    if (block == NULL) {
+        return;
+    }
+
+    fputc('(', stderr);
+
+    data = block->data;
+    for (size_t i = 0; i < block->number_of_items; i++) {
         const char *action, *space;
         int length;
 
@@ -1260,7 +1266,7 @@ static void log_action_list(const struct action_list *list)
             fputs(CLEAR_COLOR ", ", stderr);
         }
 
-        item = &list->items[i];
+        item = &block->items[i];
         action = get_action_string(item->type);
         previous_data = data;
         while (action != NULL) {
@@ -1277,9 +1283,10 @@ static void log_action_list(const struct action_list *list)
                 fputs(" ", stderr);
             }
 
-            if (length == 1 && get_parse_data_type_from_identifier(action[0]) !=
-                    PARSE_DATA_TYPE_MAX) {
-                log_parse_data(data);
+            if (length == 1 &&
+                    get_action_data_type_from_identifier(action[0]) !=
+                    ACTION_DATA_TYPE_MAX) {
+                log_action_data(data);
                 data++;
             } else {
                 fprintf(stderr, COLOR(YELLOW) "%.*s" CLEAR_COLOR,
@@ -1291,7 +1298,7 @@ static void log_action_list(const struct action_list *list)
         data = previous_data + item->data_count;
     }
 
-    fputs(CLEAR_COLOR, stderr);
+    fputs(CLEAR_COLOR ")", stderr);
 }
 
 /* Log the display information to standard error output. */
@@ -1406,14 +1413,14 @@ void _log_va_formatted(const char *format, va_list list)
                 log_event(va_arg(list, XEvent*));
                 break;
 
-            /* print a list of actions */
+            /* print a block of actions */
             case 'A':
-                log_action_list(va_arg(list, const struct action_list*));
+                log_action_block(va_arg(list, const ActionBlock*));
                 break;
 
             /* print a parse data point */
             case 'T':
-                log_parse_data(va_arg(list, const struct parse_data*));
+                log_action_data(va_arg(list, const struct action_data*));
                 break;
 
             /* print an X atom */

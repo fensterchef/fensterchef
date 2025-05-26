@@ -23,9 +23,42 @@
 static const char *action_strings[ACTION_MAX] = {
 #define X(identifier, string) \
     [ACTION_##identifier] = string,
-    DEFINE_ALL_PARSE_ACTIONS
+    DEFINE_ALL_ACTIONS
 #undef X
 };
+
+/* meta information about a data type */
+static const struct action_data_meta_information {
+    /* single letter identifier */
+    char identifier;
+    /* string representation the data type */
+    const char *name;
+} action_data_meta_information[ACTION_DATA_TYPE_MAX] = {
+#define X(identifier, type_name, short_name) \
+    { short_name, STRINGIFY(identifier) },
+    DEFINE_ALL_ACTION_DATA_TYPES
+#undef X
+};
+
+/* Search the parse data meta table for given identifier. */
+action_data_type_t get_action_data_type_from_identifier(char identifier)
+{
+    action_data_type_t type = 0;
+
+    for (; type < ACTION_DATA_TYPE_MAX; type++) {
+        if (action_data_meta_information[type].identifier == identifier) {
+            break;
+        }
+    }
+
+    return type;
+}
+
+/* Get a string representation of a data type. */
+inline const char *get_action_data_type_name(action_data_type_t type)
+{
+    return action_data_meta_information[type].name;
+}
 
 /* Get the action string of given action type. */
 inline const char *get_action_string(action_type_t type)
@@ -33,65 +66,135 @@ inline const char *get_action_string(action_type_t type)
     return action_strings[type];
 }
 
-/* Do all actions within @list. */
-void run_action_list(const struct action_list *original_list)
+/* Clear the data value within @data. */
+void clear_action_data(struct action_data *data)
 {
-    struct action_list list;
-    struct action_list_item *item;
-    struct parse_data *data;
+    switch (data->type) {
+    case ACTION_DATA_TYPE_INTEGER:
+        /* nothing */
+        break;
 
-    /* make a copy so we need to to worry about its origin and whether the next
-     * action will invalidate the pointer or items within it
-     */
-    list = *original_list;
-    duplicate_action_list(&list);
+    case ACTION_DATA_TYPE_STRING:
+        free(data->u.string);
+        break;
 
-    data = list.data;
-    for (size_t i = 0; i < list.number_of_items; i++) {
-        item = &list.items[i];
+    case ACTION_DATA_TYPE_RELATION:
+        clear_window_relation(&data->u.relation);
+        break;
+
+    case ACTION_DATA_TYPE_BUTTON:
+        dereference_action_block(data->u.button.actions);
+        break;
+
+    case ACTION_DATA_TYPE_KEY:
+        dereference_action_block(data->u.key.actions);
+        break;
+
+    case ACTION_DATA_TYPE_MAX:
+        /* nothing */
+        break;
+    }
+}
+
+/* Duplicate a single action data point into itself. */
+void duplicate_action_data(struct action_data *data)
+{
+    switch (data->type) {
+    case ACTION_DATA_TYPE_INTEGER:
+        /* nothing */
+        break;
+
+    case ACTION_DATA_TYPE_STRING:
+        data->u.string = xstrdup(data->u.string);
+        break;
+
+    case ACTION_DATA_TYPE_RELATION:
+        duplicate_window_relation(&data->u.relation);
+        break;
+
+    case ACTION_DATA_TYPE_BUTTON:
+        reference_action_block(data->u.button.actions);
+        break;
+
+    case ACTION_DATA_TYPE_KEY:
+        reference_action_block(data->u.key.actions);
+        break;
+
+    case ACTION_DATA_TYPE_MAX:
+        /* nothing */
+        break;
+    }
+}
+
+/* Increment the reference counter of an action block. */
+void reference_action_block(ActionBlock *block)
+{
+    if (block == NULL) {
+        /* avoid the pain of external null checks */
+        return;
+    }
+
+    block->reference_count++;
+}
+
+/* Decrement the reference counter of an action block. */
+void dereference_action_block(ActionBlock *block)
+{
+    if (block == NULL) {
+        return;
+    }
+
+    if (block->reference_count <= 1) {
+        struct action_data *data;
+
+        data = block->data;
+        for (size_t i = 0; i < block->number_of_items; i++) {
+            for (unsigned j = 0; j < block->items[i].data_count; j++) {
+                clear_action_data(data);
+                data++;
+            }
+        }
+        free(block->items);
+        free(block);
+    } else {
+        block->reference_count--;
+    }
+}
+
+/* Create a block of actions with specified number of items and data
+ * preallocated.
+ */
+ActionBlock *create_empty_action_block(size_t number_of_items,
+        size_t number_of_data_points)
+{
+    ActionBlock *block;
+
+    block = xcalloc(1, sizeof(*block) +
+            sizeof(*block->data) * number_of_data_points);
+    block->reference_count = 1;
+
+    ALLOCATE_ZERO(block->items, number_of_items);
+    block->number_of_items = number_of_items;
+
+    return block;
+}
+
+/* Do all actions within @block. */
+void run_action_block(ActionBlock *block)
+{
+    struct action_block_item *item;
+    const struct action_data *data;
+
+    reference_action_block(block);
+
+    data = block->data;
+    for (size_t i = 0; i < block->number_of_items; i++) {
+        item = &block->items[i];
         do_action(item->type, data);
         data += item->data_count;
     }
 
-    clear_action_list(&list);
-}
-
-/* Make a deep copy of @list and put it into itself. */
-void duplicate_action_list(struct action_list *list)
-{
-    struct action_list_item *item;
-    struct parse_data *data;
-    size_t data_count = 0;
-
-    for (size_t i = 0; i < list->number_of_items; i++) {
-        item = &list->items[i];
-        data_count += item->data_count;
-    }
-
-    list->items = DUPLICATE(list->items, list->number_of_items);
-    list->data = DUPLICATE(list->data, data_count);
-
-    data = list->data;
-    for (size_t i = 0; i < data_count; i++) {
-        duplicate_parse_data(data);
-        data++;
-    }
-}
-
-/* Free ALL memory associated to the action list. */
-void clear_action_list(const struct action_list *list)
-{
-    struct parse_data *data;
-
-    data = list->data;
-    for (size_t i = 0; i < list->number_of_items; i++) {
-        for (unsigned j = 0; j < list->items[i].data_count; j++) {
-            clear_parse_data(data);
-            data++;
-        }
-    }
-    free(list->items);
-    free(list->data);
+    dereference_action_block(block);
 }
 
 /* Resize the current window or current frame if it does not exist. */
@@ -382,11 +485,11 @@ static bool move_to_below_frame(Frame *relative, bool do_exchange)
 
 /* Translate the integer data if not using pixels. */
 static inline int translate_integer_data(Monitor *monitor,
-        const struct parse_data *data, bool is_x_axis)
+        const struct action_data *data, bool is_x_axis)
 {
     int value;
 
-    if ((data->flags & PARSE_DATA_FLAGS_IS_PERCENT)) {
+    if ((data->flags & ACTION_DATA_FLAGS_IS_PERCENT)) {
         if (is_x_axis) {
             value = monitor->width;
         } else {
@@ -400,7 +503,7 @@ static inline int translate_integer_data(Monitor *monitor,
 }
 
 /* Do the given action. */
-void do_action(action_type_t type, const struct parse_data *data)
+void do_action(action_type_t type, const struct action_data *data)
 {
     FcWindow *window;
     char *shell;
@@ -550,7 +653,7 @@ void do_action(action_type_t type, const struct parse_data *data)
             LOG_ERROR("group %s does not exist\n",
                     data->u.string);
         } else {
-            run_action_list(&group->actions);
+            run_action_block(group->actions);
         }
         break;
     }

@@ -6,7 +6,6 @@
  * group STRING ACTIONS
  */
 
-#include "core/action.h"
 #include "parse/action.h"
 #include "parse/parse.h"
 
@@ -18,7 +17,7 @@ struct parse_group {
     /* name of the group */
     char *name;
     /* the actions within the group */
-    struct action_list actions;
+    ActionBlock *actions;
 };
 
 /* Find the group by given name. */
@@ -39,6 +38,6 @@ void clear_all_groups(void);
 void continue_parsing_group(Parser *parser);
 
 /* Parse all after a `ungroup` keyword. */
-void continue_parsing_ungroup(Parser *parser, struct parse_action_list *list);
+void continue_parsing_ungroup(Parser *parser, struct parse_action_block *block);
 
 #endif

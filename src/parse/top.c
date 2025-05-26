@@ -13,11 +13,11 @@
 
 /* Parse all after a `source` keyword. */
 static void continue_parsing_source(Parser *parser,
-        struct parse_action_list *list)
+        struct parse_action_block *block)
 {
     Parser *upper;
     Parser *sub_parser;
-    struct parse_action_list sub_list;
+    struct parse_action_block sub_block;
 
     if (read_string(parser) != OK) {
         emit_parse_error(parser, "expected file string");
@@ -47,27 +47,27 @@ static void continue_parsing_source(Parser *parser,
     }
     sub_parser->upper_parser = parser;
 
-    ZERO(&sub_list, 1);
-    while (parse_top(sub_parser, &sub_list) == OK) {
+    ZERO(&sub_block, 1);
+    while (parse_top(sub_parser, &sub_block) == OK) {
         /* nothing */
     }
 
     /* if parsing succeeds, append the parsed items */
     if (sub_parser->error_count == 0) {
-        LIST_APPEND(list->items,
-                sub_list.items,
-                sub_list.items_length);
+        LIST_APPEND(block->items,
+                sub_block.items,
+                sub_block.items_length);
 
-        LIST_APPEND(list->data,
-                sub_list.data,
-                sub_list.data_length);
+        LIST_APPEND(block->data,
+                sub_block.data,
+                sub_block.data_length);
     }
 
     destroy_parser(sub_parser);
 }
 
 /* Parse a top level statement. */
-int parse_top(Parser *parser, struct parse_action_list *list)
+int parse_top(Parser *parser, struct parse_action_block *block)
 {
     int character;
 
@@ -91,23 +91,23 @@ int parse_top(Parser *parser, struct parse_action_list *list)
         /* skip over opening '(' */
         (void) get_stream_character(parser);
 
-        list->bracket_count++;
-        bracket_count = list->bracket_count;
-        while (parse_top(parser, list) == OK) {
+        block->bracket_count++;
+        bracket_count = block->bracket_count;
+        while (parse_top(parser, block) == OK) {
             /* nothing */
         }
         /* the inner function should have decremented this again */
-        if (bracket_count == list->bracket_count) {
+        if (bracket_count == block->bracket_count) {
             emit_parse_error(parser, "missing closing bracket ')'");
         }
     } else if (character == ')') {
         /* skip over closing ')' */
         (void) get_stream_character(parser);
 
-        if (list->bracket_count == 0) {
+        if (block->bracket_count == 0) {
             emit_parse_error(parser, "no matching opening ')'");
         } else {
-            list->bracket_count--;
+            block->bracket_count--;
         }
 
         return ERROR;
@@ -115,33 +115,33 @@ int parse_top(Parser *parser, struct parse_action_list *list)
         /* skip over opening '[' */
         (void) get_stream_character(parser);
 
-        continue_parsing_key_code_binding(parser, list);
+        continue_parsing_key_code_binding(parser, block);
     } else if (read_string(parser) != OK) {
         emit_parse_error(parser,
                 "expected relation, binding or action");
         /* skip the erroneous character */
         (void) get_stream_character(parser);
         /* start from the top */
-        return parse_top(parser, list);
+        return parse_top(parser, block);
     } else if (strcmp(parser->string, "alias") == 0) {
         continue_parsing_alias(parser);
     } else if (strcmp(parser->string, "group") == 0) {
         continue_parsing_group(parser);
     } else if (strcmp(parser->string, "relate") == 0) {
-        continue_parsing_relation(parser, list);
+        continue_parsing_relation(parser, block);
     } else if (strcmp(parser->string, "unrelate") == 0) {
-        continue_parsing_unrelate(parser, list);
+        continue_parsing_unrelate(parser, block);
     } else if (strcmp(parser->string, "source") == 0) {
-        continue_parsing_source(parser, list);
+        continue_parsing_source(parser, block);
     } else if (strcmp(parser->string, "unalias") == 0) {
         continue_parsing_unalias(parser);
     } else if (strcmp(parser->string, "unbind") == 0) {
-        continue_parsing_unbind(parser, list);
+        continue_parsing_unbind(parser, block);
     } else if (strcmp(parser->string, "ungroup") == 0) {
-        continue_parsing_ungroup(parser, list);
+        continue_parsing_ungroup(parser, block);
     } else {
-        if (continue_parsing_actions(parser, list) != OK) {
-            continue_parsing_binding(parser, list);
+        if (continue_parsing_actions(parser, block) != OK) {
+            continue_parsing_binding(parser, block);
         }
     }
 
@@ -150,7 +150,7 @@ int parse_top(Parser *parser, struct parse_action_list *list)
         /* skip ',' and parse from top */
         (void) get_stream_character(parser);
         /* parse the next statement as well */
-        return parse_top(parser, list);
+        return parse_top(parser, block);
     }
 
     /* even if an error occured, we at least got something */

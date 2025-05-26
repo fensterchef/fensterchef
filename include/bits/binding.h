@@ -51,7 +51,7 @@ struct button_binding {
     /* the button index */
     button_t button;
     /* the actions to execute */
-    struct action_list actions;
+    ActionBlock *actions;
 };
 
 /* a key binding structure to pass to `set_key_binding()` */
@@ -65,7 +65,7 @@ struct key_binding {
     /* the key code to use */
     KeyCode key_code;
     /* the actions to execute */
-    struct action_list actions;
+    ActionBlock *actions;
 };
 
 #endif

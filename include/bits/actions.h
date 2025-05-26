@@ -9,7 +9,7 @@
  * - I is an integer
  * - S is a string
  */
-#define DEFINE_ALL_PARSE_ACTIONS \
+#define DEFINE_ALL_ACTIONS \
     /* no operation */ \
     X(NOP, "nop") \
     /* assign a number to a frame */ \

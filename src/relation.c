@@ -18,6 +18,22 @@ size_t old_window_relations_length;
 /* the index of the currently running relation */
 size_t running_relation;
 
+/* Clear the memory occupied by the window relation. */
+void clear_window_relation(struct window_relation *relation)
+{
+    free(relation->instance_pattern);
+    free(relation->class_pattern);
+    dereference_action_block(relation->actions);
+}
+
+/* Duplicate a relation deeply into itself. */
+void duplicate_window_relation(struct window_relation *relation)
+{
+    relation->instance_pattern = xstrdup(relation->instance_pattern);
+    relation->class_pattern = xstrdup(relation->class_pattern);
+    reference_action_block(relation->actions);
+}
+
 /* Remove the window relation at given index. */
 static void remove_window_relation(size_t index)
 {
@@ -46,14 +62,6 @@ void signal_window_unrelate(void)
     }
 }
 
-/* Duplicate a relation deeply into itself. */
-void duplicate_window_relation(struct window_relation *relation)
-{
-    relation->instance_pattern = xstrdup(relation->instance_pattern);
-    relation->class_pattern = xstrdup(relation->class_pattern);
-    duplicate_action_list(&relation->actions);
-}
-
 /* Set a relation from window instance/class name to actions. */
 void set_window_relation(const struct window_relation *relation)
 {
@@ -70,7 +78,7 @@ void set_window_relation(const struct window_relation *relation)
     }
 
     if (i == window_relations_length) {
-        if (relation->actions.number_of_items > 0) {
+        if (relation->actions != NULL) {
             struct window_relation new_relation;
 
             LOG_DEBUG("adding window relation %s,%s\n",
@@ -80,36 +88,13 @@ void set_window_relation(const struct window_relation *relation)
             duplicate_window_relation(&new_relation);
             LIST_APPEND_VALUE(window_relations, new_relation);
         }
-    } else if (relation->actions.number_of_items == 0) {
+    } else if (relation->actions == NULL) {
         remove_window_relation(i);
     } else {
         clear_window_relation(&window_relations[i]);
         window_relations[i] = *relation;
         duplicate_window_relation(&window_relations[i]);
     }
-}
-
-/* Remove the relation matching @instance and @class. */
-void remove_matching_window_relation(const utf8_t *instance,
-        const utf8_t *class)
-{
-    struct window_relation *relation;
-
-    for (size_t i = 0; i < window_relations_length; i++) {
-        relation = &window_relations[i];
-        if (matches_pattern(relation->instance_pattern, instance) &&
-                matches_pattern(relation->class_pattern, class)) {
-            remove_window_relation(i);
-        }
-    }
-}
-
-/* Clear the memory occupied by the window relation. */
-void clear_window_relation(const struct window_relation *relation)
-{
-    free(relation->instance_pattern);
-    free(relation->class_pattern);
-    clear_action_list(&relation->actions);
 }
 
 /* Unset all currently set window relations. */
@@ -129,10 +114,10 @@ static inline void run_window_relation(FcWindow *window,
         struct window_relation *relation)
 {
     LOG_DEBUG("running related actions: %A\n",
-            &relation->actions);
+            relation->actions);
 
     Window_selected = window;
-    run_action_list(&relation->actions);
+    run_action_block(relation->actions);
 }
 
 /* Run the actions related to given window. */
@@ -150,7 +135,7 @@ bool run_window_relations(FcWindow *window)
                     window->properties.class.res_name) &&
                 matches_pattern(relation->class_pattern,
                         window->properties.class.res_class)) {
-            /* set back and forth in case the index changes because an
+            /* set back and forth in case the index changes because a
              * relation was removed
              */
             running_relation = i;

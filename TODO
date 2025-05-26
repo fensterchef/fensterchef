@@ -10,11 +10,15 @@ M - Maintenance
 [Done] - Finished tasks
 
 [Tasks]
-#112 M Make memory pool for action lists
-    There should be a pool for action lists so the memory is managed more
-    properly.  This should get its own file.
+#133 ! Add protection for recursive calls
+    When a group is called within a group, it would recurse infinitely.  Keep
+    track of the depth and report an error if the depth is to high
 
-#132 ...
+#134 Show parsing errors directly
+    Parsing errors are put into the log file.  Make it so the user sees these
+    errors via some sort of popup
+
+#135 ...
 
 #150 Add bar
     I just want to try this and see how it goes to learn about bars.
@@ -44,6 +48,10 @@ M - Maintenance
 
 #117 Write test code
     Write test code for... everything
+
+#132 ! Fix focus when closing floating window
+    When a floating window is closed which is above a fullscreen window, then
+    when a tiling window below should not be focused
 
 [Recheck]
 #45 ! Fix weird flicker of Steam window
@@ -613,3 +621,7 @@ M - Maintenance
 
 #131 Add default bindings to assign numbers
     There should be default bindings for mod+1-9.
+
+#112 M Make memory pool for action lists
+    There should be a pool for action lists so the memory is managed more
+    properly.  This should get its own file.

@@ -24,8 +24,8 @@
 
 /* Parse a top level statement.
  *
- * @list is appended with the parsed actions.  Make sure it has valid members.
+ * @block is appended with the parsed actions.  Make sure it has valid members.
  */
-int parse_top(Parser *parser, struct parse_action_list *list);
+int parse_top(Parser *parser, struct parse_action_block *block);
 
 #endif

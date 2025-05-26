@@ -50,11 +50,11 @@ static int resolve_boolean(Parser *parser, _Out bool *boolean)
 /* Try to resolve the string within @parser as integer. */
 int resolve_integer(Parser *parser,
         unsigned *flags,
-        parse_integer_t *output_integer)
+        action_integer_t *output_integer)
 {
     char *word;
     int error = ERROR;
-    parse_integer_t sign = 1, integer = 0;
+    action_integer_t sign = 1, integer = 0;
     bool boolean;
     unsigned modifier;
 
@@ -88,7 +88,7 @@ int resolve_integer(Parser *parser,
         }
 
         if (word[0] == '%') {
-            *flags |= PARSE_DATA_FLAGS_IS_PERCENT;
+            *flags |= ACTION_DATA_FLAGS_IS_PERCENT;
             word++;
         }
 
@@ -133,14 +133,14 @@ int resolve_integer(Parser *parser,
 /* Continue parsing an integer expression. */
 int continue_parsing_integer_expression(Parser *parser,
         _Out unsigned *output_flags,
-        _Out parse_integer_t *output_integer)
+        _Out action_integer_t *output_integer)
 {
     int character;
     bool has_anything = false;
     unsigned flags = 0;
-    parse_integer_t integer = 0;
+    action_integer_t integer = 0;
     unsigned sub_flags;
-    parse_integer_t sub_integer;
+    action_integer_t sub_integer;
 
     /* check for any integer operators */
     while (skip_blanks(parser),

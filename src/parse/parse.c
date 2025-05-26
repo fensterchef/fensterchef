@@ -127,21 +127,22 @@ void destroy_parser(Parser *parser)
 /* Test the parser functionality. */
 int test_parser(Parser *parser)
 {
-    struct parse_action_list list;
-    struct action_list actions;
+    struct parse_action_block block;
+    ActionBlock *actions;
 
-    ZERO(&list, 1);
-    while (parse_top(parser, &list) == OK) {
+    ZERO(&block, 1);
+    while (parse_top(parser, &block) == OK) {
         /* nothing */
     }
 
     if (parser->error_count == 0) {
-        make_real_action_list(&actions, &list);
+        actions = convert_parse_action_block(&block);
         LOG_DEBUG("got actions: %A\n",
-                &actions);
+                actions);
+        dereference_action_block(actions);
     }
 
-    clear_parse_list(&list);
+    clear_parse_action_block(&block);
 
     return parser->error_count > 0 ? ERROR : OK;
 }
@@ -149,28 +150,29 @@ int test_parser(Parser *parser)
 /* Parse the currently active stream and run all actions. */
 int parse_and_run_actions(Parser *parser)
 {
-    struct parse_action_list list;
-    struct action_list actions;
+    struct parse_action_block block;
+    ActionBlock *actions;
 
-    ZERO(&list, 1);
-    while (parse_top(parser, &list) == OK) {
+    ZERO(&block, 1);
+    while (parse_top(parser, &block) == OK) {
         /* nothing */
     }
 
     if (parser->error_count > 0) {
         /* clear all parsed thus far */
-        clear_parse_list(&list);
+        clear_parse_action_block(&block);
         return ERROR;
     }
 
     /* do the startup actions */
-    make_real_action_list(&actions, &list);
+    actions = convert_parse_action_block(&block);
     LOG_DEBUG("running actions: %A\n",
-            &actions);
+            actions);
     Window_selected = Window_focus;
-    run_action_list(&actions);
+    run_action_block(actions);
 
-    clear_parse_list(&list);
+    dereference_action_block(actions);
+    clear_parse_action_block(&block);
 
     return OK;
 }

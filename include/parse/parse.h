@@ -1,7 +1,6 @@
 #ifndef PARSE__PARSE_H
 #define PARSE__PARSE_H
 
-#include "core/action.h"
 #include "utility/attributes.h"
 #include "utility/list.h"
 #include "utility/types.h"

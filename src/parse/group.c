@@ -53,23 +53,23 @@ struct parse_group *find_group(const char *name)
 /* Run counter actions that undo anything that the group did. */
 void undo_group(const struct parse_group *group)
 {
-    const struct action_list *actions;
-    const struct parse_data *data;
+    const ActionBlock *actions;
+    const struct action_data *data;
     struct button_binding button;
     struct key_binding key;
     struct window_relation relation;
 
-    actions = &group->actions;
+    actions = group->actions;
     data = actions->data;
     /* find all binding actions and make an unbind action to counter it */
     for (size_t i = 0; i < actions->number_of_items; i++) {
         if (actions->items[i].type == ACTION_BUTTON_BINDING &&
-                data->u.button.actions.number_of_items > 0) {
+                data->u.button.actions->number_of_items > 0) {
             button = data->u.button;
             ZERO(&button.actions, 1);
             set_button_binding(&button);
         } else if (actions->items[i].type == ACTION_KEY_BINDING &&
-                data->u.key.actions.number_of_items > 0) {
+                data->u.key.actions->number_of_items > 0) {
             key = data->u.key;
             ZERO(&key.actions, 1);
             set_key_binding(&key);
@@ -92,7 +92,7 @@ void clear_all_groups(void)
 
         if (group_table[i].name != NULL) {
             free(group_table[i].name);
-            clear_action_list(&group_table[i].actions);
+            dereference_action_block(group_table[i].actions);
             group_table[i].name = NULL;
             group_table_count--;
         }
@@ -102,7 +102,7 @@ void clear_all_groups(void)
 /* Parse all after a `group` keyword. */
 void continue_parsing_group(Parser *parser)
 {
-    struct parse_action_list sub_list;
+    struct parse_action_block sub_block;
     unsigned index;
     struct parse_group group;
 
@@ -113,10 +113,10 @@ void continue_parsing_group(Parser *parser)
 
     group.name = xstrdup(parser->string);
 
-    ZERO(&sub_list, 1);
-    if (parse_top(parser, &sub_list) != OK) {
+    ZERO(&sub_block, 1);
+    if (parse_top(parser, &sub_block) != OK) {
         free(group.name);
-        clear_parse_list(&sub_list);
+        clear_parse_action_block(&sub_block);
         return;
     }
 
@@ -124,21 +124,20 @@ void continue_parsing_group(Parser *parser)
 
     if (group_table[index].name == NULL &&
             group_table_count + 1 > PARSE_MAX_GROUPS * PARSE_MAX_FILL_RATE) {
-        clear_parse_list(&sub_list);
+        clear_parse_action_block(&sub_block);
         free(group.name);
         emit_parse_error(parser, "there is no more space for groups");
         return;
     }
 
-    clear_parse_list_data(&sub_list);
-
-    make_real_action_list(&group.actions, &sub_list);
+    group.actions = convert_parse_action_block(&sub_block);
+    clear_parse_action_block(&sub_block);
 
     if (group_table[index].name != NULL) {
         LOG("overwriting group %s\n",
                 group.name);
         free(group_table[index].name);
-        clear_action_list(&group_table[index].actions);
+        dereference_action_block(group_table[index].actions);
     } else {
         LOG("creating group %s\n",
                 group.name);
@@ -149,10 +148,10 @@ void continue_parsing_group(Parser *parser)
 }
 
 /* Parse all after a `ungroup` keyword. */
-void continue_parsing_ungroup(Parser *parser, struct parse_action_list *list)
+void continue_parsing_ungroup(Parser *parser, struct parse_action_block *block)
 {
-    struct action_list_item item;
-    struct parse_data data;
+    struct action_block_item item;
+    struct action_data data;
 
     if (read_string(parser) != OK) {
         emit_parse_error(parser,
@@ -162,10 +161,10 @@ void continue_parsing_ungroup(Parser *parser, struct parse_action_list *list)
 
     item.type = ACTION_UNGROUP;
     item.data_count = 1;
-    LIST_APPEND_VALUE(list->items, item);
+    LIST_APPEND_VALUE(block->items, item);
 
     data.flags = 0;
-    data.type = PARSE_DATA_TYPE_STRING;
+    data.type = ACTION_DATA_TYPE_STRING;
     data.u.string = xstrdup(parser->string);
-    LIST_APPEND_VALUE(list->data, data);
+    LIST_APPEND_VALUE(block->data, data);
 }

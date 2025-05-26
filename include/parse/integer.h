@@ -26,7 +26,7 @@
  */
 int resolve_integer(Parser *parser,
         _Out unsigned *flags,
-        _Out parse_integer_t *integer);
+        _Out action_integer_t *integer);
 
 /* Continue parsing an integer expression.
  *
@@ -36,6 +36,6 @@ int resolve_integer(Parser *parser,
  */
 int continue_parsing_integer_expression(Parser *parser,
         _Out unsigned *flags,
-        _Out parse_integer_t *integer);
+        _Out action_integer_t *integer);
 
 #endif
