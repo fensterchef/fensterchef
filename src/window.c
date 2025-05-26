@@ -1270,9 +1270,19 @@ void hide_window(FcWindow *window)
     case WINDOW_MODE_FLOATING:
     case WINDOW_MODE_FULLSCREEN:
     case WINDOW_MODE_DOCK:
-    case WINDOW_MODE_DESKTOP:
-        set_focus_window(Frame_focus->window);
+    case WINDOW_MODE_DESKTOP: {
+        Monitor *monitor;
+        FcWindow *other;
+
+        monitor = get_monitor_containing_window(window);
+        other = get_window_covering_monitor(monitor);
+        if (other != NULL) {
+            set_focus_window(other);
+        } else {
+            set_focus_window(Frame_focus->window);
+        }
         break;
+    }
 
     /* not a real window mode */
     case WINDOW_MODE_MAX:
