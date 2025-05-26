@@ -24,7 +24,7 @@ const struct configuration default_configuration = {
     .auto_remove = false,
     .auto_remove_void = false,
 
-    .notification_duration = 3,
+    .notification_duration = 2,
 
     .text_padding = 6,
 
@@ -47,6 +47,7 @@ struct configuration configuration = default_configuration;
 static const struct default_button_binding {
     /* the binding flags */
     bool is_release;
+    bool is_transparent;
     /* the modifiers of the button */
     unsigned modifiers;
     /* the button to press */
@@ -55,16 +56,18 @@ static const struct default_button_binding {
     action_type_t type;
 } default_button_bindings[] = {
     /* start moving or resizing a window (depends on the mouse position) */
-    { false, 0, 1, ACTION_INITIATE_RESIZE },
+    { false, false, Mod4Mask, Button1, ACTION_INITIATE_RESIZE },
     /* minimize (hide) a window */
-    { true, 0, 2, ACTION_MINIMIZE_WINDOW },
+    { true, false, Mod4Mask, Button2, ACTION_MINIMIZE_WINDOW },
     /* start moving a window */
-    { false, 0, 3, ACTION_INITIATE_MOVE },
+    { false, false, Mod4Mask, Button3, ACTION_INITIATE_MOVE },
+    /* focus a window */
+    { false, true, 0, Button1, ACTION_FOCUS_WINDOW },
 };
 
 /* default key bindings */
 static const struct default_key_binding {
-    /* the modifiers of the key */
+    /* the modifiers of the key (will be combined with Mod4Mask) */
     unsigned modifiers;
     /* the key symbol */
     KeySym key_symbol;
@@ -224,9 +227,9 @@ static void set_default_button_bindings(void)
     /* overwrite bindings with the default button bindings */
     for (unsigned i = 0; i < SIZE(default_button_bindings); i++) {
         /* bake a button binding from the default button bindings struct */
-        binding.is_transparent = false;
         binding.is_release = default_button_bindings[i].is_release;
-        binding.modifiers = Mod4Mask | default_button_bindings[i].modifiers;
+        binding.is_transparent = default_button_bindings[i].is_transparent;
+        binding.modifiers = default_button_bindings[i].modifiers;
         binding.button = default_button_bindings[i].button_index;
         binding.actions = create_empty_action_block(1, 0);
         binding.actions->items[0].type = default_button_bindings[i].type;

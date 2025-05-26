@@ -27,7 +27,7 @@ font monospace
 # Set the text color
 foreground #7fd0f1
 
-# Set the text color
+# Set the text color for error text
 foreground error #b83940
 
 # Set the background color of fensterchef windows
@@ -104,6 +104,9 @@ mod+MiddleButton minimize window
 
 # Move a window
 mod+RightButton initiate move
+
+# Focus a window by clicking it
+transparent LeftButton focus window
 
 # Reload this configuration file
 mod+Shift+r reload configuration
@@ -184,7 +187,7 @@ group resize (
     j resize window by 0 -1%
     k resize window by 0 1%
     l resize window by 1% 0
-    
+
     q ungroup resize
     Escape ungroup resize
 )

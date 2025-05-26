@@ -1,4 +1,4 @@
-.TH FENSTERCHEF 1 "2025-05-19" "Fensterchef" "Fensterchef manual"
+.TH FENSTERCHEF 1 "2.0" "Fensterchef" "Fensterchef manual"
 .SH NAME
 fensterchef - tiling done the right way
 .
@@ -6,7 +6,7 @@ fensterchef - tiling done the right way
 .B fensterchef
 .RI [ OPTION... ]
 .
-.SH OPTIONS
+.SH OPTION
 .PP
 .BR -h ,
 .BR --help ,
@@ -35,30 +35,24 @@ as configuration file.
 .PP
 .BR -e ,
 .B --command
-.I ARGUMENTS...
+.I ARGUMENT...
     Run a command within fensterchef.
 .
 .SH DESCRIPTION
-The
-.B fensterchef
-developers thank you for choosing
-.BR fensterchef .
-.B fensterchef
-is an X11 tiling window manager with floating window support and
-a keyboard-centric philosophy although there are also a lot of options for the
-mouse.
-
-If you have used
-.BR ratpoison (1)
-before, than this is a perfect replacement for you as
-it is heavily inspired by ratpoison's manual tiling.
-.BR i3 (1)
-users will also have a
-smooth transition as floating windows behave essentially the same way, but there
-might be some initial confusing about the tiling.
-
-We took the best out of window managers we like to give a new and unique way to
-manage windows.
+Fensterchef is the original fensterchef product.  You are presented with an X11
+tiling window manager offering support for floating, fullscreen, dock and
+desktop windows with full EWMH support.
+.PP
+For a detailed guide, see
+.IR https://fensterchef.org/wm.html .
+.PP
+For all configuration options, see the the supplied configuration file at
+.IR /usr/share/fensterchef/wm .
+Create a copy of this file at
+.I ~/.config/fensterchef/wm
+and look through the options.
+All configuration options are explained at
+.BR fensterchef (5).
 .
 .SH SETUP
 Setting up fensterchef depends on whether you are using a display manager or
@@ -68,10 +62,10 @@ If this is the case, configure your display manager to set the window manager or
 edit
 .I ~/.xsessionrc
 and add:
-.EE
-exec fensterchef
 .EX
-
+exec fensterchef
+.EE
+.PP
 Without a display manager, you can instead edit
 .IR ~/.xinitrc .
 .
@@ -147,6 +141,8 @@ together with any binding.
 .B LeftButton
     Start moving/resizing the pressed window, this figures out dynamically which
     edge to move.
+.PP
+    Use this without a modifier to simply focus the window.
 .PP
 .B MiddleButton
     Minimize (hide) the pressed window.        
@@ -256,4 +252,7 @@ If the user quits, the exit status is
 Otherwise it is
 .BR 1 .
 .SH SEE ALSO
+.PP
 .BR fensterchef (5)
+.PP
+.I https://fensterchef.org
