@@ -88,7 +88,7 @@ int next_cycle(void)
             XNextEvent(display, &event);
 
             handle_window_list_event(&event);
-
+            handle_notification_event(&event);
             handle_event(&event);
         }
 

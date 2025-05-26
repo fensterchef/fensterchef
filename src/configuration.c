@@ -7,6 +7,7 @@
 #include "fensterchef.h"
 #include "font.h"
 #include "log.h"
+#include "notification.h"
 #include "parse/alias.h"
 #include "parse/group.h"
 #include "parse/input.h"
@@ -32,6 +33,7 @@ const struct configuration default_configuration = {
     .border_color_active = 0xff939388,
     .border_color_focus = 0xff7fd0f1,
     .foreground = 0xff7fd0f1,
+    .foreground_error = 0xffb83940,
     .background = 0xff49494d,
 
     .gaps_inner = { 4, 4, 4, 4 },
@@ -216,7 +218,8 @@ static const struct default_key_binding {
 static void set_default_button_bindings(void)
 {
     struct button_binding binding;
-    ActionBlock *block;
+
+    LOG_DEBUG("setting default button bindings\n");
 
     /* overwrite bindings with the default button bindings */
     for (unsigned i = 0; i < SIZE(default_button_bindings); i++) {
@@ -225,10 +228,10 @@ static void set_default_button_bindings(void)
         binding.is_release = default_button_bindings[i].is_release;
         binding.modifiers = Mod4Mask | default_button_bindings[i].modifiers;
         binding.button = default_button_bindings[i].button_index;
-        block = create_empty_action_block(1, 0);
-        block->items[0].type = default_button_bindings[i].type;
+        binding.actions = create_empty_action_block(1, 0);
+        binding.actions->items[0].type = default_button_bindings[i].type;
         set_button_binding(&binding);
-        dereference_action_block(block);
+        dereference_action_block(binding.actions);
     }
 }
 
@@ -238,23 +241,24 @@ static void set_default_button_bindings(void)
 static void set_default_key_bindings(void)
 {
     struct key_binding binding;
-    ActionBlock *block;
+
+    LOG_DEBUG("setting default key bindings\n");
 
     /* overwrite bindings with the default button bindings */
     for (unsigned i = 0; i < SIZE(default_key_bindings); i++) {
         /* bake a key binding from the bindings array */
         binding.modifiers = Mod4Mask | default_key_bindings[i].modifiers;
         binding.key_symbol = default_key_bindings[i].key_symbol;
-        block = create_empty_action_block(1,
+        binding.actions = create_empty_action_block(1,
                 default_key_bindings[i].data_count);
-        block->items[0].type = default_key_bindings[i].action;
-        block->items[0].data_count = default_key_bindings[i].data_count;
+        binding.actions->items[0].type = default_key_bindings[i].action;
+        binding.actions->items[0].data_count = default_key_bindings[i].data_count;
         if (default_key_bindings[i].data_count == 1) {
-            block->data[0] = default_key_bindings[i].data;
-            duplicate_action_data(&block->data[0]);
+            binding.actions->data[0] = default_key_bindings[i].data;
+            duplicate_action_data(&binding.actions->data[0]);
         }
-
         set_key_binding(&binding);
+        dereference_action_block(binding.actions);
     }
 }
 
@@ -268,8 +272,6 @@ void set_default_configuration(void)
     set_ignored_modifiers(DEFAULT_IGNORE_MODIFIERS);
     set_default_button_bindings();
     set_default_key_bindings();
-
-    set_font(DEFAULT_FONT);
 }
 
 /* Expand given @path.
@@ -376,6 +378,8 @@ void clear_configuration(void)
     unset_button_bindings();
     unset_key_bindings();
     unset_window_relations();
+
+    set_font(DEFAULT_FONT);
 }
 
 /* Reload the fensterchef configuration. */
@@ -390,6 +394,10 @@ void reload_configuration(void)
 
     clear_configuration();
 
+    if (error_notification != NULL) {
+        unmap_client(&error_notification->reference);
+    }
+
     if (configuration == NULL ||
             (parser = create_file_parser(configuration),
                 parser == NULL)) {
@@ -399,6 +407,14 @@ void reload_configuration(void)
         }
         set_default_configuration();
     } else if (parse_and_run_actions(parser) != OK) {
+        char buffer[1024];
+
+        snprintf(buffer, sizeof(buffer),
+                "Configuration parse error at %s:%u",
+                parser->first_error_file,
+                parser->first_error_line + 1);
+        set_error_notification(buffer);
+
         set_default_configuration();
     }
     destroy_parser(parser);

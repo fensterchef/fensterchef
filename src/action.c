@@ -977,6 +977,11 @@ void do_action(action_type_t type, const struct action_data *data)
         configuration.foreground = data->u.integer;
         break;
 
+    /* the foreground color of the fensterchef windows */
+    case ACTION_FOREGROUND_ERROR:
+        configuration.foreground_error = data->u.integer;
+        break;
+
     /* the inner gaps between frames and windows */
     case ACTION_GAPS_INNER:
         configuration.gaps_inner[0] = data->u.integer;
@@ -1279,6 +1284,11 @@ void do_action(action_type_t type, const struct action_data *data)
             break;
         }
         set_window_mode(window, WINDOW_MODE_TILING);
+        break;
+
+    /* show an error message */
+    case ACTION_SHOW_ERROR:
+        set_error_notification(data->u.string);
         break;
 
     /* toggle visibility of the interactive window list */

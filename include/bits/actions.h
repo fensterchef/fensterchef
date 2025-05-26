@@ -112,6 +112,8 @@
     X(FONT, "font S") \
     /* the foreground color of the fensterchef windows */ \
     X(FOREGROUND, "foreground I") \
+    /* the foreground color of the fensterchef windows */ \
+    X(FOREGROUND_ERROR, "foreground error I") \
     /* the inner gaps between frames and windows */ \
     X(GAPS_INNER, "gaps inner I") \
     /* set the horizontal and vertical inner gaps */ \
@@ -186,6 +188,8 @@
     X(SET_FULLSCREEN, "set fullscreen") \
     /* set the mode of the current window to tiling */ \
     X(SET_TILING, "set tiling") \
+    /* show an error message */ \
+    X(SHOW_ERROR, "show error S") \
     /* show the interactive window list */ \
     X(SHOW_LIST, "show list") \
     /* show a notification with a string message */ \

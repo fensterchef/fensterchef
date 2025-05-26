@@ -63,6 +63,8 @@ static void continue_parsing_source(Parser *parser,
                 sub_block.data_length);
     }
 
+    parser->error_count += sub_parser->error_count;
+
     destroy_parser(sub_parser);
 }
 

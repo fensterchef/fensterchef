@@ -27,6 +27,9 @@ font monospace
 # Set the text color
 foreground #7fd0f1
 
+# Set the text color
+foreground error #b83940
+
 # Set the background color of fensterchef windows
 background #49494d
 

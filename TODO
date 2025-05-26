@@ -16,10 +16,6 @@ M - Maintenance
     are switchable.  This could be a file viewer, application launcher or the
     window list.
 
-#134 Show parsing errors directly
-    Parsing errors are put into the log file.  Make it so the user sees these
-    errors via some sort of popup
-
 #136 ...
 
 #150 Add workspaces
@@ -616,3 +612,7 @@ M - Maintenance
 #133 ! Add protection for recursive calls
     When a group is called within a group, it would recurse infinitely.  Keep
     track of the depth and report an error if the depth is to high
+
+#134 Show parsing errors directly
+    Parsing errors are put into the log file.  Make it so the user sees these
+    errors via some sort of popup
