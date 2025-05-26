@@ -18,6 +18,9 @@
 #include "x11/display.h"
 #include "x11/move_resize.h"
 
+/* the current group call depth */
+static unsigned block_call_depth;
+
 /* the corresponding string identifier for all actions */
 static const char *action_strings[ACTION_MAX] = {
 #define X(identifier, string) \
@@ -181,19 +184,28 @@ ActionBlock *create_empty_action_block(size_t number_of_items,
 /* Do all actions within @block. */
 void run_action_block(ActionBlock *block)
 {
-    struct action_block_item *item;
-    const struct action_data *data;
+    block_call_depth++;
 
-    reference_action_block(block);
+    if (block_call_depth > MAX_BLOCK_CALL_DEPTH) {
+        LOG_ERROR("interrupted action: calling is too deep or nested\n");
+    } else {
+        const struct action_data *data;
 
-    data = block->data;
-    for (size_t i = 0; i < block->number_of_items; i++) {
-        item = &block->items[i];
-        do_action(item->type, data);
-        data += item->data_count;
+        reference_action_block(block);
+
+        data = block->data;
+        for (size_t i = 0; i < block->number_of_items; i++) {
+            struct action_block_item *item;
+
+            item = &block->items[i];
+            do_action(item->type, data);
+            data += item->data_count;
+        }
+
+        dereference_action_block(block);
     }
 
-    dereference_action_block(block);
+    block_call_depth--;
 }
 
 /* Resize the current window or current frame if it does not exist. */

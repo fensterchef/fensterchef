@@ -7,8 +7,6 @@
  * The user can invoke any actions in any order at any time.
  */
 
-#include <stddef.h>
-
 #include "binding.h"
 #include "bits/actions.h"
 #include "bits/action_block.h"
@@ -36,6 +34,9 @@ typedef int_fast32_t action_integer_t;
     X(BUTTON, struct button_binding button, 'B') \
     /* key binding */ \
     X(KEY, struct key_binding key, 'K')
+
+/* the maximum depth a group can be called */
+#define MAX_BLOCK_CALL_DEPTH 1024
 
 /* action codes */
 typedef enum {
