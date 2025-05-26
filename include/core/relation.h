@@ -27,11 +27,8 @@ void clear_window_relation(struct window_relation *relation);
 /* Duplicate a relation deeply into itself. */
 void duplicate_window_relation(struct window_relation *relation);
 
-/* Signal to the currently running relation that it should remove itself.
- *
- * It is only removed after it finished running.
- */
-void signal_window_unrelate(void);
+/* Remove the currently running window relation. */
+void remove_current_window_relation(void);
 
 /* Set a window relation from instance/class name to actions.
  *

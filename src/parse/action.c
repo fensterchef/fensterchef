@@ -4,6 +4,7 @@
 #include "core/window.h"
 #include "parse/action.h"
 #include "parse/input.h"
+#include "parse/integer.h"
 #include "parse/top.h"
 #include "parse/utility.h"
 #include "utility/utility.h"
@@ -60,6 +61,52 @@ static int resolve_action_word(Parser *parser, struct parse_action_block *block)
     }
 
     return count == 0 ? ERROR : OK;
+}
+
+/* Resolve the string within parser as a data point.
+ *
+ * @return false if @identifier is invalid.
+ *
+ * data->type is set to PARSE_DATA_TYPE_MAX if the string within parser does not
+ * match the data type.
+ */
+static bool resolve_data(Parser *parser, char identifier,
+        _Out struct action_data *data)
+{
+    action_data_type_t type;
+
+    type = get_action_data_type_from_identifier(identifier);
+    if (type == ACTION_DATA_TYPE_MAX) {
+        return false;
+    }
+
+    data->type = type;
+
+    switch (type) {
+    case ACTION_DATA_TYPE_INTEGER:
+        if (continue_parsing_integer_expression(parser, &data->flags,
+                    &data->u.integer) != OK) {
+            data->type = ACTION_DATA_TYPE_MAX;
+        }
+        break;
+
+    case ACTION_DATA_TYPE_STRING:
+        LIST_COPY(parser->string, 0, parser->string_length + 1,
+                data->u.string);
+        break;
+
+    case ACTION_DATA_TYPE_RELATION:
+    case ACTION_DATA_TYPE_BUTTON:
+    case ACTION_DATA_TYPE_KEY:
+        /* not supported as action parameter */
+        break;
+
+    case ACTION_DATA_TYPE_MAX:
+        /* nothing */
+        break;
+    }
+
+    return true;
 }
 
 /* Read the next string and find the actions where it matches.

@@ -8,7 +8,6 @@
 #include "font.h"
 #include "log.h"
 #include "parse/alias.h"
-#include "parse/data_type.h"
 #include "parse/group.h"
 #include "parse/input.h"
 #include "parse/parse.h"

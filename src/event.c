@@ -107,15 +107,7 @@ int next_cycle(void)
                     Frame_focus->window->border_size == 0 ||
                     (Window_focus != NULL &&
                         Window_focus->state.mode != WINDOW_MODE_TILING)) {
-                char number[MAXIMUM_DIGITS(Frame_focus->number) + 1];
-
-                snprintf(number, sizeof(number), "%u",
-                        Frame_focus->number);
-                set_system_notification(Frame_focus->number > 0 ? number :
-                            Frame_focus->left == NULL ?  "Current frame" :
-                            "Current frames",
-                        Frame_focus->x + Frame_focus->width / 2,
-                        Frame_focus->y + Frame_focus->height / 2);
+                indicate_frame(Frame_focus);
             }
             LOG("frame %F was focused\n", Frame_focus);
         }

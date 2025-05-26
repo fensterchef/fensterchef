@@ -12,7 +12,6 @@
 #include "frame.h"
 #include "log.h"
 #include "notification.h"
-#include "parse/data_type.h"
 #include "window.h"
 #include "window_list.h"
 #include "x11/display.h"

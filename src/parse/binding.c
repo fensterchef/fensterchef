@@ -14,7 +14,6 @@
 #include <ctype.h>
 
 #include "parse/action.h"
-#include "parse/data_type.h"
 #include "parse/binding.h"
 #include "parse/input.h"
 #include "parse/integer.h"

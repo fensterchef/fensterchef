@@ -14,7 +14,6 @@
  * INTEGER [+ INTEGER]...
  */
 
-#include "parse/data_type.h"
 #include "parse/parse.h"
 #include "utility/attributes.h"
 

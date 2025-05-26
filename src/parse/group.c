@@ -120,7 +120,7 @@ void continue_parsing_group(Parser *parser)
         return;
     }
 
-    index = get_group_index(parser->string);
+    index = get_group_index(group.name);
 
     if (group_table[index].name == NULL &&
             group_table_count + 1 > PARSE_MAX_GROUPS * PARSE_MAX_FILL_RATE) {

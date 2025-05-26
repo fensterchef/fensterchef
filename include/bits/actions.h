@@ -128,6 +128,8 @@
     X(HINT_SPLIT_HORIZONTALLY, "hint split horizontally") \
     /* hint that the current frame should split vertically */ \
     X(HINT_SPLIT_VERTICALLY, "hint split vertically") \
+    /* show an indication on the current frame */ \
+    X(INDICATE, "indicate") \
     /* start moving a window with the mouse */ \
     X(INITIATE_MOVE, "initiate move") \
     /* start resizing a window with the mouse */ \

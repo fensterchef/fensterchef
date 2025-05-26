@@ -109,6 +109,9 @@ Frame *create_frame(void);
  */
 void destroy_frame(Frame *frame);
 
+/* Show a notification on the given frame indicating the number. */
+void indicate_frame(Frame *frame);
+
 /* Get the frame above the given one that has no parent.
  *
  * @frame may be NULL, then simply NULL is returned.

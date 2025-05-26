@@ -9,9 +9,9 @@
 
 #include <stddef.h>
 
+#include "binding.h"
 #include "bits/actions.h"
 #include "bits/action_block.h"
-#include "bits/binding.h"
 #include "utility/types.h"
 #include "relation.h"
 

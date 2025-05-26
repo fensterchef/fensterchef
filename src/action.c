@@ -11,7 +11,6 @@
 #include "log.h"
 #include "monitor.h"
 #include "notification.h"
-#include "parse/data_type.h"
 #include "parse/group.h"
 #include "parse/parse.h"
 #include "window.h"
@@ -533,18 +532,6 @@ void do_action(action_type_t type, const struct action_data *data)
         }
 
         Frame_focus->number = data->u.integer;
-        if (Frame_focus->number == 0) {
-            set_system_notification("Number removed",
-                    Frame_focus->x + Frame_focus->width / 2,
-                    Frame_focus->y + Frame_focus->height / 2);
-        } else {
-            char number[MAXIMUM_DIGITS(Frame_focus->number) + 1];
-
-            snprintf(number, sizeof(number), "%" PRIu32, Frame_focus->number);
-            set_system_notification(number,
-                    Frame_focus->x + Frame_focus->width / 2,
-                    Frame_focus->y + Frame_focus->height / 2);
-        }
         break;
 
     /* assign a number to a window */
@@ -1042,6 +1029,11 @@ void do_action(action_type_t type, const struct action_data *data)
                 Frame_focus->width, Frame_focus->height);
         break;
 
+    /* show an indication on the current frame */
+    case ACTION_INDICATE:
+        indicate_frame(Frame_focus);
+        break;
+
     /* start moving a window with the mouse */
     case ACTION_INITIATE_MOVE:
         if (window == NULL) {
@@ -1394,7 +1386,7 @@ void do_action(action_type_t type, const struct action_data *data)
 
     /* remove the currently running relation */
     case ACTION_UNRELATE:
-        signal_window_unrelate();
+        remove_current_window_relation();
         break;
     
 

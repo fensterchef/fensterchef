@@ -54,8 +54,8 @@ static void remove_window_relation(size_t index)
     old_window_relations_length--;
 }
 
-/* Signal to the currently running relation that it should remove itself. */
-void signal_window_unrelate(void)
+/* Remove the currently running window relation. */
+void remove_current_window_relation(void)
 {
     if (running_relation < window_relations_length) {
         remove_window_relation(running_relation);
