@@ -273,7 +273,7 @@ Text *create_text(const FcChar32 *glyphs, int glyph_count)
 
         if (i == 0) {
             text->x = item->extents.x;
-            text->y = item->extents.y;
+            text->y = item->font->ascent;
         }
 
         if (i + 1 == text->item_count) {
