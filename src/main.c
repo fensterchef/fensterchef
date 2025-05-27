@@ -263,13 +263,20 @@ void parse_program_arguments(void)
     }
 }
 
-/* Open the next log file. */
-static void open_next_log_file(void)
+/* Open the next log file.
+ *
+ * @return ERROR if the log file could not be opened.
+ */
+static int open_next_log_file(void)
 {
     const char *xdg_state_home;
     LIST(char, path);
     time_t current_time;
     struct tm *tm;
+
+    if (log_severity == LOG_SEVERITY_NOTHING) {
+        return ERROR;
+    }
 
     LIST_INITIALIZE(path, 256);
 
@@ -287,7 +294,7 @@ static void open_next_log_file(void)
         fprintf(stderr, "could not create log directory \"%s\": %s\n",
                 path, strerror(errno));
         free(path);
-        return;
+        return ERROR;
     }
 
     LIST_APPEND(path, "/fensterchef", strlen("/fensterchef"));
@@ -297,7 +304,7 @@ static void open_next_log_file(void)
         fprintf(stderr, "could not create log directory \"%s\": %s\n",
                 path, strerror(errno));
         free(path);
-        return;
+        return ERROR;
     }
 
     LIST_GROW(path, path_length + 64);
@@ -310,9 +317,7 @@ static void open_next_log_file(void)
         fprintf(stderr, "could not open log file \"%s\": %s\n",
                 path, strerror(errno));
         free(path);
-
-        log_file_path = (char*) "<stderr>";
-        log_file = stderr;
+        return ERROR;
     } else {
         LOG("parsed arguments, starting to log to %s\n",
                 path);
@@ -322,6 +327,7 @@ static void open_next_log_file(void)
 
         log_file_path = path;
         setvbuf(log_file, NULL, _IOLBF, 0);
+        return OK;
     }
 }
 
@@ -342,7 +348,10 @@ int main(int argc, char **argv)
     log_file = stderr;
     (void) open_next_log_file;
 #else
-    open_next_log_file();
+    if (open_next_log_file() == ERROR) {
+        log_file_path = (char*) "<stderr>";
+        log_file = stderr;
+    }
 #endif
 
     LOG("welcome to " COLOR(YELLOW) FENSTERCHEF_NAME " " COLOR(GREEN)
