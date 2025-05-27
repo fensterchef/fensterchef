@@ -4,7 +4,7 @@ CC="${CC-cc}"
 CFLAGS='-std=c99 -Iinclude -Iinclude/core -Wall -Wextra -Wpedantic -O3'
 LDLIBS="$LDLIBS"
 PACKAGES='x11 xrandr xcursor xft fontconfig'
-PREFIX="${PREFIX-/usr}"
+PREFIX="${PREFIX-}"
 SOURCES=src/utility/*.c\ src/*.c\ src/x11/*.c\ src/parse/*.c
 
 usage() {
@@ -26,24 +26,27 @@ fensterchef() {
 
 install() {
     [ -f fensterchef ] && echo 'fensterchef has been built already' >&2 || fensterchef
-    _command mkdir -p "$PREFIX/share/licenses/fensterchef"
-    _command cp LICENSE.txt "$PREFIX/share/licenses/fensterchef"
-    _command mkdir -p "$PREFIX/bin"
-    _command mv fensterchef "$PREFIX/bin"
-    _command mkdir -p "$PREFIX/share/man/man1"
-    _command gzip --best -c doc/fensterchef.1 >"$PREFIX/share/man/man1/fensterchef.1.gz"
-    _command mkdir -p "$PREFIX/share/man/man5"
-    _command gzip --best -c doc/fensterchef.5 >"$PREFIX/share/man/man5/fensterchef.5.gz"
-    _command mkdir -p "$PREFIX/share/fensterchef"
-    _command cp wm "$PREFIX/share/fensterchef"
+    _command mkdir -p "$PREFIX/usr/share/licenses/fensterchef"
+    _command cp LICENSE.txt "$PREFIX/usr/share/licenses/fensterchef"
+    _command mkdir -p "$PREFIX/usr/bin"
+    _command mv fensterchef "$PREFIX/usr/bin"
+    _command mkdir -p "$PREFIX/usr/share/man/man1"
+    _command gzip --best -c doc/fensterchef.1 >"$PREFIX/usr/share/man/man1/fensterchef.1.gz"
+    _command mkdir -p "$PREFIX/usr/share/man/man5"
+    _command gzip --best -c doc/fensterchef.5 >"$PREFIX/usr/share/man/man5/fensterchef.5.gz"
+    _command mkdir -p "$PREFIX/usr/share/fensterchef"
+    _command cp wm "$PREFIX/usr/share/fensterchef"
 }
 
 uninstall() {
-    license="$PREFIX/share/licenses/fensterchef/"
-    [ -d "$license" ] && _command rm -rf "$license"
-    for f in "$PREFIX/bin/fensterchef" \
-             "$PREFIX/share/man/man1/fensterchef.1" \
-             "$PREFIX/share/man/man1/fensterchef.5" ; do
+    for d in "$PREFIX/usr/share/licenses/fensterchef/" \
+             "$PREFIX/usr/share/fensterchef" ; do
+        [ -d "$d" ] && _command rm -rf "$d"
+    done
+
+    for f in "$PREFIX/usr/bin/fensterchef" \
+             "$PREFIX/usr/share/man/man1/fensterchef.1.gz" \
+             "$PREFIX/usr/share/man/man5/fensterchef.5.gz" ; do
         [ -f "$f" ] && _command rm -f "$f"
     done
 }
