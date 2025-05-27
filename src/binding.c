@@ -16,7 +16,7 @@ static struct internal_button_binding {
     /* the button modifiers */
     unsigned modifiers;
     /* the actions to execute */
-    struct action_list actions;
+    ActionBlock *actions;
     /* another variation using the same button index */
     struct internal_button_binding *next;
 } *button_bindings[BUTTON_MAX - BUTTON_MIN];
@@ -30,7 +30,7 @@ static struct internal_key_binding {
     /* the key symbol, may be `NoSymbol` */
     KeySym key_symbol;
     /* the actions to execute */
-    struct action_list actions;
+    ActionBlock *actions;
     /* another variation using the same key code */
     struct internal_key_binding *next;
 } *key_bindings[KEYCODE_MAX - KEYCODE_MIN];
@@ -98,8 +98,7 @@ void set_button_binding(const struct button_binding *button_binding)
         binding->modifiers = modifiers;
     }
 
-    if (binding->actions.number_of_items == 0 &&
-            button_binding->actions.number_of_items > 0) {
+    if (binding->actions == NULL && button_binding->actions != NULL) {
         for (FcWindow *window = Window_first;
                 window != NULL;
                 window = window->next) {
@@ -108,8 +107,7 @@ void set_button_binding(const struct button_binding *button_binding)
         }
     }
 
-    if (binding->actions.number_of_items > 0 &&
-            button_binding->actions.number_of_items == 0) {
+    if (binding->actions != NULL && button_binding->actions == NULL) {
         for (FcWindow *window = Window_first;
                 window != NULL;
                 window = window->next) {
@@ -120,11 +118,11 @@ void set_button_binding(const struct button_binding *button_binding)
     }
 
     /* clear any old binded actions */
-    clear_action_list(&binding->actions);
+    dereference_action_block(binding->actions);
 
     binding->is_transparent = button_binding->is_transparent;
     binding->actions = button_binding->actions;
-    duplicate_action_list(&binding->actions);
+    reference_action_block(binding->actions);
 }
 
 /* Run the specified key binding. */
@@ -139,10 +137,10 @@ void run_button_binding(Time event_time, bool is_release,
     modifiers &= 0xff;
 
     binding = find_button_binding(is_release, modifiers, button);
-    if (binding != NULL && binding->actions.number_of_items > 0) {
+    if (binding != NULL && binding->actions->number_of_items > 0) {
         LOG("running actions: %A\n",
-                &binding->actions);
-        run_action_list(&binding->actions);
+                binding->actions);
+        run_action_block(binding->actions);
         if (binding->is_transparent) {
             XAllowEvents(display, ReplayPointer, event_time);
         }
@@ -157,7 +155,7 @@ void unset_button_bindings(void)
     for (int i = BUTTON_MIN; i < BUTTON_MAX; i++) {
         binding = button_bindings[i - BUTTON_MIN];
         for (; binding != NULL; binding = binding->next) {
-            clear_action_list(&binding->actions);
+            dereference_action_block(binding->actions);
             ZERO(&binding->actions, 1);
         }
     }
@@ -217,21 +215,19 @@ void set_key_binding(const struct key_binding *key_binding)
         binding->key_symbol = key_binding->key_symbol;
     }
 
-    if (binding->actions.number_of_items == 0 &&
-            key_binding->actions.number_of_items > 0) {
+    if (binding->actions == NULL && key_binding->actions != NULL) {
         grab_key(modifiers, key_code);
-    } else if (binding->actions.number_of_items > 0 &&
-            key_binding->actions.number_of_items == 0) {
+    } else if (binding->actions != NULL && key_binding->actions == NULL) {
         XUngrabKey(display, key_code, modifiers, DefaultRootWindow(display));
         LOG_DEBUG("ungrabbing specific key %u+%d\n",
                 modifiers, key_code);
     }
 
     /* clear any old binded actions */
-    clear_action_list(&binding->actions);
+    dereference_action_block(binding->actions);
 
     binding->actions = key_binding->actions;
-    duplicate_action_list(&binding->actions);
+    reference_action_block(binding->actions);
 }
 
 /* Run the specified key binding. */
@@ -243,10 +239,10 @@ void run_key_binding(bool is_release, unsigned modifiers, KeyCode key_code)
     modifiers &= ~modifiers_ignore;
 
     binding = find_key_binding(is_release, modifiers, key_code);
-    if (binding != NULL && binding->actions.number_of_items > 0) {
-        LOG("running actions: %A\n",
-                &binding->actions);
-        run_action_list(&binding->actions);
+    if (binding != NULL && binding->actions != NULL) {
+        LOG("running actions %A\n",
+                binding->actions);
+        run_action_block(binding->actions);
     }
 }
 
@@ -258,8 +254,8 @@ void unset_key_bindings(void)
     for (int i = KEYCODE_MIN; i < KEYCODE_MAX; i++) {
         binding = key_bindings[i - KEYCODE_MIN];
         for (; binding != NULL; binding = binding->next) {
-            clear_action_list(&binding->actions);
-            ZERO(&binding->actions, 1);
+            dereference_action_block(binding->actions);
+            binding->actions = NULL;
         }
     }
 
@@ -380,7 +376,7 @@ void grab_configured_buttons(Window window)
         binding = button_bindings[i - BUTTON_MIN];
         for (; binding != NULL; binding = binding->next) {
             /* ignore bindings with no action */
-            if (binding->actions.number_of_items == 0) {
+            if (binding->actions == NULL) {
                 LOG_DEBUG("button binding was created some "
                         "day but the actions were removed\n");
                 continue;
@@ -425,7 +421,7 @@ void grab_configured_keys(void)
         binding = key_bindings[i - KEYCODE_MIN];
         for (; binding != NULL; binding = binding->next) {
             /* ignore bindings with no action */
-            if (binding->actions.number_of_items == 0) {
+            if (binding->actions == NULL) {
                 LOG_DEBUG("key binding was created some "
                         "day but the actions were removed\n");
                 continue;

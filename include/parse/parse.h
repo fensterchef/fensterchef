@@ -1,7 +1,6 @@
 #ifndef PARSE__PARSE_H
 #define PARSE__PARSE_H
 
-#include "core/action.h"
 #include "utility/attributes.h"
 #include "utility/list.h"
 #include "utility/types.h"
@@ -28,6 +27,10 @@ typedef struct parser {
     size_t start_index;
     /* the number of errors the parser had */
     unsigned error_count;
+    /* the first line an error occured on */
+    unsigned first_error_line;
+    /* the specific file the error occured in */
+    char *first_error_file;
 
     /* the path of the file, this is `NULL` if the source is a string */
     utf8_t *file_path;

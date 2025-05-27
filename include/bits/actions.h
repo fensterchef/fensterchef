@@ -9,7 +9,7 @@
  * - I is an integer
  * - S is a string
  */
-#define DEFINE_ALL_PARSE_ACTIONS \
+#define DEFINE_ALL_ACTIONS \
     /* no operation */ \
     X(NOP, "nop") \
     /* assign a number to a frame */ \
@@ -112,6 +112,8 @@
     X(FONT, "font S") \
     /* the foreground color of the fensterchef windows */ \
     X(FOREGROUND, "foreground I") \
+    /* the foreground color of the fensterchef windows */ \
+    X(FOREGROUND_ERROR, "foreground error I") \
     /* the inner gaps between frames and windows */ \
     X(GAPS_INNER, "gaps inner I") \
     /* set the horizontal and vertical inner gaps */ \
@@ -128,6 +130,8 @@
     X(HINT_SPLIT_HORIZONTALLY, "hint split horizontally") \
     /* hint that the current frame should split vertically */ \
     X(HINT_SPLIT_VERTICALLY, "hint split vertically") \
+    /* show an indication on the current frame */ \
+    X(INDICATE, "indicate") \
     /* start moving a window with the mouse */ \
     X(INITIATE_MOVE, "initiate move") \
     /* start resizing a window with the mouse */ \
@@ -184,6 +188,8 @@
     X(SET_FULLSCREEN, "set fullscreen") \
     /* set the mode of the current window to tiling */ \
     X(SET_TILING, "set tiling") \
+    /* show an error message */ \
+    X(SHOW_ERROR, "show error S") \
     /* show the interactive window list */ \
     X(SHOW_LIST, "show list") \
     /* show a notification with a string message */ \

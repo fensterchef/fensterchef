@@ -14,7 +14,6 @@
 #include <ctype.h>
 
 #include "parse/action.h"
-#include "parse/data_type.h"
 #include "parse/binding.h"
 #include "parse/input.h"
 #include "parse/integer.h"
@@ -210,7 +209,7 @@ static int continue_parsing_modifiers(Parser *parser,
             character = peek_stream_character(parser),
             character == '+') {
         unsigned flags;
-        parse_integer_t integer;
+        action_integer_t integer;
 
         /* skip over '+' */
         (void) get_stream_character(parser);
@@ -255,42 +254,41 @@ static int resolve_button_or_key_symbol(Parser *parser,
     return OK;
 }
 
-/* Append a binding to the action list.
+/* Append a binding to the action block.
  *
- * @sub_list is the actions to use for the binding.
+ * @sub_block is the actions to use for the binding.
  *           If it is NULL, the actions are empty.
  */
-static void append_binding(Parser *parser, struct parse_action_list *list,
+static void append_binding(Parser *parser, struct parse_action_block *block,
         struct parse_binding *binding,
-        _Nullable struct parse_action_list *sub_list)
+        _Nullable struct parse_action_block *sub_block)
 {
+    struct action_block_item item;
+    struct action_data data;
+
     if (binding->button_index != BUTTON_NONE) {
         struct button_binding button;
-        struct action_list_item item;
-        struct parse_data data;
 
         button.is_release = binding->is_release;
         button.is_transparent = binding->is_transparent;
         button.modifiers = binding->modifiers;
         button.button = binding->button_index;
-        if (sub_list == NULL) {
-            ZERO(&button.actions, 0);
+        if (sub_block == NULL) {
+            button.actions = NULL;
         } else {
-            make_real_action_list(&button.actions, sub_list);
+            button.actions = convert_parse_action_block(sub_block);
         }
 
         item.type = ACTION_BUTTON_BINDING;
         item.data_count = 1;
-        LIST_APPEND_VALUE(list->items, item);
+        LIST_APPEND_VALUE(block->items, item);
 
         data.flags = 0;
-        data.type = PARSE_DATA_TYPE_BUTTON;
+        data.type = ACTION_DATA_TYPE_BUTTON;
         data.u.button = button;
-        LIST_APPEND_VALUE(list->data, data);
+        LIST_APPEND_VALUE(block->data, data);
     } else {
         struct key_binding key;
-        struct action_list_item item;
-        struct parse_data data;
 
         if (binding->is_transparent) {
             parser->start_index = binding->transparent_position;
@@ -302,46 +300,44 @@ static void append_binding(Parser *parser, struct parse_action_list *list,
         key.modifiers = binding->modifiers;
         key.key_symbol = binding->key_symbol;
         key.key_code = binding->key_code;
-        if (sub_list == NULL) {
-            ZERO(&key.actions, 0);
+        if (sub_block == NULL) {
+            key.actions = NULL;
         } else {
-            make_real_action_list(&key.actions, sub_list);
+            key.actions = convert_parse_action_block(sub_block);
         }
 
         item.type = ACTION_KEY_BINDING;
         item.data_count = 1;
-        LIST_APPEND_VALUE(list->items, item);
+        LIST_APPEND_VALUE(block->items, item);
 
         data.flags = 0;
-        data.type = PARSE_DATA_TYPE_KEY;
+        data.type = ACTION_DATA_TYPE_KEY;
         data.u.key = key;
-        LIST_APPEND_VALUE(list->data, data);
+        LIST_APPEND_VALUE(block->data, data);
     }
 }
 
 /* Parse the next binding definition in @parser. */
 static void finish_parsing_binding(Parser *parser,
         struct parse_binding *binding,
-        struct parse_action_list *list)
+        struct parse_action_block *block)
 {
-    struct parse_action_list sub_list;
+    struct parse_action_block sub_block;
 
-    ZERO(&sub_list, 1);
-    if (parse_top(parser, &sub_list) != OK) {
+    ZERO(&sub_block, 1);
+    if (parse_top(parser, &sub_block) != OK) {
         emit_parse_error(parser, "expected actions after binding");
-        clear_parse_list(&sub_list);
     } else {
-        clear_parse_list_data(&sub_list);
-
-        append_binding(parser, list, binding, &sub_list);
+        append_binding(parser, block, binding, &sub_block);
     }
+    clear_parse_action_block(&sub_block);
 }
 
 /* Read a key code value. */
 static int read_key_code(Parser *parser, struct parse_binding *binding)
 {
     unsigned flags;
-    parse_integer_t integer;
+    action_integer_t integer;
     int min_key_code, max_key_code;
 
     if (read_string(parser) != OK ||
@@ -374,7 +370,7 @@ static int read_key_code(Parser *parser, struct parse_binding *binding)
 }
 
 /* Parse a full binding definition. */
-void continue_parsing_binding(Parser *parser, struct parse_action_list *list)
+void continue_parsing_binding(Parser *parser, struct parse_action_block *block)
 {
     struct parse_binding binding;
 
@@ -403,26 +399,26 @@ void continue_parsing_binding(Parser *parser, struct parse_action_list *list)
         }
     }
 
-    finish_parsing_binding(parser, &binding, list);
+    finish_parsing_binding(parser, &binding, block);
 }
 
 /* Parse a full key code binding definition. */
 void continue_parsing_key_code_binding(Parser *parser,
-        struct parse_action_list *list)
+        struct parse_action_block *block)
 {
     struct parse_binding binding;
 
     ZERO(&binding, 1);
 
     read_key_code(parser, &binding);
-    finish_parsing_binding(parser, &binding, list);
+    finish_parsing_binding(parser, &binding, block);
 }
 
 /* Parse a full unbind statement.
  *
  * Expects that an `unbind` has already been read.
  */
-void continue_parsing_unbind(Parser *parser, struct parse_action_list *list)
+void continue_parsing_unbind(Parser *parser, struct parse_action_block *block)
 {
     struct parse_binding binding;
 
@@ -461,5 +457,5 @@ void continue_parsing_unbind(Parser *parser, struct parse_action_list *list)
         }
     }
 
-    append_binding(parser, list, &binding, NULL);
+    append_binding(parser, block, &binding, NULL);
 }

@@ -24,6 +24,25 @@
     size_t name##_length; \
     size_t name##_capacity
 
+/* Initialize a list.
+ *
+ * If the list is all 0, then this function needs not be called.  In other cases
+ * this will allocate @initial_capacity amount of elements.
+ *
+ *
+ * T*     @name is the name of the list.
+ * size_t @initial_capacity is the capacity needed.
+ *
+ * void @return
+ */
+#define LIST_INITIALIZE(name, initial_capacity) do { \
+    const size_t _initial_capacity = (initial_capacity); \
+\
+    ALLOCATE(name, _initial_capacity); \
+    name##_capacity = _initial_capacity; \
+    name##_length = 0; \
+} while (0)
+
 /* Clear given list.
  *
  * T*   @name is the name of the list.

@@ -35,70 +35,68 @@ static void read_class_string(Parser *parser,
 
 /* Parse the next assigment in the active stream. */
 void continue_parsing_relation(Parser *parser,
-        struct parse_action_list *list)
+        struct parse_action_block *block)
 {
     struct window_relation relation;
-    struct parse_action_list sub_list;
-    struct action_list_item item;
-    struct parse_data data;
+    struct parse_action_block sub_block;
+    struct action_block_item item;
+    struct action_data data;
 
     if (read_string(parser) != OK) {
         emit_parse_error(parser,
-                "expected instance,class pattern to relate to\n");
+                "expected instance,class pattern to relate to");
         return;
     }
 
     read_class_string(parser, &relation);
 
-    ZERO(&sub_list, 1);
-    if (parse_top(parser, &sub_list) != OK) {
+    ZERO(&sub_block, 1);
+    if (parse_top(parser, &sub_block) != OK) {
         emit_parse_error(parser,
                 "expected actions after relation pattern");
-        clear_parse_list(&sub_list);
+        clear_parse_action_block(&sub_block);
         free(relation.instance_pattern);
         free(relation.class_pattern);
         return;
     }
 
-    clear_parse_list_data(&sub_list);
-
-    make_real_action_list(&relation.actions, &sub_list);
+    relation.actions = convert_parse_action_block(&sub_block);
+    clear_parse_action_block(&sub_block);
 
     item.type = ACTION_RELATION;
     item.data_count = 1;
-    LIST_APPEND_VALUE(list->items, item);
+    LIST_APPEND_VALUE(block->items, item);
 
     data.flags = 0;
-    data.type = PARSE_DATA_TYPE_RELATION;
+    data.type = ACTION_DATA_TYPE_RELATION;
     data.u.relation = relation;
-    LIST_APPEND_VALUE(list->data, data);
+    LIST_APPEND_VALUE(block->data, data);
 }
 
 /* Parse all after an `unrelate` keyword. */
 void continue_parsing_unrelate(Parser *parser,
-        struct parse_action_list *list)
+        struct parse_action_block *block)
 {
-    struct action_list_item item;
+    struct action_block_item item;
     struct window_relation relation;
-    struct parse_data data;
+    struct action_data data;
 
     if (read_string(parser) != OK) {
         /* `unrelate` without a following string */
         item.type = ACTION_UNRELATE;
         item.data_count = 0;
-        LIST_APPEND_VALUE(list->items, item);
+        LIST_APPEND_VALUE(block->items, item);
     } else {
         read_class_string(parser, &relation);
-
-        ZERO(&relation.actions, 1);
+        relation.actions = NULL;
 
         item.type = ACTION_RELATION;
         item.data_count = 1;
-        LIST_APPEND_VALUE(list->items, item);
+        LIST_APPEND_VALUE(block->items, item);
 
         data.flags = 0;
-        data.type = PARSE_DATA_TYPE_RELATION;
+        data.type = ACTION_DATA_TYPE_RELATION;
         data.u.relation = relation;
-        LIST_APPEND_VALUE(list->data, data);
+        LIST_APPEND_VALUE(block->data, data);
     }
 }

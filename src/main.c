@@ -1,10 +1,14 @@
+#include <errno.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <time.h>
 
 #include "configuration.h"
 #include "event.h"
 #include "fensterchef.h"
 #include "log.h"
 #include "monitor.h"
+#include "utility/list.h"
 #include "x11/display.h"
 #include "x11/synchronize.h"
 
@@ -84,10 +88,6 @@ static void handle_program_option(program_option_t option, char *value)
         [LOG_SEVERITY_NOTHING] = "nothing",
     };
 
-    LOG_DEBUG("option %s (%c): %s\n",
-            parse_options[option].long_option,
-            parse_options[option].short_option, value);
-
     switch (option) {
     /* the user wants to receive information */
     case PROGRAM_OPTION_HELP:
@@ -132,12 +132,6 @@ static void handle_program_option(program_option_t option, char *value)
     case PROGRAM_OPTION_COMMAND: {
         size_t length;
         char *command;
-
-        if (value == NULL) {
-            /* should not happen */
-            LOG_DEBUG("this code path should not have been reached\n");
-            exit(EXIT_FAILURE);
-        }
 
         length = strlen(value);
         command = xmemdup(value, length + 1);
@@ -269,14 +263,74 @@ void parse_program_arguments(void)
     }
 }
 
+/* Open the next log file. */
+static void open_next_log_file(void)
+{
+    const char *xdg_state_home;
+    LIST(char, path);
+    time_t current_time;
+    struct tm *tm;
+
+    LIST_INITIALIZE(path, 256);
+
+    xdg_state_home = getenv("XDG_STATE_HOME");
+    if (xdg_state_home == NULL) {
+        LIST_APPEND(path, Fensterchef_home, strlen(Fensterchef_home));
+        LIST_APPEND(path, "/.local/state", strlen("/.local/state"));
+    } else {
+        LIST_APPEND(path, xdg_state_home, strlen(xdg_state_home));
+    }
+
+    LIST_APPEND_VALUE(path, '\0');
+    path_length--;
+    if (mkdir(path, 0755) == -1 && errno != EEXIST) {
+        fprintf(stderr, "could not create log directory \"%s\": %s\n",
+                path, strerror(errno));
+        free(path);
+        return;
+    }
+
+    LIST_APPEND(path, "/fensterchef", strlen("/fensterchef"));
+    LIST_APPEND_VALUE(path, '\0');
+    path_length--;
+    if (mkdir(path, 0755) == -1 && errno != EEXIST) {
+        fprintf(stderr, "could not create log directory \"%s\": %s\n",
+                path, strerror(errno));
+        free(path);
+        return;
+    }
+
+    LIST_GROW(path, path_length + 64);
+    current_time = time(NULL);
+    tm = localtime(&current_time);
+    path_length += strftime(&path[path_length], 64, "/%F_%T.log", tm) + 1;
+
+    log_file = fopen(path, "w");
+    if (log_file == NULL) {
+        fprintf(stderr, "could not open log file \"%s\": %s\n",
+                path, strerror(errno));
+        free(path);
+
+        log_file_path = (char*) "<stderr>";
+        log_file = stderr;
+    } else {
+        LOG("parsed arguments, starting to log to %s\n",
+                path);
+
+        /* trim the memory */
+        REALLOCATE(path, path_length);
+
+        log_file_path = path;
+        setvbuf(log_file, NULL, _IOLBF, 0);
+    }
+}
+
 /* FENSTERCHEF main entry point. */
 int main(int argc, char **argv)
 {
     Fensterchef_home = getenv("HOME");
     if (Fensterchef_home == NULL) {
-        Fensterchef_home = ".";
-        LOG_ERROR("HOME is not set, using the arbritary %s\n",
-                Fensterchef_home);
+        Fensterchef_home = "/tmp";
     }
 
     /* parse the program arguments */
@@ -284,7 +338,13 @@ int main(int argc, char **argv)
     number_of_program_arguments = argc;
     parse_program_arguments();
 
-    LOG("parsed arguments, starting to log\n");
+#ifdef DEBUG
+    log_file = stderr;
+    (void) open_next_log_file;
+#else
+    open_next_log_file();
+#endif
+
     LOG("welcome to " COLOR(YELLOW) FENSTERCHEF_NAME " " COLOR(GREEN)
                 FENSTERCHEF_VERSION CLEAR_COLOR "\n");
     LOG("the configuration file resides in %s\n",

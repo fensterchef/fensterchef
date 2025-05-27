@@ -19,6 +19,12 @@ typedef enum {
 /* the severity of the logging */
 extern log_severity_t log_severity;
 
+/* the path of the log file */
+extern char *log_file_path;
+
+/* the file to log to */
+extern FILE *log_file;
+
 #ifdef DEBUG
 
 /* ansi color codes for colored output */

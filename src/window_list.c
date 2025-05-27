@@ -136,22 +136,22 @@ static int render_window_list(void)
     monitor = get_focused_monitor();
 
     /* put enough text items on the stack */
-    Text texts[Window_count + 1];
+    Text *texts[Window_count + 1];
 
     /* measure the maximum needed width/height and count the windows */
     for (FcWindow *window = Window_first;
             window != NULL;
             window = window->next) {
+        Text *text;
 
         if (!is_window_in_window_list(window)) {
             continue;
         }
 
-        Text *const text = &texts[item_count];
 
         const int length = get_window_string(window, buffer, sizeof(buffer));
         glyphs = get_glyphs(buffer, length, &glyph_count);
-        initialize_text(text, glyphs, glyph_count);
+        text = create_text(glyphs, glyph_count);
         width = MAX(width, text->width);
 
         /* do not "overflow" the height */
@@ -166,6 +166,7 @@ static int render_window_list(void)
 
         y += text->height;
 
+        texts[item_count] = text;
         item_count++;
     }
 
@@ -175,21 +176,21 @@ static int render_window_list(void)
                     "There are %u other windows",
                 Window_count);
         glyphs = get_glyphs(buffer, length, &glyph_count);
-        initialize_text(&texts[0], glyphs, glyph_count);
-        width = texts[0].width;
-        height = texts[0].height;
+        texts[0] = create_text(glyphs, glyph_count);
+        width = texts[0]->width;
+        height = texts[0]->height;
         item_count = 1;
 
         /* reset the selected item */
         WindowList.selected = 0;
         selected_y = 0;
-        selected_height = texts[0].height;
+        selected_height = texts[0]->height;
     } else {
         /* if windows were removed, dynamically adjust the selected item so that
          * when it is out of bounds, the last item is selected
          */
         if (WindowList.selected >= item_count) {
-            selected_height = texts[item_count - 1].height;
+            selected_height = texts[item_count - 1]->height;
             selected_y = y - selected_height;
             WindowList.selected = item_count - 1;
         }
@@ -234,15 +235,12 @@ static int render_window_list(void)
         XftColor *background_pointer, *foreground_pointer;
         int rect_y, rect_height;
 
-        Text *const text = &texts[i];
+        Text *const text = texts[i];
 
-        /* add some extra to the top of the rectangle if this is the first
-         * item so that it looks better
-         */
+        /* add a little extra to the top if this is the first item */
         if (i == 0) {
             rect_y = 0;
-            rect_height = text->height +
-                configuration.text_padding / 2;
+            rect_height = text->height + configuration.text_padding / 2;
         } else {
             rect_y = y;
             rect_height = text->height;
@@ -280,7 +278,7 @@ static int render_window_list(void)
 
     /* clear all text objects */
     for (unsigned i = 0; i < item_count; i++) {
-        clear_text(&texts[i]);
+        destroy_text(texts[i]);
     }
 
     free_xft_color(&foreground);
@@ -317,7 +315,7 @@ static void handle_key_press(XKeyPressedEvent *event)
         return;
     }
 
-    key_symbol = XkbKeycodeToKeysym(display, event->keycode, 0, 1);
+    key_symbol = XkbKeycodeToKeysym(display, event->keycode, 0, 0);
     switch (key_symbol) {
     /* cancel selection */
     case XK_q:

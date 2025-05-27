@@ -10,38 +10,29 @@ M - Maintenance
 [Done] - Finished tasks
 
 [Tasks]
-#112 M Make memory pool for action lists
-    There should be a pool for action lists so the memory is managed more
-    properly.  This should get its own file.
-
-#132 ...
-
-#150 Add bar
-    I just want to try this and see how it goes to learn about bars.
-
-#180 Add custom window borders
-    Yes, it is happening soon...
-    Use the shape extension for very advanced graphical beauties
-
-#200 Make repository for fensterchef-menu
-    Menus of all kind for any window manager
-
-#300 Make repository for fensterchef-notify
-    Notification daemon for notify-send usable in any window manager
-
-#400 Make repository for fensterchef-window-list
-    Window list usable in any window manager
-
-#1000 Make a wayland port
-    Make an additional repository that hosts fensterland
-
-[In Progress]
 #71 Make generic menu item chooser
     Abstract parts of the window list away to make more choose menus like an
     application launcher.  Make a single window that can hold many lists which
     are switchable.  This could be a file viewer, application launcher or the
     window list.
 
+#136 M Add dual link again
+    The dual link between window and frame was difficult to manage but lot has
+    changed, try to add it again
+
+#137 ...
+
+#150 Add workspaces
+    Workspaces are pretty much part of EWMH and are an essential
+
+#165 Add bar
+    I just want to try this and see how it goes to learn about bars.
+
+#180 Add custom window borders
+    Yes, it is happening soon...
+    Use the shape extension for very advanced graphical beauties
+
+[In Progress]
 #117 Write test code
     Write test code for... everything
 
@@ -613,3 +604,19 @@ M - Maintenance
 
 #131 Add default bindings to assign numbers
     There should be default bindings for mod+1-9.
+
+#112 M Make memory pool for action lists
+    There should be a pool for action lists so the memory is managed more
+    properly.  This should get its own file.
+
+#132 ! Fix focus when closing floating window
+    When a floating window is closed which is above a fullscreen window, then
+    when a tiling window below should not be focused
+
+#133 ! Add protection for recursive calls
+    When a group is called within a group, it would recurse infinitely.  Keep
+    track of the depth and report an error if the depth is to high
+
+#134 Show parsing errors directly
+    Parsing errors are put into the log file.  Make it so the user sees these
+    errors via some sort of popup

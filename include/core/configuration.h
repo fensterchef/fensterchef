@@ -47,6 +47,8 @@ extern struct configuration {
     uint32_t border_color_focus;
     /* color of the text */
     uint32_t foreground;
+    /* color of erroneous text */
+    uint32_t foreground_error;
     /* color of the background of fensterchef windows */
     uint32_t background;
 

@@ -5,6 +5,7 @@
 #include "frame.h"
 #include "log.h"
 #include "monitor.h"
+#include "notification.h"
 #include "utility/utility.h"
 #include "window.h"
 
@@ -95,6 +96,38 @@ void destroy_frame(Frame *frame)
 /*****************
  * Frame utility *
  *****************/
+
+/* Show a notification on the given frame indicating the number. */
+void indicate_frame(Frame *frame)
+{
+    if (frame->number == 0) {
+        const char *message;
+        if (frame == Frame_focus) {
+            if (frame->left != NULL) {
+                message = "Current Frames";
+            } else {
+                message = "Current Frame";
+            }
+        } else {
+            if (frame->left != NULL) {
+                message = "Frames";
+            } else {
+                message = "Frame";
+            }
+        }
+
+        set_system_notification(message,
+                frame->x + frame->width / 2,
+                frame->y + frame->height / 2);
+    } else {
+        char number[MAXIMUM_DIGITS(frame->number) + 1];
+
+        snprintf(number, sizeof(number), "%" PRIu32, frame->number);
+        set_system_notification(number,
+                frame->x + frame->width / 2,
+                frame->y + frame->height / 2);
+    }
+}
 
 /* Get the frame above the given one that has no parent. */
 Frame *get_root_frame(const Frame *frame)

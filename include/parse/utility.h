@@ -8,7 +8,6 @@
  * This file is meant to be private to the parser.
  */
 
-#include "parse/data_type.h"
 #include "parse/parse.h"
 #include "utility/attributes.h"
 

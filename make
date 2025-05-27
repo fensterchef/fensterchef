@@ -26,14 +26,16 @@ fensterchef() {
 
 install() {
     [ -f fensterchef ] && echo 'fensterchef has been built already' >&2 || fensterchef
-    _command mkdir -p "$PREFIX/share/licenses"
-    _command cp LICENSE.txt "$PREFIX/share/licenses"
+    _command mkdir -p "$PREFIX/share/licenses/fensterchef"
+    _command cp LICENSE.txt "$PREFIX/share/licenses/fensterchef"
     _command mkdir -p "$PREFIX/bin"
     _command mv fensterchef "$PREFIX/bin"
     _command mkdir -p "$PREFIX/share/man/man1"
     _command gzip --best -c doc/fensterchef.1 >"$PREFIX/share/man/man1/fensterchef.1.gz"
     _command mkdir -p "$PREFIX/share/man/man5"
     _command gzip --best -c doc/fensterchef.5 >"$PREFIX/share/man/man5/fensterchef.5.gz"
+    _command mkdir -p "$PREFIX/share/fensterchef"
+    _command cp wm "$PREFIX/share/fensterchef"
 }
 
 uninstall() {

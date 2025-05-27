@@ -6,7 +6,7 @@
  * relation.
  */
 
-#include "action.h"
+#include "bits/action_block.h"
 #include "bits/window.h"
 #include "utility/attributes.h"
 #include "utility/types.h"
@@ -18,30 +18,25 @@ struct window_relation {
     /* the pattern the class should match */
     utf8_t *class_pattern;
     /* the actions to execute */
-    struct action_list actions;
+    ActionBlock *actions;
 };
 
-/* Signal to the currently running relation that it should remove itself.
- *
- * It is only removed after it finished running.
- */
-void signal_window_unrelate(void);
+/* Clear the memory occupied by the window relation. */
+void clear_window_relation(struct window_relation *relation);
 
 /* Duplicate a relation deeply into itself. */
 void duplicate_window_relation(struct window_relation *relation);
 
-/* Set a widnow relation from instance/class name to actions.
+/* Remove the currently running window relation. */
+void remove_current_window_relation(void);
+
+/* Set a window relation from instance/class name to actions.
  *
  * All memory from the given relation is duplicated.
+ *
+ * Set @relation->actions to NULL to clear a window relation.
  */
 void set_window_relation(const struct window_relation *relation);
-
-/* Remove the relation matching @instance and @class. */
-void remove_matching_window_relation(const utf8_t *instance,
-        const utf8_t *class);
-
-/* Clear the memory occupied by the window relation. */
-void clear_window_relation(const struct window_relation *relation);
 
 /* Unset all currently set window relations. */
 void unset_window_relations(void);

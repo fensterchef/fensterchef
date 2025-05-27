@@ -54,14 +54,14 @@ sandbox: build
 	$(SANDBOX) &
 	# wait for x server to start
 	sleep 1
-	DISPLAY=$(SANDBOX_DISPLAY) ./build/fensterchef --verbose --config config
+	DISPLAY=$(SANDBOX_DISPLAY) ./build/fensterchef --verbose --config wm
 	pkill Xephyr
 
 gdb-sandbox: build
 	$(SANDBOX) &
 	# wait for x server to start
 	sleep 1
-	DISPLAY=$(SANDBOX_DISPLAY) gdb -ex run --args ./build/fensterchef --verbose --config config
+	DISPLAY=$(SANDBOX_DISPLAY) gdb -ex run --args ./build/fensterchef --verbose --config wm
 	pkill Xephyr
 
 clean:

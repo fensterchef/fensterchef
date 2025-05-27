@@ -27,8 +27,6 @@ struct text_item {
  * used to render them
  */
 typedef struct text {
-    /* indexes within their respective font */
-    FT_UInt *glyphs;
     /* the origin of the first glyph */
     int x;
     int y;
@@ -39,6 +37,8 @@ typedef struct text {
     struct text_item *items;
     /* the number of text sections */
     int item_count;
+    /* indexes within their respective font */
+    FT_UInt glyphs[];
 } Text;
 
 /* Get an Xft color from an RGB color. */
@@ -55,7 +55,7 @@ int set_font(const char *name);
 
 /* Convert given @utf8 string with @length to a glyph array.
  *
- * @length may be -1, then the function uses strlen() on utf8.
+ * @length may be -1, then the function uses strlen() on @utf8.
  *
  * @return a pointer to the first glyph.
  *         Do NOT free this pointer.
@@ -63,16 +63,13 @@ int set_font(const char *name);
  */
 FcChar32 *get_glyphs(const utf8_t *utf8, int length, int *glyph_count);
 
-/* Transform given glyphs to a text object.
- *
- * Free the resources the text occupies using `clear_text()`.
- */
-void initialize_text(Text *text, const FcChar32 *glyphs, int glyph_count);
+/* Create a text object from given glyphs. */
+Text *create_text(const FcChar32 *glyphs, int glyph_count);
 
 /* Draw given @text using drawable @draw. */
 void draw_text(XftDraw *draw, XftColor *color, int x, int y, Text *text);
 
-/* Clear the resources occupied by a text object. */
-void clear_text(Text *text);
+/* Destroy a text object. */
+void destroy_text(Text *text);
 
 #endif

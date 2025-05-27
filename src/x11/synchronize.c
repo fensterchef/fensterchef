@@ -155,7 +155,7 @@ static void set_input_focus(_Nullable FcWindow *window)
     }
 
     if (focus_id != None) {
-        LOG("focusing client: %w\n", focus_id);
+        LOG("focusing client %w\n", focus_id);
         XSetInputFocus(display, focus_id, RevertToParent, CurrentTime);
     }
 

@@ -67,25 +67,25 @@ int resolve_modifier(Parser *parser, _Out unsigned *modifier);
  *
  * Expects that a string has been read into @parser.
  *
- * @list will be appended with the bind action.
+ * @block will be appended with the bind action.
  */
-void continue_parsing_binding(Parser *parser, struct parse_action_list *list);
+void continue_parsing_binding(Parser *parser, struct parse_action_block *block);
 
 /* Parse a full key code binding definition.
  *
  * Expects that a '[' has been just consumed.
  *
- * @list will be appended with the bind action.
+ * @block will be appended with the bind action.
  */
 void continue_parsing_key_code_binding(Parser *parser,
-        struct parse_action_list *list);
+        struct parse_action_block *block);
 
 /* Parse a full unbind statement.
  *
  * Expects that an `unbind` has already been read.
  *
- * @list will be appended with the unbind action.
+ * @block will be appended with the unbind action.
  */
-void continue_parsing_unbind(Parser *parser, struct parse_action_list *list);
+void continue_parsing_unbind(Parser *parser, struct parse_action_block *block);
 
 #endif

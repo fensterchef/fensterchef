@@ -12,7 +12,6 @@
 #include "frame.h"
 #include "log.h"
 #include "notification.h"
-#include "parse/data_type.h"
 #include "window.h"
 #include "window_list.h"
 #include "x11/display.h"
@@ -20,6 +19,12 @@
 
 /* the severity of the logging */
 log_severity_t log_severity = LOG_SEVERITY_INFO;
+
+/* the path of the log file */
+char *log_file_path;
+
+/* the file to log to */
+FILE *log_file;
 
 /***********************/
 /** String conversion **/
@@ -287,48 +292,48 @@ static const char *gravity_to_string(int gravity)
 static void log_boolean(bool boolean)
 {
     fputs(boolean ? COLOR(GREEN) "true" CLEAR_COLOR :
-            COLOR(RED) "false" CLEAR_COLOR, stderr);
+            COLOR(RED) "false" CLEAR_COLOR, log_file);
 }
 
 static void log_hexadecimal(unsigned x)
 {
-    fprintf(stderr, COLOR(GREEN) "%#x" CLEAR_COLOR,
+    fprintf(log_file, COLOR(GREEN) "%#x" CLEAR_COLOR,
             x);
 }
 
 static void log_point(int x, int y)
 {
-    fprintf(stderr, COLOR(GREEN) "%d+%d" CLEAR_COLOR,
+    fprintf(log_file, COLOR(GREEN) "%d+%d" CLEAR_COLOR,
             x, y);
 }
 
 static void log_rectangle(int x, int y, unsigned width, unsigned height)
 {
-    fprintf(stderr, COLOR(GREEN) "%d+%d+%ux%u" CLEAR_COLOR,
+    fprintf(log_file, COLOR(GREEN) "%d+%d+%ux%u" CLEAR_COLOR,
             x, y, width, height);
 }
 
 static void log_size(unsigned width, unsigned height)
 {
-    fprintf(stderr, COLOR(GREEN) "%ux%u" CLEAR_COLOR,
+    fprintf(log_file, COLOR(GREEN) "%ux%u" CLEAR_COLOR,
             width, height);
 }
 
 static void log_integer(int x)
 {
-    fprintf(stderr, COLOR(GREEN) "%d" CLEAR_COLOR,
+    fprintf(log_file, COLOR(GREEN) "%d" CLEAR_COLOR,
             x);
 }
 
 static void log_unsigned(unsigned x)
 {
-    fprintf(stderr, COLOR(GREEN) "%d" CLEAR_COLOR,
+    fprintf(log_file, COLOR(GREEN) "%d" CLEAR_COLOR,
             x);
 }
 
 static void log_unsigned_pair(unsigned x, unsigned y)
 {
-    fprintf(stderr, COLOR(GREEN) "%u,%u" CLEAR_COLOR,
+    fprintf(log_file, COLOR(GREEN) "%u,%u" CLEAR_COLOR,
             x, y);
 }
 
@@ -338,9 +343,9 @@ static void log_button(unsigned button)
 
     string = button_to_string(button);
     if (string == NULL) {
-        fprintf(stderr, COLOR(CYAN) "X%u" CLEAR_COLOR, button - 7);
+        fprintf(log_file, COLOR(CYAN) "X%u" CLEAR_COLOR, button - 7);
     } else {
-        fprintf(stderr, COLOR(CYAN) "%s" CLEAR_COLOR, string);
+        fprintf(log_file, COLOR(CYAN) "%s" CLEAR_COLOR, string);
     }
 }
 
@@ -348,13 +353,13 @@ static void log_source(int source)
 {
     switch (source) {
     case 1:
-        fputs(COLOR(CYAN) "client" CLEAR_COLOR, stderr);
+        fputs(COLOR(CYAN) "client" CLEAR_COLOR, log_file);
         break;
     case 2:
-        fputs(COLOR(CYAN) "pager" CLEAR_COLOR, stderr);
+        fputs(COLOR(CYAN) "pager" CLEAR_COLOR, log_file);
         break;
     default:
-        fputs(COLOR(CYAN) "legacy" CLEAR_COLOR, stderr);
+        fputs(COLOR(CYAN) "legacy" CLEAR_COLOR, log_file);
         break;
     }
 }
@@ -365,9 +370,9 @@ static void log_gravity(int gravity)
 
     string = gravity_to_string(gravity);
     if (string == NULL) {
-        fprintf(stderr, COLOR(GREEN) "%u" CLEAR_COLOR, gravity);
+        fprintf(log_file, COLOR(GREEN) "%u" CLEAR_COLOR, gravity);
     } else {
-        fprintf(stderr, COLOR(CYAN) "%s" CLEAR_COLOR, string);
+        fprintf(log_file, COLOR(CYAN) "%s" CLEAR_COLOR, string);
     }
 }
 
@@ -377,9 +382,9 @@ static void log_direction(wm_move_resize_direction_t direction)
 
     string = direction_to_string(direction);
     if (string == NULL) {
-        fprintf(stderr, COLOR(GREEN) "%u" CLEAR_COLOR, direction);
+        fprintf(log_file, COLOR(GREEN) "%u" CLEAR_COLOR, direction);
     } else {
-        fprintf(stderr, COLOR(CYAN) "%s" CLEAR_COLOR, string);
+        fprintf(log_file, COLOR(CYAN) "%s" CLEAR_COLOR, string);
     }
 }
 
@@ -392,131 +397,134 @@ static void log_modifiers(unsigned mask)
     };
     int modifier_count = 0;
 
-    fputs(COLOR(MAGENTA), stderr);
+    fputs(COLOR(MAGENTA), log_file);
     for (const char **modifier = modifiers; mask != 0; mask >>= 1, modifier++) {
         if ((mask & 1)) {
             if (modifier_count > 0) {
-                fputs(CLEAR_COLOR "+" COLOR(MAGENTA), stderr);
+                fputs(CLEAR_COLOR "+" COLOR(MAGENTA), log_file);
             }
-            fputs(*modifier, stderr);
+            fputs(*modifier, log_file);
             modifier_count++;
         }
     }
-    fputs(CLEAR_COLOR, stderr);
+    fputs(CLEAR_COLOR, log_file);
 }
 
 static void log_x_window(Window window)
 {
     if (window == None) {
-        fputs(COLOR(CYAN) "None" CLEAR_COLOR, stderr);
+        fputs(COLOR(CYAN) "None" CLEAR_COLOR, log_file);
         return;
     }
 
     log_hexadecimal(window);
-    fputs(COLOR(YELLOW), stderr);
+    fputs(COLOR(YELLOW), log_file);
     if (window == ewmh_window) {
-        fputs("<check>", stderr);
+        fputs("<check>", log_file);
     } else if (window == WindowList.reference.id) {
-        fputs("<window list>", stderr);
+        fputs("<window list>", log_file);
     } else if (system_notification != NULL &&
             window == system_notification->reference.id) {
-        fputs("<notification>", stderr);
+        fputs("<notification>", log_file);
+    } else if (error_notification != NULL &&
+            window == error_notification->reference.id) {
+        fputs("<error>", log_file);
     } else if (window == DefaultRootWindow(display)) {
-        fputs("<root>", stderr);
+        fputs("<root>", log_file);
     } else {
         for (FcWindow *fwindow = Window_first;
                 fwindow != NULL;
                 fwindow = fwindow->next) {
             if (fwindow->reference.id == window) {
-                fprintf(stderr, "<%u>", fwindow->number);
+                fprintf(log_file, "<%u>", fwindow->number);
                 break;
             }
         }
     }
-    fputs(CLEAR_COLOR, stderr);
+    fputs(CLEAR_COLOR, log_file);
 }
 
 static void log_motion(int motion)
 {
-    fputs(COLOR(CYAN), stderr);
+    fputs(COLOR(CYAN), log_file);
     switch (motion) {
     case NotifyNormal:
-        fputs("normal", stderr);
+        fputs("normal", log_file);
         break;
     case NotifyHint:
-        fputs("hint", stderr);
+        fputs("hint", log_file);
         break;
     default:
-        fprintf(stderr, "%u", motion);
+        fprintf(log_file, "%u", motion);
     }
-    fputs(CLEAR_COLOR, stderr);
+    fputs(CLEAR_COLOR, log_file);
 }
 
 static void log_notify_detail(int detail)
 {
     const char *string;
 
-    fputs(COLOR(CYAN), stderr);
+    fputs(COLOR(CYAN), log_file);
     string = notify_detail_to_string(detail);
     if (string == NULL) {
-        fprintf(stderr, "%u", detail);
+        fprintf(log_file, "%u", detail);
     } else {
-        fputs(string, stderr);
+        fputs(string, log_file);
     }
-    fputs(CLEAR_COLOR, stderr);
+    fputs(CLEAR_COLOR, log_file);
 }
 
 static void log_notify_mode(int mode)
 {
     const char *string;
 
-    fputs(COLOR(CYAN), stderr);
+    fputs(COLOR(CYAN), log_file);
     string = notify_mode_to_string(mode);
     if (string == NULL) {
-        fprintf(stderr, "%u", mode);
+        fprintf(log_file, "%u", mode);
     } else {
-        fputs(string, stderr);
+        fputs(string, log_file);
     }
-    fputs(CLEAR_COLOR, stderr);
+    fputs(CLEAR_COLOR, log_file);
 }
 
 static void log_place(int place)
 {
-    fputs(COLOR(CYAN), stderr);
+    fputs(COLOR(CYAN), log_file);
     switch (place) {
     case PlaceOnTop:
-        fputs("on top", stderr);
+        fputs("on top", log_file);
         break;
     case PlaceOnBottom:
-        fputs("on bottom", stderr);
+        fputs("on bottom", log_file);
         break;
     default:
-        fprintf(stderr, "%u", place);
+        fprintf(log_file, "%u", place);
     }
-    fputs(CLEAR_COLOR, stderr);
+    fputs(CLEAR_COLOR, log_file);
 }
 
 static void log_property_state(int state)
 {
-    fputs(COLOR(CYAN), stderr);
+    fputs(COLOR(CYAN), log_file);
     switch (state) {
     case PropertyNewValue:
-        fputs("new value", stderr);
+        fputs("new value", log_file);
         break;
     case PropertyDelete:
-        fputs("delete", stderr);
+        fputs("delete", log_file);
         break;
     default:
-        fprintf(stderr, "%d", state);
+        fprintf(log_file, "%d", state);
     }
-    fputs(CLEAR_COLOR, stderr);
+    fputs(CLEAR_COLOR, log_file);
 }
 
 static void log_atom(Atom atom)
 {
     const char *atom_string;
 
-    fputs(COLOR(CYAN), stderr);
+    fputs(COLOR(CYAN), log_file);
     atom_string = atom_to_string(atom);
     if (atom_string == NULL) {
 #ifdef DEBUG
@@ -524,38 +532,38 @@ static void log_atom(Atom atom)
 
         name = XGetAtomName(display, atom);
         if (name == NULL) {
-            fprintf(stderr, "%ld",
+            fprintf(log_file, "%ld",
                     atom);
         } else {
-            fputs(name, stderr);
+            fputs(name, log_file);
             XFree(name);
         }
 #endif
-        fputs(COLOR(RED) "<not known>", stderr);
+        fputs(COLOR(RED) "<not known>", log_file);
     } else {
-        fprintf(stderr, "%s",
+        fprintf(log_file, "%s",
                 atom_string);
     }
-    fputs(CLEAR_COLOR, stderr);
+    fputs(CLEAR_COLOR, log_file);
 }
 
 static void log_visibility(int visibility)
 {
-    fputs(COLOR(CYAN), stderr);
+    fputs(COLOR(CYAN), log_file);
     switch (visibility) {
     case VisibilityUnobscured:
-        fputs("unobscured", stderr);
+        fputs("unobscured", log_file);
         break;
     case VisibilityPartiallyObscured:
-        fputs("partially obscured", stderr);
+        fputs("partially obscured", log_file);
         break;
     case VisibilityFullyObscured:
-        fputs("fully obscured", stderr);
+        fputs("fully obscured", log_file);
         break;
     default:
-        fprintf(stderr, "%u", visibility);
+        fprintf(log_file, "%u", visibility);
     }
-    fputs(CLEAR_COLOR, stderr);
+    fputs(CLEAR_COLOR, log_file);
 }
 
 static void log_configure_mask(unsigned mask)
@@ -566,87 +574,87 @@ static void log_configure_mask(unsigned mask)
     };
     int flag_count = 0;
 
-    fputs(COLOR(MAGENTA), stderr);
+    fputs(COLOR(MAGENTA), log_file);
     for (const char **flag = flags; mask != 0; mask >>= 1, flag++) {
         if ((mask & 1)) {
             if (flag_count > 0) {
-                fputs(CLEAR_COLOR "+" COLOR(MAGENTA), stderr);
+                fputs(CLEAR_COLOR "+" COLOR(MAGENTA), log_file);
             }
-            fputs(*flag, stderr);
+            fputs(*flag, log_file);
             flag_count++;
         }
     }
-    fputs(CLEAR_COLOR, stderr);
+    fputs(CLEAR_COLOR, log_file);
 }
 
 static void log_mapping(int mapping)
 {
-    fputs(COLOR(CYAN), stderr);
+    fputs(COLOR(CYAN), log_file);
     switch (mapping) {
     case MappingModifier:
-        fputs("modifier", stderr);
+        fputs("modifier", log_file);
         break;
     case MappingKeyboard:
-        fputs("keyboard", stderr);
+        fputs("keyboard", log_file);
         break;
     case MappingPointer:
-        fputs("pointer", stderr);
+        fputs("pointer", log_file);
         break;
     default:
-        fprintf(stderr, "%u", mapping);
+        fprintf(log_file, "%u", mapping);
     }
-    fputs(CLEAR_COLOR, stderr);
+    fputs(CLEAR_COLOR, log_file);
 }
 
 static void log_wm_state(int state)
 {
-    fputs(COLOR(CYAN), stderr);
+    fputs(COLOR(CYAN), log_file);
     switch (state) {
     case WithdrawnState:
-        fputs("withdrawn", stderr);
+        fputs("withdrawn", log_file);
         break;
     case NormalState:
-        fputs("normal", stderr);
+        fputs("normal", log_file);
         break;
     case IconicState:
-        fputs("iconic", stderr);
+        fputs("iconic", log_file);
         break;
     default:
-        fprintf(stderr, "%u", state);
+        fprintf(log_file, "%u", state);
     }
-    fputs(CLEAR_COLOR, stderr);
+    fputs(CLEAR_COLOR, log_file);
 }
 
 static void log_window_mode(window_mode_t mode)
 {
-    fputs(COLOR(CYAN), stderr);
+    fputs(COLOR(CYAN), log_file);
     switch (mode) {
     case WINDOW_MODE_TILING:
-        fputs("tiling", stderr);
+        fputs("tiling", log_file);
         break;
     case WINDOW_MODE_FLOATING:
-        fputs("floating", stderr);
+        fputs("floating", log_file);
         break;
     case WINDOW_MODE_DOCK:
-        fputs("dock", stderr);
+        fputs("dock", log_file);
         break;
     case WINDOW_MODE_FULLSCREEN:
-        fputs("fullscreen", stderr);
+        fputs("fullscreen", log_file);
         break;
     case WINDOW_MODE_DESKTOP:
-        fputs("desktop", stderr);
+        fputs("desktop", log_file);
         break;
     case WINDOW_MODE_MAX:
-        fputs("none", stderr);
+        fputs("none", log_file);
         break;
     }
-    fputs(CLEAR_COLOR, stderr);
+    fputs(CLEAR_COLOR, log_file);
 }
 
 /*************************/
 /** Event log functions **/
 
-#define V(string) fputs(", " string "=", stderr)
+#define V(string) fputs(", " string "=", log_file)
 
 /* Log a RandrScreenChangeNotifyEvent to standard error output. */
 static void log_xkb_new_keyboard_notify_event(
@@ -741,7 +749,7 @@ static void log_focus_in_event(XFocusInEvent *event)
 static void log_keymap_notify_event(XKeymapEvent *event)
 {
     (void) event;
-    fprintf(stderr, ", keys=...");
+    fprintf(log_file, ", keys=...");
 }
 
 /* Log a ExposeEvent to standard error output. */
@@ -966,16 +974,16 @@ static void log_client_message_event(XClientMessageEvent *event)
     } else if (event->message_type == ATOM(_NET_WM_STATE)) {
         V("data");
         if (event->data.l[0] >= (long) SIZE(state_strings)) {
-            fprintf(stderr, COLOR(RED) "<misformatted>");
+            fprintf(log_file, COLOR(RED) "<misformatted>");
         } else {
-            fprintf(stderr, COLOR(CYAN) "%s",
+            fprintf(log_file, COLOR(CYAN) "%s",
                     state_strings[event->data.l[0]]);
         }
-        fputc(' ', stderr);
+        fputc(' ', log_file);
         log_atom(event->data.l[1]);
     } else {
         V("l");
-        fprintf(stderr, COLOR(GREEN) "%ld %ld %ld %ld %ld" CLEAR_COLOR,
+        fprintf(log_file, COLOR(GREEN) "%ld %ld %ld %ld %ld" CLEAR_COLOR,
                 event->data.l[0], event->data.l[1], event->data.l[2],
                 event->data.l[3], event->data.l[4]);
     }
@@ -992,42 +1000,42 @@ static void log_mapping_notify_event(XMappingEvent *event)
 /* Log an event to standard error output. */
 static void log_event(XEvent *event)
 {
-    fprintf(stderr, "[");
+    fprintf(log_file, "[");
 
     if (event->type == xkb_event_base) {
         switch (((XkbAnyEvent*) event)->xkb_type) {
         case XkbNewKeyboardNotify:
-            fputs("XkbNewKeyboardNotify", stderr);
+            fputs("XkbNewKeyboardNotify", log_file);
             log_xkb_new_keyboard_notify_event(
                     (XkbNewKeyboardNotifyEvent*) event);
             break;
 
         case XkbMapNotify:
-            fputs("XkbMapNotify", stderr);
+            fputs("XkbMapNotify", log_file);
             log_xkb_map_notify_event((XkbMapNotifyEvent*) event);
             break;
 
         default:
-            fprintf(stderr, "UNKNOWN_XKB_EVENT(%d)",
+            fprintf(log_file, "UNKNOWN_XKB_EVENT(%d)",
                     ((XkbAnyEvent*) event)->xkb_type);
         }
-        fputs("]", stderr);
+        fputs("]", log_file);
         return;
     }
 
     if (event->type == randr_event_base) {
-        fputs("RandrScreenChangeNotify", stderr);
+        fputs("RandrScreenChangeNotify", log_file);
         log_randr_screen_change_notify_event(
                 (XRRScreenChangeNotifyEvent*) event);
-        fputs("]", stderr);
+        fputs("]", log_file);
         return;
     }
 
     if (event_to_string(event->type) == NULL) {
-        fprintf(stderr, "UNKNOWN_EVENT(%d)",
+        fprintf(log_file, "UNKNOWN_EVENT(%d)",
                 event->type);
     } else {
-        fputs(event_to_string(event->type), stderr);
+        fputs(event_to_string(event->type), log_file);
     }
 
     switch (event->type) {
@@ -1148,81 +1156,81 @@ static void log_event(XEvent *event)
         log_mapping_notify_event((XMappingEvent*) event);
         break;
     }
-    fputs("]", stderr);
+    fputs("]", log_file);
 }
 
 /* Log a window to standard error output. */
 static void log_window(const FcWindow *window)
 {
     log_hexadecimal(window->reference.id);
-    fprintf(stderr, COLOR(YELLOW) "<%u>" CLEAR_COLOR,
+    fprintf(log_file, COLOR(YELLOW) "<%u>" CLEAR_COLOR,
             window->number);
 }
 
 /* Log a window to standard error output. */
 static void log_frame(const Frame *frame)
 {
-    fputs(COLOR(MAGENTA) "[", stderr);
+    fputs(COLOR(MAGENTA) "[", log_file);
     log_rectangle(frame->x, frame->y, frame->width, frame->height);
-    fputs(COLOR(MAGENTA) "]" CLEAR_COLOR, stderr);
+    fputs(COLOR(MAGENTA) "]" CLEAR_COLOR, log_file);
     if (frame->number > 0) {
-        fprintf(stderr, COLOR(YELLOW) "<%u>" CLEAR_COLOR,
+        fprintf(log_file, COLOR(YELLOW) "<%u>" CLEAR_COLOR,
                 frame->number);
     }
 }
 
-/* Log given data point to stderr. */
-static void log_parse_data(const struct parse_data *data)
+/* Log given data point to log_file. */
+static void log_action_data(const struct action_data *data)
 {
     switch (data->type) {
-    case PARSE_DATA_TYPE_INTEGER:
-        fprintf(stderr, COLOR(GREEN) "%" PRIiPARSE_INTEGER,
+    case ACTION_DATA_TYPE_INTEGER:
+        fprintf(log_file, COLOR(GREEN) "%" PRIiACTION_INTEGER,
                 data->u.integer);
-        if ((data->flags & PARSE_DATA_FLAGS_IS_PERCENT)) {
-            fputc('%', stderr);
+        if ((data->flags & ACTION_DATA_FLAGS_IS_PERCENT)) {
+            fputc('%', log_file);
         }
-        fputs(CLEAR_COLOR, stderr);
+        fputs(CLEAR_COLOR, log_file);
         break;
 
-    case PARSE_DATA_TYPE_STRING:
+    case ACTION_DATA_TYPE_STRING:
         log_formatted("%s",
                 data->u.string);
         break;
 
-    case PARSE_DATA_TYPE_RELATION: {
+    case ACTION_DATA_TYPE_RELATION: {
         const struct window_relation *const relation =
             &data->u.relation;
-        log_formatted("%s,%s ( %A )",
+        log_formatted("%s,%s %A",
                 relation->instance_pattern,
                 relation->class_pattern,
-                &relation->actions);
+                relation->actions);
         break;
     }
 
-    case PARSE_DATA_TYPE_BUTTON: {
+    case ACTION_DATA_TYPE_BUTTON: {
         const struct button_binding *const binding = &data->u.button;
         if (binding->is_release) {
-            fprintf(stderr, COLOR(YELLOW) "release" CLEAR_COLOR " ");
+            fprintf(log_file, COLOR(YELLOW) "release" CLEAR_COLOR " ");
         }
         if (binding->is_transparent) {
-            fprintf(stderr, COLOR(YELLOW) "transparent" CLEAR_COLOR " ");
+            fprintf(log_file, COLOR(YELLOW) "transparent" CLEAR_COLOR " ");
         }
         if (binding->modifiers != 0) {
             log_formatted("%u+",
                     binding->modifiers);
         }
-        log_formatted("%u ( %A )",
-                binding->modifiers, &binding->actions);
+        log_formatted("%u %A",
+                binding->modifiers, binding->actions);
         break;
     }
 
-    case PARSE_DATA_TYPE_KEY: {
+    case ACTION_DATA_TYPE_KEY: {
         const struct key_binding *const binding = &data->u.key;
         if (binding->is_release) {
-            fprintf(stderr, COLOR(YELLOW) "release" CLEAR_COLOR " ");
+            fprintf(log_file, COLOR(YELLOW) "release" CLEAR_COLOR " ");
         }
         if (binding->modifiers != 0) {
-            fprintf(stderr, COLOR(GREEN) "%u" CLEAR_COLOR "+",
+            fprintf(log_file, COLOR(GREEN) "%u" CLEAR_COLOR "+",
                     binding->modifiers);
         }
 
@@ -1230,37 +1238,43 @@ static void log_parse_data(const struct parse_data *data)
             log_formatted("[%d]",
                     (int) binding->key_code);
         } else {
-            fprintf(stderr, COLOR(CYAN) "%s" CLEAR_COLOR,
+            fprintf(log_file, COLOR(CYAN) "%s" CLEAR_COLOR,
                     XKeysymToString(binding->key_symbol));
         }
 
-        log_formatted(" ( %A )",
-                &binding->actions);
+        log_formatted(" %A",
+                binding->actions);
         break;
     }
 
-    case PARSE_DATA_TYPE_MAX:
+    case ACTION_DATA_TYPE_MAX:
         /* nothing */
         break;
     }
 }
 
-/* Log a list of actions to stderr. */
-static void log_action_list(const struct action_list *list)
+/* Log a block of actions to log_file. */
+static void log_action_block(const ActionBlock *block)
 {
-    const struct action_list_item *item;
-    const struct parse_data *data, *previous_data;
+    const struct action_block_item *item;
+    const struct action_data *data, *previous_data;
 
-    data = list->data;
-    for (size_t i = 0; i < list->number_of_items; i++) {
+    if (block == NULL) {
+        return;
+    }
+
+    fputc('(', log_file);
+
+    data = block->data;
+    for (size_t i = 0; i < block->number_of_items; i++) {
         const char *action, *space;
         int length;
 
         if (i > 0) {
-            fputs(CLEAR_COLOR ", ", stderr);
+            fputs(CLEAR_COLOR ", ", log_file);
         }
 
-        item = &list->items[i];
+        item = &block->items[i];
         action = get_action_string(item->type);
         previous_data = data;
         while (action != NULL) {
@@ -1274,15 +1288,16 @@ static void log_action_list(const struct action_list *list)
 
             /* check if this is after the first part of the action */
             if (action != get_action_string(item->type)) {
-                fputs(" ", stderr);
+                fputs(" ", log_file);
             }
 
-            if (length == 1 && get_parse_data_type_from_identifier(action[0]) !=
-                    PARSE_DATA_TYPE_MAX) {
-                log_parse_data(data);
+            if (length == 1 &&
+                    get_action_data_type_from_identifier(action[0]) !=
+                    ACTION_DATA_TYPE_MAX) {
+                log_action_data(data);
                 data++;
             } else {
-                fprintf(stderr, COLOR(YELLOW) "%.*s" CLEAR_COLOR,
+                fprintf(log_file, COLOR(YELLOW) "%.*s" CLEAR_COLOR,
                         length, action);
             }
 
@@ -1291,7 +1306,7 @@ static void log_action_list(const struct action_list *list)
         data = previous_data + item->data_count;
     }
 
-    fputs(CLEAR_COLOR, stderr);
+    fputs(CLEAR_COLOR ")", log_file);
 }
 
 /* Log the display information to standard error output. */
@@ -1321,7 +1336,7 @@ static void log_display(Display *display)
     millimeter_width = DisplayWidthMM(display, screen);
     millimeter_height = DisplayHeightMM(display, screen);
 
-    fprintf(stderr,
+    fprintf(log_file,
             "Display[connection_number="); log_integer(connection_number);
     V("default_screen"); log_integer(screen);
     V("screen_count"); log_integer(screen_count);
@@ -1332,10 +1347,10 @@ static void log_display(Display *display)
     V("default_root"); log_hexadecimal(root);
     V("size"); log_size(width, height);
     V("millimeter_size"); log_size(millimeter_width, millimeter_height);
-    fputs("]", stderr);
+    fputs("]", log_file);
 }
 
-/* Log to stderr and use the variable argument list. */
+/* Log to log_file and use the variable argument list. */
 void _log_va_formatted(const char *format, va_list list)
 {
     char buffer[64];
@@ -1347,7 +1362,7 @@ void _log_va_formatted(const char *format, va_list list)
                 format++;
                 /* fall through */
             case '\0':
-                fputc('%', stderr);
+                fputc('%', log_file);
                 continue;
 
             /* print a point */
@@ -1406,14 +1421,14 @@ void _log_va_formatted(const char *format, va_list list)
                 log_event(va_arg(list, XEvent*));
                 break;
 
-            /* print a list of actions */
+            /* print a block of actions */
             case 'A':
-                log_action_list(va_arg(list, const struct action_list*));
+                log_action_block(va_arg(list, const ActionBlock*));
                 break;
 
             /* print a parse data point */
             case 'T':
-                log_parse_data(va_arg(list, const struct parse_data*));
+                log_action_data(va_arg(list, const struct action_data*));
                 break;
 
             /* print an X atom */
@@ -1430,7 +1445,7 @@ void _log_va_formatted(const char *format, va_list list)
             default: {
                 unsigned i = 0;
 
-                fputs(COLOR(GREEN), stderr);
+                fputs(COLOR(GREEN), log_file);
 
                 /* move a segment of `format` into `buffer` and feed it into the
                  * real `printf()`
@@ -1439,8 +1454,8 @@ void _log_va_formatted(const char *format, va_list list)
                     buffer[i] = format[i];
                     if (strchr(PRINTF_FORMAT_SPECIFIERS, format[i]) != NULL) {
                         buffer[i + 1] = '\0';
-                        vfprintf(stderr, buffer, list);
-                        fputs(CLEAR_COLOR, stderr);
+                        vfprintf(log_file, buffer, list);
+                        fputs(CLEAR_COLOR, log_file);
                         format += i - 1;
                         /* all clean */
                         i = 0;
@@ -1451,7 +1466,7 @@ void _log_va_formatted(const char *format, va_list list)
 
                 /* if anything is weird print the rest of the format string */
                 if (i > 0) {
-                    fputs(format, stderr);
+                    fputs(format, log_file);
                     while (format[2] != '\0') {
                         format++;
                     }
@@ -1461,7 +1476,7 @@ void _log_va_formatted(const char *format, va_list list)
             }
             format++;
         } else {
-            fputc(format[0], stderr);
+            fputc(format[0], log_file);
         }
     }
 }
@@ -1487,7 +1502,7 @@ void _log_formatted(log_severity_t severity, const char *file, int line,
     strftime(buffer, sizeof(buffer),
             severity == LOG_SEVERITY_ERROR ? COLOR(RED) "{%F %T} " :
                 COLOR(GREEN) "[%F %T] ", tm);
-    fprintf(stderr, "%s" COLOR(YELLOW) "(%s:%d) " CLEAR_COLOR,
+    fprintf(log_file, "%s" COLOR(YELLOW) "(%s:%d) " CLEAR_COLOR,
             buffer, file, line);
 
     /* parse the format string */
@@ -1512,9 +1527,9 @@ void _log_formatted(log_severity_t severity, const char *format, ...)
     current_time = time(NULL);
     tm = localtime(&current_time);
     strftime(buffer, sizeof(buffer),
-            severity == LOG_SEVERITY_ERROR ? COLOR(RED) "{%F %T}" :
-                COLOR(GREEN) "[%F %T]", tm);
-    fputs(buffer, stderr);
+            severity == LOG_SEVERITY_ERROR ? COLOR(RED) "{%F %T} " :
+                COLOR(GREEN) "[%F %T] ", tm);
+    fputs(buffer, log_file);
 
     /* parse the format string */
     va_start(list, format);

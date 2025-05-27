@@ -7,8 +7,8 @@
 #include "fensterchef.h"
 #include "font.h"
 #include "log.h"
+#include "notification.h"
 #include "parse/alias.h"
-#include "parse/data_type.h"
 #include "parse/group.h"
 #include "parse/input.h"
 #include "parse/parse.h"
@@ -24,7 +24,7 @@ const struct configuration default_configuration = {
     .auto_remove = false,
     .auto_remove_void = false,
 
-    .notification_duration = 3,
+    .notification_duration = 2,
 
     .text_padding = 6,
 
@@ -33,6 +33,7 @@ const struct configuration default_configuration = {
     .border_color_active = 0xff939388,
     .border_color_focus = 0xff7fd0f1,
     .foreground = 0xff7fd0f1,
+    .foreground_error = 0xffb83940,
     .background = 0xff49494d,
 
     .gaps_inner = { 4, 4, 4, 4 },
@@ -46,6 +47,7 @@ struct configuration configuration = default_configuration;
 static const struct default_button_binding {
     /* the binding flags */
     bool is_release;
+    bool is_transparent;
     /* the modifiers of the button */
     unsigned modifiers;
     /* the button to press */
@@ -54,16 +56,18 @@ static const struct default_button_binding {
     action_type_t type;
 } default_button_bindings[] = {
     /* start moving or resizing a window (depends on the mouse position) */
-    { false, 0, 1, ACTION_INITIATE_RESIZE },
+    { false, false, Mod4Mask, Button1, ACTION_INITIATE_RESIZE },
     /* minimize (hide) a window */
-    { true, 0, 2, ACTION_MINIMIZE_WINDOW },
+    { true, false, Mod4Mask, Button2, ACTION_MINIMIZE_WINDOW },
     /* start moving a window */
-    { false, 0, 3, ACTION_INITIATE_MOVE },
+    { false, false, Mod4Mask, Button3, ACTION_INITIATE_MOVE },
+    /* focus a window */
+    { false, true, 0, Button1, ACTION_FOCUS_WINDOW },
 };
 
 /* default key bindings */
 static const struct default_key_binding {
-    /* the modifiers of the key */
+    /* the modifiers of the key (will be combined with Mod4Mask) */
     unsigned modifiers;
     /* the key symbol */
     KeySym key_symbol;
@@ -72,7 +76,7 @@ static const struct default_key_binding {
     /* the amount of data points (0 or 1) */
     unsigned data_count;
     /* optional additional action data */
-    struct parse_data data;
+    struct action_data data;
 } default_key_bindings[] = {
     /* reload the configuration */
     { ShiftMask, XK_r, .action = ACTION_RELOAD_CONFIGURATION },
@@ -139,72 +143,72 @@ static const struct default_key_binding {
 
     /* run the terminal or xterm as fall back */
     { 0, XK_Return, ACTION_RUN, 1,
-        { 0, PARSE_DATA_TYPE_INTEGER, { .string =
+        { 0, ACTION_DATA_TYPE_INTEGER, { .string =
             (utf8_t*) "[ -n \"$TERMINAL\" ] && exec \"$TERMINAL\" || exec xterm"
         } }
     },
 
     /* assign/select specific windows */
     { 0, XK_0, ACTION_ASSIGN_WINDOW, 1,
-        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 100 } }
+        { 0, ACTION_DATA_TYPE_INTEGER, { .integer = 100 } }
     },
     { 0, XK_1, ACTION_ASSIGN_WINDOW, 1,
-        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 101 } }
+        { 0, ACTION_DATA_TYPE_INTEGER, { .integer = 101 } }
     },
     { 0, XK_2, ACTION_ASSIGN_WINDOW, 1,
-        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 102 } }
+        { 0, ACTION_DATA_TYPE_INTEGER, { .integer = 102 } }
     },
     { 0, XK_3, ACTION_ASSIGN_WINDOW, 1,
-        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 103 } }
+        { 0, ACTION_DATA_TYPE_INTEGER, { .integer = 103 } }
     },
     { 0, XK_4, ACTION_ASSIGN_WINDOW, 1,
-        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 104 } }
+        { 0, ACTION_DATA_TYPE_INTEGER, { .integer = 104 } }
     },
     { 0, XK_5, ACTION_ASSIGN_WINDOW, 1,
-        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 105 } }
+        { 0, ACTION_DATA_TYPE_INTEGER, { .integer = 105 } }
     },
     { 0, XK_6, ACTION_ASSIGN_WINDOW, 1,
-        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 106 } }
+        { 0, ACTION_DATA_TYPE_INTEGER, { .integer = 106 } }
     },
     { 0, XK_7, ACTION_ASSIGN_WINDOW, 1,
-        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 107 } }
+        { 0, ACTION_DATA_TYPE_INTEGER, { .integer = 107 } }
     },
     { 0, XK_8, ACTION_ASSIGN_WINDOW, 1,
-        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 108 } }
+        { 0, ACTION_DATA_TYPE_INTEGER, { .integer = 108 } }
     },
     { 0, XK_9, ACTION_ASSIGN_WINDOW, 1,
-        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 109 } }
+        { 0, ACTION_DATA_TYPE_INTEGER, { .integer = 109 } }
     },
 
     { ShiftMask, XK_0, ACTION_FOCUS_WINDOW, 1,
-        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 100 } }
+        { 0, ACTION_DATA_TYPE_INTEGER, { .integer = 100 } }
     },
     { ShiftMask, XK_1, ACTION_FOCUS_WINDOW, 1,
-        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 101 } }
+        { 0, ACTION_DATA_TYPE_INTEGER, { .integer = 101 } }
     },
     { ShiftMask, XK_2, ACTION_FOCUS_WINDOW, 1,
-        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 102 } }
+        { 0, ACTION_DATA_TYPE_INTEGER, { .integer = 102 } }
     },
     { ShiftMask, XK_3, ACTION_FOCUS_WINDOW, 1,
-        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 103 } }
+        { 0, ACTION_DATA_TYPE_INTEGER, { .integer = 103 } }
     },
     { ShiftMask, XK_4, ACTION_FOCUS_WINDOW, 1,
-        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 104 } }
+        { 0, ACTION_DATA_TYPE_INTEGER, { .integer = 104 } }
     },
     { ShiftMask, XK_5, ACTION_FOCUS_WINDOW, 1,
-        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 105 } }
+        { 0, ACTION_DATA_TYPE_INTEGER, { .integer = 105 } }
     },
     { ShiftMask, XK_6, ACTION_FOCUS_WINDOW, 1,
-        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 106 } }
+        { 0, ACTION_DATA_TYPE_INTEGER, { .integer = 106 } }
     },
     { ShiftMask, XK_7, ACTION_FOCUS_WINDOW, 1,
-        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 107 } }
+        { 0, ACTION_DATA_TYPE_INTEGER, { .integer = 107 } }
     },
     { ShiftMask, XK_8, ACTION_FOCUS_WINDOW, 1,
-        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 108 } }
+        { 0, ACTION_DATA_TYPE_INTEGER, { .integer = 108 } }
     },
     { ShiftMask, XK_9, ACTION_FOCUS_WINDOW, 1,
-        { 0, PARSE_DATA_TYPE_INTEGER, { .integer = 109 } }
+        { 0, ACTION_DATA_TYPE_INTEGER, { .integer = 109 } }
     },
 
     /* quit fensterchef */
@@ -216,24 +220,21 @@ static const struct default_key_binding {
  */
 static void set_default_button_bindings(void)
 {
-    struct action_list_item item;
     struct button_binding binding;
 
-    binding.actions.items = &item;
-    item.data_count = 0;
-    binding.actions.number_of_items = 1;
-    binding.actions.data = NULL;
+    LOG_DEBUG("setting default button bindings\n");
 
     /* overwrite bindings with the default button bindings */
     for (unsigned i = 0; i < SIZE(default_button_bindings); i++) {
         /* bake a button binding from the default button bindings struct */
-        binding.is_transparent = false;
         binding.is_release = default_button_bindings[i].is_release;
-        binding.modifiers = Mod4Mask | default_button_bindings[i].modifiers;
+        binding.is_transparent = default_button_bindings[i].is_transparent;
+        binding.modifiers = default_button_bindings[i].modifiers;
         binding.button = default_button_bindings[i].button_index;
-        item.type = default_button_bindings[i].type;
-
+        binding.actions = create_empty_action_block(1, 0);
+        binding.actions->items[0].type = default_button_bindings[i].type;
         set_button_binding(&binding);
+        dereference_action_block(binding.actions);
     }
 }
 
@@ -242,30 +243,25 @@ static void set_default_button_bindings(void)
  */
 static void set_default_key_bindings(void)
 {
-    struct action_list_item item;
-    struct parse_data data;
     struct key_binding binding;
 
-    binding.is_release = false;
-    binding.key_code = 0;
-    binding.actions.items = &item;
-    item.data_count = 0;
-    binding.actions.number_of_items = 1;
-    binding.actions.data = &data;
-    data.flags = 0;
+    LOG_DEBUG("setting default key bindings\n");
 
     /* overwrite bindings with the default button bindings */
     for (unsigned i = 0; i < SIZE(default_key_bindings); i++) {
         /* bake a key binding from the bindings array */
         binding.modifiers = Mod4Mask | default_key_bindings[i].modifiers;
         binding.key_symbol = default_key_bindings[i].key_symbol;
-        item.type = default_key_bindings[i].action;
-        item.data_count = default_key_bindings[i].data_count;
-        if (item.data_count == 1) {
-            data = default_key_bindings[i].data;
+        binding.actions = create_empty_action_block(1,
+                default_key_bindings[i].data_count);
+        binding.actions->items[0].type = default_key_bindings[i].action;
+        binding.actions->items[0].data_count = default_key_bindings[i].data_count;
+        if (default_key_bindings[i].data_count == 1) {
+            binding.actions->data[0] = default_key_bindings[i].data;
+            duplicate_action_data(&binding.actions->data[0]);
         }
-
         set_key_binding(&binding);
+        dereference_action_block(binding.actions);
     }
 }
 
@@ -279,8 +275,6 @@ void set_default_configuration(void)
     set_ignored_modifiers(DEFAULT_IGNORE_MODIFIERS);
     set_default_button_bindings();
     set_default_key_bindings();
-
-    set_font(DEFAULT_FONT);
 }
 
 /* Expand given @path.
@@ -387,6 +381,8 @@ void clear_configuration(void)
     unset_button_bindings();
     unset_key_bindings();
     unset_window_relations();
+
+    set_font(DEFAULT_FONT);
 }
 
 /* Reload the fensterchef configuration. */
@@ -401,6 +397,10 @@ void reload_configuration(void)
 
     clear_configuration();
 
+    if (error_notification != NULL) {
+        unmap_client(&error_notification->reference);
+    }
+
     if (configuration == NULL ||
             (parser = create_file_parser(configuration),
                 parser == NULL)) {
@@ -410,6 +410,14 @@ void reload_configuration(void)
         }
         set_default_configuration();
     } else if (parse_and_run_actions(parser) != OK) {
+        char buffer[1024];
+
+        snprintf(buffer, sizeof(buffer),
+                "Configuration parse error at %s:%u",
+                parser->first_error_file,
+                parser->first_error_line + 1);
+        set_error_notification(buffer);
+
         set_default_configuration();
     }
     destroy_parser(parser);

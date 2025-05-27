@@ -28,8 +28,8 @@ int allocate_xft_color(uint32_t rgb, XftColor *color)
     XRenderColor render_color;
     Bool result;
 
-    render_color.red = ((rgb >> 8) & 0xff00);
-    render_color.green = (rgb & 0xff00);
+    render_color.red = ((rgb >> 8) & (0xff << 8));
+    render_color.green = (rgb & (0xff << 8));
     render_color.blue = (rgb & 0xff) << 8;
     render_color.alpha = 0xffff;
     result = XftColorAllocValue(display,
@@ -37,7 +37,7 @@ int allocate_xft_color(uint32_t rgb, XftColor *color)
             DefaultColormap(display, DefaultScreen(display)),
             &render_color, color);
     if (!result) {
-        LOG_ERROR("could not allocate Xft color value for background\n");
+        LOG_ERROR("could not allocate Xft color value\n");
         return ERROR;
     }
 
@@ -169,24 +169,26 @@ FcChar32 *get_glyphs(const utf8_t *utf8, int length, int *glyph_count)
     return glyphs;
 }
 
-/* Transform given glyphs to a text object. */
-void initialize_text(Text *text, const FcChar32 *glyphs, int glyph_count)
+/* Create a text object from given glyphs. */
+Text *create_text(const FcChar32 *glyphs, int glyph_count)
 {
+    Text *text;
     int item_capacity = 2;
     int glyph_index = 0;
 
-    /* initialize the text object */
-    ALLOCATE(text->glyphs, glyph_count);
-    ALLOCATE(text->items, item_capacity);
-    text->item_count = 0;
+    /* create the text object */
+    text = xmalloc(sizeof(*text) + sizeof(*text->glyphs) * glyph_count);
     text->x = 0;
     text->y = 0;
     text->width = 0;
     text->height = 0;
+    ALLOCATE(text->items, item_capacity);
+    text->item_count = 0;
 
     /* go over all glyphs */
     for (int i = 0, j; i < glyph_count; i++) {
         const FcChar32 glyph = glyphs[i];
+
         /* find the font that has this glyph */
         for (j = 0; j < font_list.count; j++) {
             FcCharSet *charset;
@@ -231,8 +233,8 @@ void initialize_text(Text *text, const FcChar32 *glyphs, int glyph_count)
             continue;
         }
 
-        /* if no items are there yet, add a first one; add a next one if the
-         * fonts mismatch
+        /* If no items are there yet, add a first one.  Add a next one if the
+         * fonts mismatch.
          */
         if (text->item_count == 0 ||
                 text->items[text->item_count - 1].font != font) {
@@ -271,14 +273,16 @@ void initialize_text(Text *text, const FcChar32 *glyphs, int glyph_count)
 
         if (i == 0) {
             text->x = item->extents.x;
-            text->y = text->items[0].font->ascent;
+            text->y = item->extents.y;
         }
+
         if (i + 1 == text->item_count) {
             text->width += item->extents.width;
+            text->height += item->font->height;
         } else {
             text->width += item->extents.xOff;
+            text->height += item->extents.yOff;
         }
-        text->height = MAX(text->height, (unsigned) item->font->height);
 
         LOG_DEBUG("extent for item %d: %S %P %P\n",
                 i, item->extents.width, item->extents.height,
@@ -288,6 +292,8 @@ void initialize_text(Text *text, const FcChar32 *glyphs, int glyph_count)
 
     LOG_DEBUG("text bounds: %R\n",
             text->x, text->y, text->width, text->height);
+
+    return text;
 }
 
 /* Draw given @text using drawable @draw. */
@@ -308,12 +314,13 @@ void draw_text(XftDraw *draw, XftColor *color, int start_x, int start_y,
                 &text->glyphs[item->glyph_index], item->glyph_count);
 
         x += item->extents.xOff;
+        y += item->extents.yOff;
     }
 }
 
-/* Clear the resources occupied by a text object. */
-void clear_text(Text *text)
+/* Destroy a text object. */
+void destroy_text(Text *text)
 {
-    free(text->glyphs);
     free(text->items);
+    free(text);
 }

@@ -19,9 +19,20 @@ void emit_parse_error(Parser *parser, const char *format, ...)
     va_list list;
     Parser *upper;
 
-    parser->error_count++;
     get_stream_position(parser, parser->start_index, &line, &column);
     string_line = get_stream_line(parser, line, &length);
+
+    /* set the first error in the upper parser */
+    upper = parser;
+    while (upper->upper_parser != NULL) {
+        upper = upper->upper_parser;
+    }
+    if (upper->error_count == 0) {
+        upper->first_error_file = xstrdup(parser->file_path);
+        upper->first_error_line = line;
+    }
+
+    parser->error_count++;
 
     file = parser->file_path;
     if (file == NULL) {
@@ -34,37 +45,37 @@ void emit_parse_error(Parser *parser, const char *format, ...)
     if (upper != NULL) {
         unsigned line, column;
 
-        fprintf(stderr, "In file included from " COLOR(GREEN) "%s" CLEAR_COLOR,
+        fprintf(log_file, "In file included from " COLOR(GREEN) "%s" CLEAR_COLOR,
                 upper->file_path);
         get_stream_position(parser, upper->start_index, &line, &column);
-        fprintf(stderr, ":" COLOR(GREEN) "%u" CLEAR_COLOR,
+        fprintf(log_file, ":" COLOR(GREEN) "%u" CLEAR_COLOR,
                 line + 1);
 
         upper = upper->upper_parser;
         for (; upper != NULL; upper = upper->upper_parser) {
-            fprintf(stderr, ",\n                 from ");
-            fprintf(stderr, COLOR(GREEN) "%s" CLEAR_COLOR,
+            fprintf(log_file, ",\n                 from ");
+            fprintf(log_file, COLOR(GREEN) "%s" CLEAR_COLOR,
                     upper->file_path);
             get_stream_position(parser, upper->start_index, &line, &column);
-            fprintf(stderr, ":" COLOR(GREEN) "%u" CLEAR_COLOR,
+            fprintf(log_file, ":" COLOR(GREEN) "%u" CLEAR_COLOR,
                     line + 1);
         }
-        fprintf(stderr, ":\n");
+        fprintf(log_file, ":\n");
     }
 
-    fprintf(stderr, BOLD_COLOR "%s:%d:%d:" CLEAR_COLOR " " COLOR(RED),
+    fprintf(log_file, BOLD_COLOR "%s:%d:%d:" CLEAR_COLOR " " COLOR(RED),
             file, line + 1, column + 1);
 
     va_start(list, format);
-    vfprintf(stderr, format, list);
+    vfprintf(log_file, format, list);
     va_end(list);
 
-    fprintf(stderr, CLEAR_COLOR "\n %4u | %.*s\n",
+    fprintf(log_file, CLEAR_COLOR "\n %4u | %.*s\n",
             line + 1, (int) length, string_line);
     for (unsigned i = 0; i < column; i++) {
-        fputc(' ', stderr);
+        fputc(' ', log_file);
     }
-    fputs("        ^\n", stderr);
+    fputs("        ^\n", log_file);
 }
 
 /* Initialize a parse object to parse file at given path. */
@@ -120,6 +131,7 @@ void destroy_parser(Parser *parser)
     if (parser != NULL) {
         free(parser->file_path);
         free(parser->string);
+        free(parser->first_error_file);
         free(parser);
     }
 }
@@ -127,21 +139,22 @@ void destroy_parser(Parser *parser)
 /* Test the parser functionality. */
 int test_parser(Parser *parser)
 {
-    struct parse_action_list list;
-    struct action_list actions;
+    struct parse_action_block block;
+    ActionBlock *actions;
 
-    ZERO(&list, 1);
-    while (parse_top(parser, &list) == OK) {
+    ZERO(&block, 1);
+    while (parse_top(parser, &block) == OK) {
         /* nothing */
     }
 
     if (parser->error_count == 0) {
-        make_real_action_list(&actions, &list);
+        actions = convert_parse_action_block(&block);
         LOG_DEBUG("got actions: %A\n",
-                &actions);
+                actions);
+        dereference_action_block(actions);
     }
 
-    clear_parse_list(&list);
+    clear_parse_action_block(&block);
 
     return parser->error_count > 0 ? ERROR : OK;
 }
@@ -149,28 +162,29 @@ int test_parser(Parser *parser)
 /* Parse the currently active stream and run all actions. */
 int parse_and_run_actions(Parser *parser)
 {
-    struct parse_action_list list;
-    struct action_list actions;
+    struct parse_action_block block;
+    ActionBlock *actions;
 
-    ZERO(&list, 1);
-    while (parse_top(parser, &list) == OK) {
+    ZERO(&block, 1);
+    while (parse_top(parser, &block) == OK) {
         /* nothing */
     }
 
     if (parser->error_count > 0) {
         /* clear all parsed thus far */
-        clear_parse_list(&list);
+        clear_parse_action_block(&block);
         return ERROR;
     }
 
     /* do the startup actions */
-    make_real_action_list(&actions, &list);
+    actions = convert_parse_action_block(&block);
     LOG_DEBUG("running actions: %A\n",
-            &actions);
+            actions);
     Window_selected = Window_focus;
-    run_action_list(&actions);
+    run_action_block(actions);
 
-    clear_parse_list(&list);
+    dereference_action_block(actions);
+    clear_parse_action_block(&block);
 
     return OK;
 }
