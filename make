@@ -45,8 +45,8 @@ uninstall() {
     done
 
     for f in "$PREFIX/usr/bin/fensterchef" \
-             "$PREFIX/usr/share/man/man1/fensterchef.1" \
-             "$PREFIX/usr/share/man/man1/fensterchef.5" ; do
+             "$PREFIX/usr/share/man/man1/fensterchef.1.gz" \
+             "$PREFIX/usr/share/man/man5/fensterchef.5.gz" ; do
         [ -f "$f" ] && _command rm -f "$f"
     done
 }
