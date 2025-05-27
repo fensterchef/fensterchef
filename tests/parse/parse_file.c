@@ -8,7 +8,7 @@ int config_file_parser(void)
 {
     Parser *parser;
 
-    parser = create_file_parser("config");
+    parser = create_file_parser("wm");
 
     if (test_parser(parser) != OK) {
         destroy_parser(parser);

@@ -9,7 +9,7 @@
 
 #define FENSTERCHEF_VERSION "1.3"
 
-#define FENSTERCHEF_CONFIGURATION "fensterchef/config"
+#define FENSTERCHEF_CONFIGURATION "fensterchef/wm"
 
 /* the home directory */
 extern const char *Fensterchef_home;
