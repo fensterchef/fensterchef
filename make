@@ -39,8 +39,11 @@ install() {
 }
 
 uninstall() {
-    license="$PREFIX/share/licenses/fensterchef/"
-    [ -d "$license" ] && _command rm -rf "$license"
+    for d in "$PREFIX/share/licenses/fensterchef/" \
+             "$PREFIX/share/fensterchef" ; do
+        [ -d "$d" ] && _command rm -rf "$d"
+    done
+
     for f in "$PREFIX/bin/fensterchef" \
              "$PREFIX/share/man/man1/fensterchef.1" \
              "$PREFIX/share/man/man1/fensterchef.5" ; do
