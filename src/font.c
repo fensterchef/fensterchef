@@ -278,7 +278,7 @@ Text *create_text(const FcChar32 *glyphs, int glyph_count)
 
         if (i + 1 == text->item_count) {
             text->width += item->extents.width;
-            text->height += item->extents.height;
+            text->height += item->font->height;
         } else {
             text->width += item->extents.xOff;
             text->height += item->extents.yOff;

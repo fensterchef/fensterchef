@@ -1198,8 +1198,6 @@ void show_window(FcWindow *window)
 /* Hide @window and adjust the tiling and focus. */
 void hide_window(FcWindow *window)
 {
-    Frame *frame, *stash;
-
     if (!window->state.is_visible) {
         return;
     }
@@ -1207,7 +1205,7 @@ void hide_window(FcWindow *window)
     switch (window->state.mode) {
     /* the window is replaced by another window in the tiling layout */
     case WINDOW_MODE_TILING: {
-        Frame *pop;
+        Frame *frame, *pop, *stash;
 
         frame = get_window_frame(window);
 
@@ -1216,7 +1214,7 @@ void hide_window(FcWindow *window)
         stash = stash_frame_later(frame);
         if (configuration.auto_remove) {
             /* if the frame is not a root frame, remove it, otherwise
-             * auto-fill-void is checked
+             * `auto fill void` is checked
              */
             if (frame->parent != NULL) {
                 remove_frame(frame);
@@ -1248,9 +1246,9 @@ void hide_window(FcWindow *window)
             }
         }
 
-        /* put `pop` back onto the stack, if it was used it will be empty and
-         * therefore not be put onto the stack again but it will in any case be
-         * destroyed
+        /* Put `pop` back onto the stack.  If it was used it will be empty and
+         * therefore not be put onto the stack again.  It will be destroyed in
+         * any case.
          */
         if (pop != NULL) {
             stash_frame(pop);
@@ -1274,6 +1272,11 @@ void hide_window(FcWindow *window)
         Monitor *monitor;
         FcWindow *other;
 
+        /* set it to invisible first, so it is not returned in
+         * get_window_covering_monitor()
+         */
+        window->state.is_visible = false;
+
         monitor = get_monitor_containing_window(window);
         other = get_window_covering_monitor(monitor);
         if (other != NULL) {
@@ -1288,8 +1291,6 @@ void hide_window(FcWindow *window)
     case WINDOW_MODE_MAX:
         break;
     }
-
-    window->state.is_visible = false;
 }
 
 /* Hide the window without touching the tiling or focus. */

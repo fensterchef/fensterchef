@@ -237,13 +237,10 @@ static int render_window_list(void)
 
         Text *const text = texts[i];
 
-        /* add some extra to the top of the rectangle if this is the first
-         * item so that it looks better
-         */
+        /* add a little extra to the top if this is the first item */
         if (i == 0) {
             rect_y = 0;
-            rect_height = text->height +
-                configuration.text_padding / 2;
+            rect_height = text->height + configuration.text_padding / 2;
         } else {
             rect_y = y;
             rect_height = text->height;
@@ -318,7 +315,7 @@ static void handle_key_press(XKeyPressedEvent *event)
         return;
     }
 
-    key_symbol = XkbKeycodeToKeysym(display, event->keycode, 0, 1);
+    key_symbol = XkbKeycodeToKeysym(display, event->keycode, 0, 0);
     switch (key_symbol) {
     /* cancel selection */
     case XK_q:

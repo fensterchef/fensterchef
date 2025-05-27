@@ -16,7 +16,11 @@ M - Maintenance
     are switchable.  This could be a file viewer, application launcher or the
     window list.
 
-#136 ...
+#136 M Add dual link again
+    The dual link between window and frame was difficult to manage but lot has
+    changed, try to add it again
+
+#137 ...
 
 #150 Add workspaces
     Workspaces are pretty much part of EWMH and are an essential
