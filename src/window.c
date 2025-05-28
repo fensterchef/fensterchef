@@ -196,9 +196,10 @@ static void initialize_window_properties(FcWindow *window)
     for (int i = 0; i < atom_count; i++) {
         LOG_DEBUG("window has: %a\n",
                 atoms[i]);
-        if (atoms[i] == ATOM(_NET_WM_STATE)) {
-            states = get_atom_list_property(window->reference.id,
-                    ATOM(_NET_WM_STATE));
+        if (atoms[i] == ATOM(_NET_WM_STATE) &&
+                (states = get_atom_list_property(window->reference.id,
+                        ATOM(_NET_WM_STATE)),
+                    states != NULL)) {
 #ifdef DEBUG
             LOG_DEBUG("_NET_WM_STATE: ");
             for (Atom *atom = states; atom[0] != None; atom++) {
@@ -210,9 +211,10 @@ static void initialize_window_properties(FcWindow *window)
             }
             log_formatted("\n");
 #endif
-        } else if (atoms[i] == ATOM(_NET_WM_WINDOW_TYPE)) {
-            types = get_atom_list_property(window->reference.id,
-                    ATOM(_NET_WM_WINDOW_TYPE));
+        } else if (atoms[i] == ATOM(_NET_WM_WINDOW_TYPE) &&
+                (types = get_atom_list_property(window->reference.id,
+                        ATOM(_NET_WM_WINDOW_TYPE)),
+                    types != NULL)) {
 #ifdef DEBUG
             LOG_DEBUG("_NET_WM_WINDOW_TYPE: ");
             for (Atom *atom = types; atom[0] != None; atom++) {

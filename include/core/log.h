@@ -84,7 +84,7 @@ void _log_formatted(log_severity_t severity, const char *format, ...);
     _log_formatted(LOG_SEVERITY_ERROR, __VA_ARGS__)
 #endif
 
-/* Print a formatted string to standard error output.
+/* Print a formatted string to the log file.
  *
  * The following format specifiers are supported on top of the regular
  * format specifiers (some printf format specifiers might be overwritten):

@@ -252,6 +252,8 @@ static void handle_destroy_notify(XDestroyWindowEvent *event)
 
     window = get_fensterchef_window(event->window);
     if (window != NULL) {
+        /* make sure the window is hidden */
+        hide_window(window);
         destroy_window(window);
     }
 }
