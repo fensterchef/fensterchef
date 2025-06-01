@@ -170,8 +170,8 @@ bool get_strut_property(Window window, wm_strut_partial_t *strut)
         }
     } else {
         strut->left = longs[0];
-        strut->top = longs[1];
-        strut->right = longs[2];
+        strut->right = longs[1];
+        strut->top = longs[2];
         strut->bottom = longs[3];
         strut->left_start_y = longs[4];
         strut->left_end_y = longs[5];
